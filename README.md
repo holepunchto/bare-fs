@@ -1,9 +1,9 @@
-# tiny-fs-native
+# @pearjs/fs
 
 Native fs for Javascript
 
 ```
-npm install tiny-fs-native
+npm install @pearjs/fs
 ```
 
 Useful for embedded devices that only have n-api but not node.
@@ -12,7 +12,7 @@ Useful for embedded devices that only have n-api but not node.
 ## Usage
 
 ``` js
-const fs = require('tiny-fs-native')
+const fs = require('@pearjs/fs')
 
 // currently supports
 

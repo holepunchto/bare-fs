@@ -27,9 +27,9 @@ const constants = exports.constants = {
 const reqs = []
 let used = 0
 
-binding.tiny_fs_init(onfsresponse)
+binding.pear_fs_init(onfsresponse)
 
-process.on('exit', () => binding.tiny_fs_destroy())
+process.on('exit', () => binding.pear_fs_destroy())
 
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber (flags) {
@@ -72,8 +72,8 @@ function modeToNumber (mode) {
 }
 
 function alloc () {
-  const handle = b4a.alloc(binding.sizeof_tiny_fs_t)
-  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_tiny_fs_t_id, 1)
+  const handle = b4a.alloc(binding.sizeof_pear_fs_t)
+  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_pear_fs_t_id, 1)
 
   view[0] = reqs.length
 
@@ -140,7 +140,7 @@ function write (fd, buf, offset, len, pos, cb) {
     const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
     const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
 
-    binding.tiny_fs_write(req.handle, fd, buf, offset, len, low, high)
+    binding.pear_fs_write(req.handle, fd, buf, offset, len, low, high)
     return
   }
 
@@ -155,7 +155,7 @@ function writeSync (fd, buf, offset = 0, len = buf.byteLength, pos = null) {
   const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
   const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
 
-  return binding.tiny_fs_write_sync(fd, buf, offset, len, low, high)
+  return binding.pear_fs_write_sync(fd, buf, offset, len, low, high)
 }
 
 function writev (fd, buffers, pos, cb) {
@@ -172,7 +172,7 @@ function writev (fd, buffers, pos, cb) {
   const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
   const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
 
-  binding.tiny_fs_writev(req.handle, fd, buffers, low, high)
+  binding.pear_fs_writev(req.handle, fd, buffers, low, high)
 }
 
 function read (fd, buf, offset, len, pos, cb) {
@@ -185,7 +185,7 @@ function read (fd, buf, offset, len, pos, cb) {
     const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
     const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
 
-    binding.tiny_fs_read(req.handle, fd, buf, offset, len, low, high)
+    binding.pear_fs_read(req.handle, fd, buf, offset, len, low, high)
     return
   }
 
@@ -200,7 +200,7 @@ function readSync (fd, buf, offset = 0, len = buf.byteLength, pos = null) {
   const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
   const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
 
-  return binding.tiny_fs_read_sync(fd, buf, offset, len, low, high)
+  return binding.pear_fs_read_sync(fd, buf, offset, len, low, high)
 }
 
 function readv (fd, buffers, pos, cb) {
@@ -217,7 +217,7 @@ function readv (fd, buffers, pos, cb) {
   const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
   const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
 
-  binding.tiny_fs_readv(req.handle, fd, buffers, low, high)
+  binding.pear_fs_readv(req.handle, fd, buffers, low, high)
 }
 
 function open (filename, flags = 'r', mode = 0o666, cb) {
@@ -234,7 +234,7 @@ function open (filename, flags = 'r', mode = 0o666, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.tiny_fs_open(req.handle, filename, flags, mode)
+  binding.pear_fs_open(req.handle, filename, flags, mode)
 }
 
 function openSync (filename, flags = 'r', mode = 0o666) {
@@ -243,7 +243,7 @@ function openSync (filename, flags = 'r', mode = 0o666) {
   if (typeof flags === 'string') flags = flagsToNumber(flags)
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  const res = binding.tiny_fs_open_sync(filename, flags, mode)
+  const res = binding.pear_fs_open_sync(filename, flags, mode)
 
   if (res < 0) throw createError(res)
   return res
@@ -257,11 +257,11 @@ function close (fd, cb = noop) {
   const req = getReq()
 
   req.callback = cb
-  binding.tiny_fs_close(req.handle, fd)
+  binding.pear_fs_close(req.handle, fd)
 }
 
 function closeSync (fd) {
-  const res = binding.tiny_fs_close_sync(fd)
+  const res = binding.pear_fs_close_sync(fd)
 
   if (res < 0) throw createError(res)
   return res
@@ -274,7 +274,7 @@ function ftruncate (fd, len, cb) {
   const high = (len - low) / 0x100000000
 
   req.callback = cb
-  binding.tiny_fs_ftruncate(req.handle, fd, low, high)
+  binding.pear_fs_ftruncate(req.handle, fd, low, high)
 }
 
 class Stats {
@@ -346,12 +346,12 @@ function stat (path, cb) {
     else cb(null, new Stats(buf))
   }
 
-  binding.tiny_fs_stat(req.handle, path, req.buffer)
+  binding.pear_fs_stat(req.handle, path, req.buffer)
 }
 
 function statSync (path) {
   const buffer = b4a.allocUnsafe(16 * 8)
-  const res = binding.tiny_fs_stat_sync(path, buffer)
+  const res = binding.pear_fs_stat_sync(path, buffer)
   if (res < 0) throw createError(res)
   return new Stats(buffer)
 }
@@ -366,12 +366,12 @@ function lstat (path, cb) {
     else cb(null, new Stats(buf))
   }
 
-  binding.tiny_fs_lstat(req.handle, path, req.buffer)
+  binding.pear_fs_lstat(req.handle, path, req.buffer)
 }
 
 function lstatSync (path) {
   const buffer = b4a.allocUnsafe(16 * 8)
-  const res = binding.tiny_fs_lstat_sync(path, buffer)
+  const res = binding.pear_fs_lstat_sync(path, buffer)
   if (res < 0) throw createError(res)
   return new Stats(buffer)
 }
@@ -386,12 +386,12 @@ function fstat (fd, cb) {
     else cb(null, new Stats(buf))
   }
 
-  binding.tiny_fs_fstat(req.handle, fd, req.buffer)
+  binding.pear_fs_fstat(req.handle, fd, req.buffer)
 }
 
 function fstatSync (fd) {
   const buffer = b4a.allocUnsafe(16 * 8)
-  const res = binding.tiny_fs_fstat_sync(fd, buffer)
+  const res = binding.pear_fs_fstat_sync(fd, buffer)
   if (res < 0) throw createError(res)
   return new Stats(buffer)
 }
@@ -424,7 +424,7 @@ function rename (src, dst, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.tiny_fs_rename(req.handle, src, dst)
+  binding.pear_fs_rename(req.handle, src, dst)
 }
 
 function mkdir (path, opts, cb) {
@@ -444,21 +444,21 @@ function mkdir (path, opts, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.tiny_fs_mkdir(req.handle, path, mode)
+  binding.pear_fs_mkdir(req.handle, path, mode)
 }
 
 function rmdir (path, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.tiny_fs_rmdir(req.handle, path)
+  binding.pear_fs_rmdir(req.handle, path)
 }
 
 function unlink (path, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.tiny_fs_unlink(req.handle, path)
+  binding.pear_fs_unlink(req.handle, path)
 }
 
 function readFile (path, opts, cb) {

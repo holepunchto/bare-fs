@@ -5,7 +5,7 @@
 
 static napi_ref on_open;
 
-#define TINY_FS_ERRORS(NAME, DESC) { \
+#define PEAR_FS_ERRORS(NAME, DESC) { \
   napi_create_array(env, &entry); \
   napi_create_array(env, &val); \
   napi_value name; \
@@ -25,11 +25,11 @@ typedef struct {
   napi_env env;
   uint64_t *stat;
   uint32_t id;
-} tiny_fs_t;
+} pear_fs_t;
 
 static void
 on_fs_response (uv_fs_t *req) {
-  tiny_fs_t *p = (tiny_fs_t *) req;
+  pear_fs_t *p = (pear_fs_t *) req;
 
   napi_handle_scope scope;
   napi_open_handle_scope(p->env, &scope);
@@ -83,26 +83,26 @@ copy_stat (uv_fs_t *req, uint64_t *s) {
 
 static void
 on_fs_stat_response (uv_fs_t *req) {
-  tiny_fs_t *p = (tiny_fs_t *) req;
+  pear_fs_t *p = (pear_fs_t *) req;
   copy_stat(req, p->stat);
   on_fs_response(req);
 }
 
-NAPI_METHOD(tiny_fs_init) {
+NAPI_METHOD(pear_fs_init) {
   NAPI_ARGV(1)
   napi_create_reference(env, argv[0], 1, &on_open);
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_destroy) {
+NAPI_METHOD(pear_fs_destroy) {
   napi_delete_reference(env, on_open);
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_open) {
+NAPI_METHOD(pear_fs_open) {
   NAPI_ARGV(4)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
   NAPI_ARGV_INT32(flags, 2)
   NAPI_ARGV_INT32(mode, 3)
@@ -117,7 +117,7 @@ NAPI_METHOD(tiny_fs_open) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_open_sync) {
+NAPI_METHOD(pear_fs_open_sync) {
   NAPI_ARGV(3)
 
   NAPI_ARGV_UTF8(path, 4096, 0)
@@ -137,10 +137,10 @@ NAPI_METHOD(tiny_fs_open_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_write) {
+NAPI_METHOD(pear_fs_write) {
   NAPI_ARGV(7)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
   NAPI_ARGV_BUFFER(data, 2)
   NAPI_ARGV_UINT32(offset, 3)
@@ -165,7 +165,7 @@ NAPI_METHOD(tiny_fs_write) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_write_sync) {
+NAPI_METHOD(pear_fs_write_sync) {
   NAPI_ARGV(6)
 
   NAPI_ARGV_UINT32(fd, 0)
@@ -195,10 +195,10 @@ NAPI_METHOD(tiny_fs_write_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_writev) {
+NAPI_METHOD(pear_fs_writev) {
   NAPI_ARGV(5)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
 
   napi_value arr = argv[2];
@@ -231,10 +231,10 @@ NAPI_METHOD(tiny_fs_writev) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_read) {
+NAPI_METHOD(pear_fs_read) {
   NAPI_ARGV(7)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
   NAPI_ARGV_BUFFER(data, 2)
   NAPI_ARGV_UINT32(offset, 3)
@@ -259,7 +259,7 @@ NAPI_METHOD(tiny_fs_read) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_read_sync) {
+NAPI_METHOD(pear_fs_read_sync) {
   NAPI_ARGV(6)
 
   NAPI_ARGV_UINT32(fd, 0)
@@ -289,10 +289,10 @@ NAPI_METHOD(tiny_fs_read_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_readv) {
+NAPI_METHOD(pear_fs_readv) {
   NAPI_ARGV(5)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
 
   napi_value arr = argv[2];
@@ -325,10 +325,10 @@ NAPI_METHOD(tiny_fs_readv) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_ftruncate) {
+NAPI_METHOD(pear_fs_ftruncate) {
   NAPI_ARGV(4)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
   NAPI_ARGV_UINT32(len_low, 2)
   NAPI_ARGV_UINT32(len_high, 3)
@@ -345,10 +345,10 @@ NAPI_METHOD(tiny_fs_ftruncate) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_close) {
+NAPI_METHOD(pear_fs_close) {
   NAPI_ARGV(2)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
 
   uv_loop_t *loop;
@@ -361,7 +361,7 @@ NAPI_METHOD(tiny_fs_close) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_close_sync) {
+NAPI_METHOD(pear_fs_close_sync) {
   NAPI_ARGV(1)
 
   NAPI_ARGV_UINT32(fd, 0)
@@ -379,10 +379,10 @@ NAPI_METHOD(tiny_fs_close_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_rename) {
+NAPI_METHOD(pear_fs_rename) {
   NAPI_ARGV(3)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(src, 4096, 1)
   NAPI_ARGV_UTF8(dst, 4096, 2)
 
@@ -396,10 +396,10 @@ NAPI_METHOD(tiny_fs_rename) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_mkdir) {
+NAPI_METHOD(pear_fs_mkdir) {
   NAPI_ARGV(3)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
   NAPI_ARGV_INT32(mode, 2)
 
@@ -413,10 +413,10 @@ NAPI_METHOD(tiny_fs_mkdir) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_rmdir) {
+NAPI_METHOD(pear_fs_rmdir) {
   NAPI_ARGV(2)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
 
   uv_loop_t *loop;
@@ -429,10 +429,10 @@ NAPI_METHOD(tiny_fs_rmdir) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_stat) {
+NAPI_METHOD(pear_fs_stat) {
   NAPI_ARGV(3)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
   NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 2)
 
@@ -447,7 +447,7 @@ NAPI_METHOD(tiny_fs_stat) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_stat_sync) {
+NAPI_METHOD(pear_fs_stat_sync) {
   NAPI_ARGV(2)
 
   NAPI_ARGV_UTF8(path, 4096, 0)
@@ -467,10 +467,10 @@ NAPI_METHOD(tiny_fs_stat_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_lstat) {
+NAPI_METHOD(pear_fs_lstat) {
   NAPI_ARGV(3)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
   NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 2)
 
@@ -485,7 +485,7 @@ NAPI_METHOD(tiny_fs_lstat) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_lstat_sync) {
+NAPI_METHOD(pear_fs_lstat_sync) {
   NAPI_ARGV(2)
 
   NAPI_ARGV_UTF8(path, 4096, 0)
@@ -505,10 +505,10 @@ NAPI_METHOD(tiny_fs_lstat_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_fstat) {
+NAPI_METHOD(pear_fs_fstat) {
   NAPI_ARGV(3)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UINT32(fd, 1)
   NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 2)
 
@@ -523,7 +523,7 @@ NAPI_METHOD(tiny_fs_fstat) {
   return NULL;
 }
 
-NAPI_METHOD(tiny_fs_fstat_sync) {
+NAPI_METHOD(pear_fs_fstat_sync) {
   NAPI_ARGV(2)
 
   NAPI_ARGV_UINT32(fd, 0)
@@ -543,10 +543,10 @@ NAPI_METHOD(tiny_fs_fstat_sync) {
   return res;
 }
 
-NAPI_METHOD(tiny_fs_unlink) {
+NAPI_METHOD(pear_fs_unlink) {
   NAPI_ARGV(2)
 
-  NAPI_ARGV_BUFFER_CAST(tiny_fs_t *, req, 0)
+  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, req, 0)
   NAPI_ARGV_UTF8(path, 4096, 1)
 
   uv_loop_t *loop;
@@ -560,34 +560,34 @@ NAPI_METHOD(tiny_fs_unlink) {
 }
 
 NAPI_INIT() {
-  NAPI_EXPORT_SIZEOF(tiny_fs_t)
-  NAPI_EXPORT_OFFSETOF(tiny_fs_t, id)
+  NAPI_EXPORT_SIZEOF(pear_fs_t)
+  NAPI_EXPORT_OFFSETOF(pear_fs_t, id)
 
-  NAPI_EXPORT_FUNCTION(tiny_fs_init)
-  NAPI_EXPORT_FUNCTION(tiny_fs_destroy)
+  NAPI_EXPORT_FUNCTION(pear_fs_init)
+  NAPI_EXPORT_FUNCTION(pear_fs_destroy)
 
-  NAPI_EXPORT_FUNCTION(tiny_fs_open)
-  NAPI_EXPORT_FUNCTION(tiny_fs_ftruncate)
-  NAPI_EXPORT_FUNCTION(tiny_fs_read)
-  NAPI_EXPORT_FUNCTION(tiny_fs_readv)
-  NAPI_EXPORT_FUNCTION(tiny_fs_write)
-  NAPI_EXPORT_FUNCTION(tiny_fs_writev)
-  NAPI_EXPORT_FUNCTION(tiny_fs_close)
-  NAPI_EXPORT_FUNCTION(tiny_fs_rename)
-  NAPI_EXPORT_FUNCTION(tiny_fs_mkdir)
-  NAPI_EXPORT_FUNCTION(tiny_fs_rmdir)
-  NAPI_EXPORT_FUNCTION(tiny_fs_stat)
-  NAPI_EXPORT_FUNCTION(tiny_fs_lstat)
-  NAPI_EXPORT_FUNCTION(tiny_fs_fstat)
-  NAPI_EXPORT_FUNCTION(tiny_fs_unlink)
+  NAPI_EXPORT_FUNCTION(pear_fs_open)
+  NAPI_EXPORT_FUNCTION(pear_fs_ftruncate)
+  NAPI_EXPORT_FUNCTION(pear_fs_read)
+  NAPI_EXPORT_FUNCTION(pear_fs_readv)
+  NAPI_EXPORT_FUNCTION(pear_fs_write)
+  NAPI_EXPORT_FUNCTION(pear_fs_writev)
+  NAPI_EXPORT_FUNCTION(pear_fs_close)
+  NAPI_EXPORT_FUNCTION(pear_fs_rename)
+  NAPI_EXPORT_FUNCTION(pear_fs_mkdir)
+  NAPI_EXPORT_FUNCTION(pear_fs_rmdir)
+  NAPI_EXPORT_FUNCTION(pear_fs_stat)
+  NAPI_EXPORT_FUNCTION(pear_fs_lstat)
+  NAPI_EXPORT_FUNCTION(pear_fs_fstat)
+  NAPI_EXPORT_FUNCTION(pear_fs_unlink)
 
-  NAPI_EXPORT_FUNCTION(tiny_fs_open_sync)
-  NAPI_EXPORT_FUNCTION(tiny_fs_read_sync)
-  NAPI_EXPORT_FUNCTION(tiny_fs_write_sync)
-  NAPI_EXPORT_FUNCTION(tiny_fs_stat_sync)
-  NAPI_EXPORT_FUNCTION(tiny_fs_fstat_sync)
-  NAPI_EXPORT_FUNCTION(tiny_fs_lstat_sync)
-  NAPI_EXPORT_FUNCTION(tiny_fs_close_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_open_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_read_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_write_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_stat_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_fstat_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_lstat_sync)
+  NAPI_EXPORT_FUNCTION(pear_fs_close_sync)
 
   NAPI_EXPORT_UINT32(O_RDWR)
   NAPI_EXPORT_UINT32(O_RDONLY)
