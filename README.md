@@ -1,13 +1,10 @@
 # @pearjs/fs
 
-Native fs for Javascript
+Native file system for Javascript.
 
 ```
 npm install @pearjs/fs
 ```
-
-Useful for embedded devices that only have n-api but not node.
-
 
 ## Usage
 
