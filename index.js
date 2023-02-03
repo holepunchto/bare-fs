@@ -27,9 +27,13 @@ const constants = exports.constants = {
 const reqs = []
 let used = 0
 
-binding.pear_fs_init(onfsresponse)
+const fs = {
+  handle: b4a.allocUnsafe(binding.sizeof_pear_fs_t)
+}
 
-process.on('exit', () => binding.pear_fs_destroy())
+binding.pear_fs_init(fs.handle, fs, onfsresponse)
+
+process.on('exit', () => binding.pear_fs_destroy(fs.handle))
 
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber (flags) {
@@ -72,8 +76,11 @@ function modeToNumber (mode) {
 }
 
 function alloc () {
-  const handle = b4a.alloc(binding.sizeof_pear_fs_t)
-  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_pear_fs_t_id, 1)
+  const handle = b4a.alloc(binding.sizeof_pear_fs_req_t)
+
+  binding.pear_fs_req_init(fs.handle, handle)
+
+  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_pear_fs_req_t_id, 1)
 
   view[0] = reqs.length
 
@@ -755,8 +762,6 @@ exports.createReadStream = (path, options) => new FileReadStream(path, options)
 
 exports.WriteStream = FileWriteStream
 exports.createWriteStream = (path, options) => new FileWriteStream(path, options)
-
-exports._onfsresponse = onfsresponse // just for trible ensurance gc...
 
 function promisify (fn) {
   return function (...args) {
