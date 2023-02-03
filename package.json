@@ -3,6 +3,14 @@
   "version": "1.3.0",
   "description": "Native file system for Javascript",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "promises.js",
+    "binding.c",
+    "binding.js",
+    "CMakeLists.txt",
+    "prebuilds"
+  ],
   "scripts": {
     "test": "standard && brittle test/*.js",
     "install": "pear-dev rebuild",
