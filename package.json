@@ -27,7 +27,6 @@
   },
   "homepage": "https://github.com/holepunchto/pearjs-fs#readme",
   "dependencies": {
-    "@pearjs/dev": "^0.1.0",
     "napi-macros": "^2.2.2",
     "streamx": "^2.13.0"
   },
