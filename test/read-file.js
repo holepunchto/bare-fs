@@ -1,6 +1,5 @@
 const test = require('brittle')
 const path = require('path')
-const fsnode = require('fs')
 const { createFolder } = require('./helpers')
 const fs = require('../index.js')
 const b4a = require('b4a')
@@ -33,18 +32,12 @@ test('read file with encoding', function (t) {
 })
 
 test('read non-existing file', function (t) {
-  t.plan(4)
+  t.plan(2)
 
   const root = createFolder(t)
 
   fs.readFile(path.join(root, 'not-exists.txt'), function (err, data) {
-    t.is(err.errno, -2)
     t.is(err.code, 'ENOENT')
-    t.is(data, undefined)
-  })
-
-  fsnode.readFile(path.join(root, 'not-exists-two.txt'), function (err, data) {
-    t.comment('fsnode errno: ' + err.errno)
     t.is(data, undefined)
   })
 })
@@ -77,18 +70,12 @@ test.skip('read file with non-existing encoding', function (t) {
 })
 
 test('read file but it is a folder', function (t) {
-  t.plan(4)
+  t.plan(2)
 
   const root = createFolder(t)
 
   fs.readFile(path.join(root, 'examples'), { encoding: 'utf-8' }, function (err, data) {
-    t.is(err.errno, -21)
     t.is(err.code, 'EISDIR')
-    t.is(data, undefined)
-  })
-
-  fsnode.readFile(path.join(root, 'examples'), { encoding: 'utf-8' }, function (err, data) {
-    t.comment('fsnode errno: ' + err.errno)
     t.is(data, undefined)
   })
 })

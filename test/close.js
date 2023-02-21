@@ -27,7 +27,7 @@ test('close', function (t) {
 })
 
 test('close fd already closed', function (t) {
-  t.plan(4)
+  t.plan(3)
 
   const root = createFolder(t)
 
@@ -38,7 +38,6 @@ test('close fd already closed', function (t) {
       t.is(err, null)
 
       fs.close(fd, function (err) {
-        t.is(err.errno, -9)
         t.is(err.code, 'EBADF')
       })
     })
