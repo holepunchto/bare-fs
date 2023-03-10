@@ -287,31 +287,31 @@ class Stats {
   }
 
   isDirectory () {
-    return (this.mode & constants.S_IFDIR) !== 0
+    return (this.mode & constants.S_IFMT) === constants.S_IFDIR
   }
 
   isFile () {
-    return (this.mode & constants.S_IFREG) !== 0
+    return (this.mode & constants.S_IFMT) === constants.S_IFREG
   }
 
   isBlockDevice () {
-    return (this.mode & constants.S_IFBLK) !== 0
+    return (this.mode & constants.S_IFMT) === constants.S_IFBLK
   }
 
   isCharacterDevice () {
-    return (this.mode & constants.S_IFCHR) !== 0
+    return (this.mode & constants.S_IFCHR) === constants.S_IFCHR
   }
 
   isFIFO () {
-    return (this.mode & constants.S_IFIFO) !== 0
+    return (this.mode & constants.S_IFMT) === constants.S_IFIFO
   }
 
   isSymbolicLink () {
-    return (this.mode & constants.S_IFLNK) !== 0
+    return (this.mode & constants.S_IFMT) === constants.S_IFLNK
   }
 
   isSocket () {
-    return (this.mode & constants.S_IFSOCK) !== 0
+    return (this.mode & constants.S_IFMT) === constants.S_IFSOCK
   }
 }
 
