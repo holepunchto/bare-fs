@@ -1,1 +1,1 @@
-module.exports = require('./').promises
+module.exports = require('.').promises

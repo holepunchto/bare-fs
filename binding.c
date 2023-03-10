@@ -1,132 +1,177 @@
-#include <napi-macros.h>
-#include <node_api.h>
+#include <js.h>
+#include <pear.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <uv.h>
 
-#define PEAR_FS_ERRORS(NAME, DESC) \
-  { \
-    napi_create_array(env, &entry); \
-    napi_create_array(env, &val); \
-    napi_value name; \
-    napi_create_string_utf8(env, #NAME, NAPI_AUTO_LENGTH, &name); \
-    napi_set_element(env, val, 0, name); \
-    napi_value desc; \
-    napi_create_string_utf8(env, DESC, NAPI_AUTO_LENGTH, &desc); \
-    napi_set_element(env, val, 1, desc); \
-    napi_create_int32(env, UV_##NAME, &key); \
-    napi_set_element(env, entry, 0, key); \
-    napi_set_element(env, entry, 1, val); \
-    napi_set_element(env, arr, i++, entry); \
-  }
-
 typedef struct {
-  napi_ref ctx;
-  napi_ref on_open;
+  js_ref_t *ctx;
+  js_ref_t *on_open;
 } pear_fs_t;
 
 typedef struct {
   uv_fs_t req;
   pear_fs_t *fs;
-  napi_env env;
-  uint64_t *stat;
+  js_env_t *env;
+  uv_buf_t buf;
   uint32_t id;
 } pear_fs_req_t;
+
+static inline uint64_t
+time_to_ms (uv_timespec_t time) {
+  return time.tv_sec * 1e3 + time.tv_nsec / 1e6;
+}
+
+static inline void
+copy_stat (uv_fs_t *req, uv_buf_t *buf) {
+  if (req->result != 0) return;
+
+  uv_stat_t *stat = &req->statbuf;
+
+  uint64_t *s = (uint64_t *) buf->base;
+
+  *(s++) = stat->st_dev;
+  *(s++) = stat->st_mode;
+  *(s++) = stat->st_nlink;
+  *(s++) = stat->st_uid;
+
+  *(s++) = stat->st_gid;
+  *(s++) = stat->st_rdev;
+  *(s++) = stat->st_ino;
+  *(s++) = stat->st_size;
+
+  *(s++) = stat->st_blksize;
+  *(s++) = stat->st_blocks;
+  *(s++) = stat->st_flags;
+  *(s++) = stat->st_gen;
+
+  *(s++) = time_to_ms(stat->st_atim);
+  *(s++) = time_to_ms(stat->st_mtim);
+  *(s++) = time_to_ms(stat->st_ctim);
+  *(s++) = time_to_ms(stat->st_birthtim);
+}
+
+static inline void
+copy_path (uv_fs_t *req, uv_buf_t *buf) {
+  if (req->result != 0) return;
+
+  strncpy(buf->base, (char *) req->ptr, buf->len);
+}
 
 static void
 on_fs_response (uv_fs_t *req) {
   pear_fs_req_t *p = (pear_fs_req_t *) req;
 
-  napi_handle_scope scope;
-  napi_open_handle_scope(p->env, &scope);
+  js_handle_scope_t *scope;
+  js_open_handle_scope(p->env, &scope);
 
-  napi_value cb;
-  napi_get_reference_value(p->env, p->fs->on_open, &cb);
+  js_value_t *cb;
+  js_get_reference_value(p->env, p->fs->on_open, &cb);
 
-  napi_value ctx;
-  napi_get_reference_value(p->env, p->fs->ctx, &ctx);
+  js_value_t *ctx;
+  js_get_reference_value(p->env, p->fs->ctx, &ctx);
 
-  napi_value argv[2];
-  napi_create_uint32(p->env, p->id, &(argv[0]));
-  napi_create_int32(p->env, req->result, &(argv[1]));
+  js_value_t *argv[2];
+  js_create_uint32(p->env, p->id, &argv[0]);
+  js_create_int32(p->env, req->result, &argv[1]);
 
   uv_fs_req_cleanup(req);
 
-  NAPI_MAKE_CALLBACK(p->env, NULL, ctx, cb, 2, (const napi_value *) argv, NULL);
+  js_call_function(p->env, ctx, cb, 2, argv, NULL);
 
-  napi_close_handle_scope(p->env, scope);
-}
-
-static uint64_t
-time_to_ms (uv_timespec_t time) {
-  return time.tv_sec * 1e3 + time.tv_nsec / 1e6;
-}
-
-static void
-copy_stat (uv_fs_t *req, uint64_t *s) {
-  if (req->result == 0) {
-    *(s++) = req->statbuf.st_dev;
-    *(s++) = req->statbuf.st_mode;
-    *(s++) = req->statbuf.st_nlink;
-    *(s++) = req->statbuf.st_uid;
-
-    *(s++) = req->statbuf.st_gid;
-    *(s++) = req->statbuf.st_rdev;
-    *(s++) = req->statbuf.st_ino;
-    *(s++) = req->statbuf.st_size;
-
-    *(s++) = req->statbuf.st_blksize;
-    *(s++) = req->statbuf.st_blocks;
-    *(s++) = req->statbuf.st_flags;
-    *(s++) = req->statbuf.st_gen;
-
-    *(s++) = time_to_ms(req->statbuf.st_atim);
-    *(s++) = time_to_ms(req->statbuf.st_mtim);
-    *(s++) = time_to_ms(req->statbuf.st_ctim);
-    *(s++) = time_to_ms(req->statbuf.st_birthtim);
-  }
+  js_close_handle_scope(p->env, scope);
 }
 
 static void
 on_fs_stat_response (uv_fs_t *req) {
   pear_fs_req_t *p = (pear_fs_req_t *) req;
-  copy_stat(req, p->stat);
+
+  copy_stat(req, &p->buf);
+
   on_fs_response(req);
 }
 
-NAPI_METHOD(pear_fs_init) {
-  NAPI_ARGV(3)
-  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, fs, 0)
-  napi_create_reference(env, argv[1], 1, &fs->ctx);
-  napi_create_reference(env, argv[2], 1, &fs->on_open);
+static void
+on_fs_readlink_response (uv_fs_t *req) {
+  pear_fs_req_t *p = (pear_fs_req_t *) req;
+
+  copy_path(req, &p->buf);
+
+  on_fs_response(req);
+}
+
+static js_value_t *
+pear_fs_init (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_t *fs;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &fs, NULL, NULL, NULL);
+
+  js_create_reference(env, argv[1], 1, &fs->ctx);
+  js_create_reference(env, argv[2], 1, &fs->on_open);
+
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_destroy) {
-  NAPI_ARGV(1)
-  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, fs, 0)
-  napi_delete_reference(env, fs->on_open);
-  napi_delete_reference(env, fs->ctx);
+static js_value_t *
+pear_fs_destroy (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_t *fs;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &fs, NULL, NULL, NULL);
+
+  js_delete_reference(env, fs->on_open);
+  js_delete_reference(env, fs->ctx);
+
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_req_init) {
-  NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(pear_fs_t *, fs, 0)
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 1)
+static js_value_t *
+pear_fs_req_init (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_t *fs;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &fs, NULL, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[1], NULL, (void **) &req, NULL, NULL, NULL);
+
   req->fs = fs;
+
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_open) {
-  NAPI_ARGV(4)
+static js_value_t *
+pear_fs_open (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 4;
+  js_value_t *argv[4];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(path, 4096, 1)
-  NAPI_ARGV_INT32(flags, 2)
-  NAPI_ARGV_INT32(mode, 3)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
+
+  int32_t flags;
+  js_get_value_int32(env, argv[2], &flags);
+
+  int32_t mode;
+  js_get_value_int32(env, argv[3], &mode);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
@@ -135,238 +180,313 @@ NAPI_METHOD(pear_fs_open) {
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_open_sync) {
-  NAPI_ARGV(3)
+static js_value_t *
+pear_fs_open_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_UTF8(path, 4096, 0)
-  NAPI_ARGV_INT32(flags, 1)
-  NAPI_ARGV_INT32(mode, 2)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[0], path, 4096, NULL);
+
+  int32_t flags;
+  js_get_value_int32(env, argv[1], &flags);
+
+  int32_t mode;
+  js_get_value_int32(env, argv[2], &mode);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
-
   uv_fs_open(loop, &req, path, flags, mode, NULL);
 
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
+
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_write) {
-  NAPI_ARGV(7)
+static js_value_t *
+pear_fs_write (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 6;
+  js_value_t *argv[6];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
-  NAPI_ARGV_BUFFER(data, 2)
-  NAPI_ARGV_UINT32(offset, 3)
-  NAPI_ARGV_UINT32(len, 4)
-  NAPI_ARGV_UINT32(pos_low, 5)
-  NAPI_ARGV_UINT32(pos_high, 6)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
+
+  void *data;
+  js_get_typedarray_info(env, argv[2], NULL, &data, NULL, NULL, NULL);
+
+  uint32_t offset;
+  js_get_value_uint32(env, argv[3], &offset);
+
+  uint32_t len;
+  js_get_value_uint32(env, argv[4], &len);
+
+  int64_t pos;
+  js_get_value_int64(env, argv[5], &pos);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
-  int64_t pos = ((int64_t) pos_high) * 0x100000000 + ((int64_t) pos_low);
-
-  const uv_buf_t buf = {
-    .base = data + offset,
-    .len = len};
+  const uv_buf_t buf = uv_buf_init(data + offset, len);
 
   uv_fs_write(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_write_sync) {
-  NAPI_ARGV(6)
+static js_value_t *
+pear_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 5;
+  js_value_t *argv[5];
 
-  NAPI_ARGV_UINT32(fd, 0)
-  NAPI_ARGV_BUFFER(data, 1)
-  NAPI_ARGV_UINT32(offset, 2)
-  NAPI_ARGV_UINT32(len, 3)
-  NAPI_ARGV_UINT32(pos_low, 4)
-  NAPI_ARGV_UINT32(pos_high, 5)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[0], &fd);
+
+  void *data;
+  js_get_typedarray_info(env, argv[1], NULL, &data, NULL, NULL, NULL);
+
+  uint32_t offset;
+  js_get_value_uint32(env, argv[2], &offset);
+
+  uint32_t len;
+  js_get_value_uint32(env, argv[3], &len);
+
+  int64_t pos;
+  js_get_value_int64(env, argv[4], &pos);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  const uv_buf_t buf = uv_buf_init(data + offset, len);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  uv_fs_write(loop, &req, fd, &buf, 1, pos, NULL);
 
-  int64_t pos = ((int64_t) pos_high) * 0x100000000 + ((int64_t) pos_low);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
 
-  const uv_buf_t buf = {
-    .base = data + offset,
-    .len = len};
-
-  uv_fs_write(loop, (uv_fs_t *) &req, fd, &buf, 1, pos, NULL);
-
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_writev) {
-  NAPI_ARGV(5)
+static js_value_t *
+pear_fs_writev (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 4;
+  js_value_t *argv[4];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
 
-  napi_value arr = argv[2];
-  napi_value item;
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  NAPI_ARGV_UINT32(pos_low, 3)
-  NAPI_ARGV_UINT32(pos_high, 4)
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
+
+  js_value_t *arr = argv[2];
+  js_value_t *item;
+
+  int64_t pos;
+  js_get_value_int64(env, argv[3], &pos);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
-  uint32_t nbufs;
-  napi_get_array_length(env, arr, &nbufs);
+  uint32_t bufs_len;
+  js_get_array_length(env, arr, &bufs_len);
 
-  uv_buf_t *bufs = malloc(sizeof(uv_buf_t) * nbufs);
+  uv_buf_t *bufs = malloc(sizeof(uv_buf_t) * bufs_len);
 
-  for (uint32_t i = 0; i < nbufs; i++) {
-    napi_get_element(env, arr, i, &item);
-    uv_buf_t *buf = &(bufs[i]);
-    napi_get_buffer_info(env, item, (void **) &(buf->base), &(buf->len));
+  for (uint32_t i = 0; i < bufs_len; i++) {
+    js_get_element(env, arr, i, &item);
+
+    uv_buf_t *buf = &bufs[i];
+    js_get_typedarray_info(env, item, NULL, (void **) &buf->base, &buf->len, NULL, NULL);
   }
 
-  int64_t pos = ((int64_t) pos_high) * 0x100000000 + ((int64_t) pos_low);
+  uv_fs_write(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, on_fs_response);
 
-  uv_fs_write(loop, (uv_fs_t *) req, fd, bufs, nbufs, pos, on_fs_response);
   free(bufs);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_read) {
-  NAPI_ARGV(7)
+static js_value_t *
+pear_fs_read (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 6;
+  js_value_t *argv[6];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
-  NAPI_ARGV_BUFFER(data, 2)
-  NAPI_ARGV_UINT32(offset, 3)
-  NAPI_ARGV_UINT32(len, 4)
-  NAPI_ARGV_UINT32(pos_low, 5)
-  NAPI_ARGV_UINT32(pos_high, 6)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
+
+  void *data;
+  js_get_typedarray_info(env, argv[2], NULL, &data, NULL, NULL, NULL);
+
+  uint32_t offset;
+  js_get_value_uint32(env, argv[3], &offset);
+
+  uint32_t len;
+  js_get_value_uint32(env, argv[4], &len);
+
+  int64_t pos;
+  js_get_value_int64(env, argv[5], &pos);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
-  int64_t pos = ((int64_t) pos_high) * 0x100000000 + ((int64_t) pos_low);
-
-  const uv_buf_t buf = {
-    .base = data + offset,
-    .len = len};
+  const uv_buf_t buf = uv_buf_init(data + offset, len);
 
   uv_fs_read(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_read_sync) {
-  NAPI_ARGV(6)
+static js_value_t *
+pear_fs_read_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 5;
+  js_value_t *argv[5];
 
-  NAPI_ARGV_UINT32(fd, 0)
-  NAPI_ARGV_BUFFER(data, 1)
-  NAPI_ARGV_UINT32(offset, 2)
-  NAPI_ARGV_UINT32(len, 3)
-  NAPI_ARGV_UINT32(pos_low, 4)
-  NAPI_ARGV_UINT32(pos_high, 5)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[0], &fd);
+
+  void *data;
+  js_get_typedarray_info(env, argv[1], NULL, &data, NULL, NULL, NULL);
+
+  uint32_t offset;
+  js_get_value_uint32(env, argv[2], &offset);
+
+  uint32_t len;
+  js_get_value_uint32(env, argv[3], &len);
+
+  int64_t pos;
+  js_get_value_int64(env, argv[4], &pos);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  const uv_buf_t buf = uv_buf_init(data + offset, len);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
-
-  int64_t pos = ((int64_t) pos_high) * 0x100000000 + ((int64_t) pos_low);
-
-  const uv_buf_t buf = {
-    .base = data + offset,
-    .len = len};
-
   uv_fs_read(loop, (uv_fs_t *) &req, fd, &buf, 1, pos, NULL);
 
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
+
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_readv) {
-  NAPI_ARGV(5)
+static js_value_t *
+pear_fs_readv (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 4;
+  js_value_t *argv[4];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
 
-  napi_value arr = argv[2];
-  napi_value item;
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  NAPI_ARGV_UINT32(pos_low, 3)
-  NAPI_ARGV_UINT32(pos_high, 4)
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
+
+  js_value_t *arr = argv[2];
+  js_value_t *item;
+
+  int64_t pos;
+  js_get_value_int64(env, argv[3], &pos);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
-  uint32_t nbufs;
-  napi_get_array_length(env, arr, &nbufs);
+  uint32_t bufs_len;
+  js_get_array_length(env, arr, &bufs_len);
 
-  uv_buf_t *bufs = malloc(sizeof(uv_buf_t) * nbufs);
+  uv_buf_t *bufs = malloc(sizeof(uv_buf_t) * bufs_len);
 
-  for (uint32_t i = 0; i < nbufs; i++) {
-    napi_get_element(env, arr, i, &item);
-    uv_buf_t *buf = &(bufs[i]);
-    napi_get_buffer_info(env, item, (void **) &(buf->base), &(buf->len));
+  for (uint32_t i = 0; i < bufs_len; i++) {
+    js_get_element(env, arr, i, &item);
+
+    uv_buf_t *buf = &bufs[i];
+    js_get_typedarray_info(env, item, NULL, (void **) &buf->base, &buf->len, NULL, NULL);
   }
 
-  int64_t pos = ((int64_t) pos_high) * 0x100000000 + ((int64_t) pos_low);
+  uv_fs_read(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, on_fs_response);
 
-  uv_fs_read(loop, (uv_fs_t *) req, fd, bufs, nbufs, pos, on_fs_response);
   free(bufs);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_ftruncate) {
-  NAPI_ARGV(4)
+static js_value_t *
+pear_fs_ftruncate (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
-  NAPI_ARGV_UINT32(len_low, 2)
-  NAPI_ARGV_UINT32(len_high, 3)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
+
+  int64_t len;
+  js_get_value_int64(env, argv[2], &len);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
-
-  int64_t len = ((int64_t) len_high) * 0x100000000 + ((int64_t) len_low);
 
   uv_fs_ftruncate(loop, (uv_fs_t *) req, fd, len, on_fs_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_close) {
-  NAPI_ARGV(2)
+static js_value_t *
+pear_fs_close (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
@@ -375,50 +495,74 @@ NAPI_METHOD(pear_fs_close) {
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_close_sync) {
-  NAPI_ARGV(1)
+static js_value_t *
+pear_fs_close_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 1;
+  js_value_t *argv[1];
 
-  NAPI_ARGV_UINT32(fd, 0)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[0], &fd);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
-
   uv_fs_close(loop, &req, fd, NULL);
 
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
+
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_rename) {
-  NAPI_ARGV(3)
+static js_value_t *
+pear_fs_rename (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(src, 4096, 1)
-  NAPI_ARGV_UTF8(dst, 4096, 2)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char src[4097];
+  js_get_value_string_utf8(env, argv[1], src, 4096, NULL);
+
+  char dest[4097];
+  js_get_value_string_utf8(env, argv[2], dest, 4096, NULL);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
-  uv_fs_rename(loop, (uv_fs_t *) req, src, dst, on_fs_response);
+  uv_fs_rename(loop, (uv_fs_t *) req, src, dest, on_fs_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_mkdir) {
-  NAPI_ARGV(3)
+static js_value_t *
+pear_fs_mkdir (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(path, 4096, 1)
-  NAPI_ARGV_INT32(mode, 2)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
+
+  int32_t mode;
+  js_get_value_int32(env, argv[2], &mode);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
@@ -427,14 +571,21 @@ NAPI_METHOD(pear_fs_mkdir) {
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_rmdir) {
-  NAPI_ARGV(2)
+static js_value_t *
+pear_fs_rmdir (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(path, 4096, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
@@ -443,128 +594,198 @@ NAPI_METHOD(pear_fs_rmdir) {
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_stat) {
-  NAPI_ARGV(3)
+static js_value_t *
+pear_fs_stat (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(path, 4096, 1)
-  NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 2)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
+
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[2], NULL, &data, &data_len, NULL, NULL);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
-  req->stat = data;
   req->env = env;
+  req->buf = uv_buf_init(data, data_len);
 
   uv_fs_stat(loop, (uv_fs_t *) req, path, on_fs_stat_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_stat_sync) {
-  NAPI_ARGV(2)
+static js_value_t *
+pear_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  NAPI_ARGV_UTF8(path, 4096, 0)
-  NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[0], path, 4096, NULL);
+
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[1], NULL, &data, &data_len, NULL, NULL);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
-
   uv_fs_stat(loop, &req, path, NULL);
 
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
-  copy_stat(&req, data);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
+
+  uv_buf_t buf = uv_buf_init((char *) data, data_len);
+  copy_stat(&req, &buf);
+
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_lstat) {
-  NAPI_ARGV(3)
+static js_value_t *
+pear_fs_lstat (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(path, 4096, 1)
-  NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 2)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
+
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[2], NULL, &data, &data_len, NULL, NULL);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
-  req->stat = data;
   req->env = env;
+  req->buf = uv_buf_init((char *) data, data_len);
 
   uv_fs_lstat(loop, (uv_fs_t *) req, path, on_fs_stat_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_lstat_sync) {
-  NAPI_ARGV(2)
+static js_value_t *
+pear_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  NAPI_ARGV_UTF8(path, 4096, 0)
-  NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[0], path, 4096, NULL);
+
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[1], NULL, &data, &data_len, NULL, NULL);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
-
   uv_fs_lstat(loop, &req, path, NULL);
 
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
-  copy_stat(&req, data);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
+
+  uv_buf_t buf = uv_buf_init((char *) data, data_len);
+  copy_stat(&req, &buf);
+
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_fstat) {
-  NAPI_ARGV(3)
+static js_value_t *
+pear_fs_fstat (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UINT32(fd, 1)
-  NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 2)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[1], &fd);
+
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[2], NULL, &data, &data_len, NULL, NULL);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
-  req->stat = data;
   req->env = env;
+  req->buf = uv_buf_init((char *) data, data_len);
 
   uv_fs_fstat(loop, (uv_fs_t *) req, fd, on_fs_stat_response);
 
   return NULL;
 }
 
-NAPI_METHOD(pear_fs_fstat_sync) {
-  NAPI_ARGV(2)
+static js_value_t *
+pear_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  NAPI_ARGV_UINT32(fd, 0)
-  NAPI_ARGV_BUFFER_CAST(uint64_t *, data, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  uint32_t fd;
+  js_get_value_uint32(env, argv[0], &fd);
+
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[1], NULL, &data, &data_len, NULL, NULL);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
-
   uv_fs_fstat(loop, &req, fd, NULL);
 
-  napi_value res;
-  napi_create_int32(env, req.result, &res);
+  js_value_t *res;
+  js_create_int32(env, req.result, &res);
+
+  uv_buf_t buf = uv_buf_init((char *) data, data_len);
   copy_stat(&req, data);
+
   uv_fs_req_cleanup(&req);
 
   return res;
 }
 
-NAPI_METHOD(pear_fs_unlink) {
-  NAPI_ARGV(2)
+static js_value_t *
+pear_fs_unlink (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  NAPI_ARGV_BUFFER_CAST(pear_fs_req_t *, req, 0)
-  NAPI_ARGV_UTF8(path, 4096, 1)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   uv_loop_t *loop;
-  napi_get_uv_event_loop(env, &loop);
+  js_get_env_loop(env, &loop);
 
   req->env = env;
 
@@ -573,66 +794,250 @@ NAPI_METHOD(pear_fs_unlink) {
   return NULL;
 }
 
-NAPI_INIT() {
-  NAPI_EXPORT_SIZEOF(pear_fs_t)
-  NAPI_EXPORT_SIZEOF(pear_fs_req_t)
-  NAPI_EXPORT_OFFSETOF(pear_fs_req_t, id)
+static js_value_t *
+pear_fs_readlink (js_env_t *env, js_callback_info_t *info) {
+  size_t argc = 3;
+  js_value_t *argv[3];
 
-  NAPI_EXPORT_FUNCTION(pear_fs_init)
-  NAPI_EXPORT_FUNCTION(pear_fs_destroy)
+  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
 
-  NAPI_EXPORT_FUNCTION(pear_fs_req_init)
+  pear_fs_req_t *req;
+  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  NAPI_EXPORT_FUNCTION(pear_fs_open)
-  NAPI_EXPORT_FUNCTION(pear_fs_ftruncate)
-  NAPI_EXPORT_FUNCTION(pear_fs_read)
-  NAPI_EXPORT_FUNCTION(pear_fs_readv)
-  NAPI_EXPORT_FUNCTION(pear_fs_write)
-  NAPI_EXPORT_FUNCTION(pear_fs_writev)
-  NAPI_EXPORT_FUNCTION(pear_fs_close)
-  NAPI_EXPORT_FUNCTION(pear_fs_rename)
-  NAPI_EXPORT_FUNCTION(pear_fs_mkdir)
-  NAPI_EXPORT_FUNCTION(pear_fs_rmdir)
-  NAPI_EXPORT_FUNCTION(pear_fs_stat)
-  NAPI_EXPORT_FUNCTION(pear_fs_lstat)
-  NAPI_EXPORT_FUNCTION(pear_fs_fstat)
-  NAPI_EXPORT_FUNCTION(pear_fs_unlink)
+  char path[4097];
+  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
-  NAPI_EXPORT_FUNCTION(pear_fs_open_sync)
-  NAPI_EXPORT_FUNCTION(pear_fs_read_sync)
-  NAPI_EXPORT_FUNCTION(pear_fs_write_sync)
-  NAPI_EXPORT_FUNCTION(pear_fs_stat_sync)
-  NAPI_EXPORT_FUNCTION(pear_fs_fstat_sync)
-  NAPI_EXPORT_FUNCTION(pear_fs_lstat_sync)
-  NAPI_EXPORT_FUNCTION(pear_fs_close_sync)
+  void *data;
+  size_t data_len;
+  js_get_typedarray_info(env, argv[2], NULL, &data, &data_len, NULL, NULL);
 
-  NAPI_EXPORT_UINT32(O_RDWR)
-  NAPI_EXPORT_UINT32(O_RDONLY)
-  NAPI_EXPORT_UINT32(O_WRONLY)
-  NAPI_EXPORT_UINT32(O_CREAT)
-  NAPI_EXPORT_UINT32(O_TRUNC)
-  NAPI_EXPORT_UINT32(O_APPEND)
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
 
-  NAPI_EXPORT_UINT32(S_IFMT)
-  NAPI_EXPORT_UINT32(S_IFREG)
-  NAPI_EXPORT_UINT32(S_IFDIR)
-  NAPI_EXPORT_UINT32(S_IFCHR)
-  NAPI_EXPORT_UINT32(S_IFLNK)
+  req->env = env;
+  req->buf = uv_buf_init((char *) data, data_len);
 
-#ifndef _WIN32
-  NAPI_EXPORT_UINT32(S_IFBLK)
-  NAPI_EXPORT_UINT32(S_IFIFO)
-  NAPI_EXPORT_UINT32(S_IFSOCK)
-#endif
+  uv_fs_readlink(loop, (uv_fs_t *) req, path, on_fs_readlink_response);
 
-  NAPI_EXPORT_INT32(UV_ENOENT)
-
-#ifdef _WIN32
-  uint32_t IS_WINDOWS = 1;
-#else
-  uint32_t IS_WINDOWS = 0;
-#endif
-
-  NAPI_EXPORT_UINT32(IS_WINDOWS)
-  NAPI_EXPORT_UV_ERROR_MAP()
+  return NULL;
 }
+
+static js_value_t *
+init (js_env_t *env, js_value_t *exports) {
+  {
+    js_value_t *val;
+    js_create_uint32(env, sizeof(pear_fs_t), &val);
+    js_set_named_property(env, exports, "sizeofFS", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, sizeof(pear_fs_req_t), &val);
+    js_set_named_property(env, exports, "sizeofFSReq", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, offsetof(pear_fs_req_t, id), &val);
+    js_set_named_property(env, exports, "offsetofFSReqID", val);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "init", -1, pear_fs_init, NULL, &fn);
+    js_set_named_property(env, exports, "init", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "destroy", -1, pear_fs_destroy, NULL, &fn);
+    js_set_named_property(env, exports, "destroy", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "initReq", -1, pear_fs_req_init, NULL, &fn);
+    js_set_named_property(env, exports, "initReq", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "open", -1, pear_fs_open, NULL, &fn);
+    js_set_named_property(env, exports, "open", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "openSync", -1, pear_fs_open_sync, NULL, &fn);
+    js_set_named_property(env, exports, "openSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "ftruncate", -1, pear_fs_ftruncate, NULL, &fn);
+    js_set_named_property(env, exports, "ftruncate", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "read", -1, pear_fs_read, NULL, &fn);
+    js_set_named_property(env, exports, "read", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "readSync", -1, pear_fs_read_sync, NULL, &fn);
+    js_set_named_property(env, exports, "readSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "readv", -1, pear_fs_readv, NULL, &fn);
+    js_set_named_property(env, exports, "readv", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "write", -1, pear_fs_write, NULL, &fn);
+    js_set_named_property(env, exports, "write", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "writeSync", -1, pear_fs_write_sync, NULL, &fn);
+    js_set_named_property(env, exports, "writeSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "writev", -1, pear_fs_writev, NULL, &fn);
+    js_set_named_property(env, exports, "writev", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "close", -1, pear_fs_close, NULL, &fn);
+    js_set_named_property(env, exports, "close", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "closeSync", -1, pear_fs_close_sync, NULL, &fn);
+    js_set_named_property(env, exports, "closeSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "rename", -1, pear_fs_rename, NULL, &fn);
+    js_set_named_property(env, exports, "rename", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "mkdir", -1, pear_fs_mkdir, NULL, &fn);
+    js_set_named_property(env, exports, "mkdir", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "rmdir", -1, pear_fs_rmdir, NULL, &fn);
+    js_set_named_property(env, exports, "rmdir", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "stat", -1, pear_fs_stat, NULL, &fn);
+    js_set_named_property(env, exports, "stat", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "statSync", -1, pear_fs_stat_sync, NULL, &fn);
+    js_set_named_property(env, exports, "statSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "lstat", -1, pear_fs_lstat, NULL, &fn);
+    js_set_named_property(env, exports, "lstat", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "lstatSync", -1, pear_fs_lstat_sync, NULL, &fn);
+    js_set_named_property(env, exports, "lstatSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "fstat", -1, pear_fs_fstat, NULL, &fn);
+    js_set_named_property(env, exports, "fstat", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "fstatSync", -1, pear_fs_fstat_sync, NULL, &fn);
+    js_set_named_property(env, exports, "fstatSync", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "unlink", -1, pear_fs_unlink, NULL, &fn);
+    js_set_named_property(env, exports, "unlink", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "readlink", -1, pear_fs_readlink, NULL, &fn);
+    js_set_named_property(env, exports, "readlink", fn);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, O_RDWR, &val);
+    js_set_named_property(env, exports, "O_RDWR", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, O_RDONLY, &val);
+    js_set_named_property(env, exports, "O_RDONLY", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, O_WRONLY, &val);
+    js_set_named_property(env, exports, "O_WRONLY", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, O_CREAT, &val);
+    js_set_named_property(env, exports, "O_CREAT", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, O_TRUNC, &val);
+    js_set_named_property(env, exports, "O_TRUNC", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, O_APPEND, &val);
+    js_set_named_property(env, exports, "O_APPEND", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFMT, &val);
+    js_set_named_property(env, exports, "S_IFMT", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFREG, &val);
+    js_set_named_property(env, exports, "S_IFREG", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFDIR, &val);
+    js_set_named_property(env, exports, "S_IFDIR", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFCHR, &val);
+    js_set_named_property(env, exports, "S_IFCHR", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFLNK, &val);
+    js_set_named_property(env, exports, "S_IFLNK", val);
+  }
+#ifndef _WIN32
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFBLK, &val);
+    js_set_named_property(env, exports, "S_IFBLK", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFIFO, &val);
+    js_set_named_property(env, exports, "S_IFIFO", val);
+  }
+  {
+    js_value_t *val;
+    js_create_uint32(env, S_IFSOCK, &val);
+    js_set_named_property(env, exports, "S_IFSOCK", val);
+  }
+#endif
+
+  return exports;
+}
+
+PEAR_MODULE(init)

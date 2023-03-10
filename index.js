@@ -1,11 +1,8 @@
-const binding = require('./binding')
+const path = require('path')
 const { Readable, Writable } = require('streamx')
-const b4a = require('b4a')
+const binding = require('./binding')
 
 const LE = (new Uint8Array(new Uint16Array([255]).buffer))[0] === 0xff
-const ERRORS = new Map(binding.uv_error_map)
-
-const sep = exports.sep = binding.IS_WINDOWS ? '\\' : '/'
 
 const constants = exports.constants = {
   O_RDWR: binding.O_RDWR,
@@ -28,12 +25,12 @@ const reqs = []
 let used = 0
 
 const fs = {
-  handle: b4a.allocUnsafe(binding.sizeof_pear_fs_t)
+  handle: Buffer.allocUnsafe(binding.sizeofFS)
 }
 
-binding.pear_fs_init(fs.handle, fs, onfsresponse)
+binding.init(fs.handle, fs, onfsresponse)
 
-process.on('exit', () => binding.pear_fs_destroy(fs.handle))
+process.on('exit', () => binding.destroy(fs.handle))
 
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber (flags) {
@@ -76,11 +73,11 @@ function modeToNumber (mode) {
 }
 
 function alloc () {
-  const handle = b4a.alloc(binding.sizeof_pear_fs_req_t)
+  const handle = Buffer.alloc(binding.sizeofFSReq)
 
-  binding.pear_fs_req_init(fs.handle, handle)
+  binding.initReq(fs.handle, handle)
 
-  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_pear_fs_req_t_id, 1)
+  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetofFSReqID, 1)
 
   view[0] = reqs.length
 
@@ -128,8 +125,8 @@ function onfsresponse (id, result) {
 }
 
 function createError (errno) {
-  const [code, desc] = ERRORS.get(errno)
-  const err = new Error(code + ': ' + desc)
+  const [code, message] = process.errnos.get(errno)
+  const err = new Error(code + ': ' + message)
 
   err.errno = errno
   err.code = code
@@ -144,10 +141,7 @@ function write (fd, buf, offset, len, pos, cb) {
     req.buffer = buf
     req.callback = cb
 
-    const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
-    const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
-
-    binding.pear_fs_write(req.handle, fd, buf, offset, len, low, high)
+    binding.write(req.handle, fd, buf, offset, len, pos)
     return
   }
 
@@ -158,17 +152,14 @@ function write (fd, buf, offset, len, pos, cb) {
   throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received ' + cb)
 }
 
-function writeSync (fd, buf, offset = 0, len = buf.byteLength, pos = null) {
-  const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
-  const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
-
-  return binding.pear_fs_write_sync(fd, buf, offset, len, low, high)
+function writeSync (fd, buf, offset = 0, len = buf.byteLength, pos = 0) {
+  return binding.writeSync(fd, buf, offset, len, pos)
 }
 
 function writev (fd, buffers, pos, cb) {
   if (typeof pos === 'function') {
     cb = pos
-    pos = null
+    pos = 0
   }
 
   const req = getReq()
@@ -176,10 +167,7 @@ function writev (fd, buffers, pos, cb) {
   req.buffers = buffers
   req.callback = cb
 
-  const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
-  const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
-
-  binding.pear_fs_writev(req.handle, fd, buffers, low, high)
+  binding.writev(req.handle, fd, buffers, pos)
 }
 
 function read (fd, buf, offset, len, pos, cb) {
@@ -189,10 +177,7 @@ function read (fd, buf, offset, len, pos, cb) {
     req.buffer = buf
     req.callback = cb
 
-    const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
-    const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
-
-    binding.pear_fs_read(req.handle, fd, buf, offset, len, low, high)
+    binding.read(req.handle, fd, buf, offset, len, pos)
     return
   }
 
@@ -203,17 +188,14 @@ function read (fd, buf, offset, len, pos, cb) {
   throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received ' + cb)
 }
 
-function readSync (fd, buf, offset = 0, len = buf.byteLength, pos = null) {
-  const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
-  const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
-
-  return binding.pear_fs_read_sync(fd, buf, offset, len, low, high)
+function readSync (fd, buf, offset = 0, len = buf.byteLength, pos = 0) {
+  return binding.readSync(fd, buf, offset, len, pos)
 }
 
 function readv (fd, buffers, pos, cb) {
   if (typeof pos === 'function') {
     cb = pos
-    pos = null
+    pos = 0
   }
 
   const req = getReq()
@@ -221,10 +203,7 @@ function readv (fd, buffers, pos, cb) {
   req.buffers = buffers
   req.callback = cb
 
-  const low = pos === null ? 0xffffffff : ((pos & 0xffffffff) >>> 0)
-  const high = pos === null ? 0xffffffff : (pos - low) / 0x100000000
-
-  binding.pear_fs_readv(req.handle, fd, buffers, low, high)
+  binding.readv(req.handle, fd, buffers, pos)
 }
 
 function open (filename, flags = 'r', mode = 0o666, cb) {
@@ -241,7 +220,7 @@ function open (filename, flags = 'r', mode = 0o666, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.pear_fs_open(req.handle, filename, flags, mode)
+  binding.open(req.handle, filename, flags, mode)
 }
 
 function openSync (filename, flags = 'r', mode = 0o666) {
@@ -250,7 +229,7 @@ function openSync (filename, flags = 'r', mode = 0o666) {
   if (typeof flags === 'string') flags = flagsToNumber(flags)
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  const res = binding.pear_fs_open_sync(filename, flags, mode)
+  const res = binding.openSync(filename, flags, mode)
 
   if (res < 0) throw createError(res)
   return res
@@ -264,11 +243,11 @@ function close (fd, cb = noop) {
   const req = getReq()
 
   req.callback = cb
-  binding.pear_fs_close(req.handle, fd)
+  binding.close(req.handle, fd)
 }
 
 function closeSync (fd) {
-  const res = binding.pear_fs_close_sync(fd)
+  const res = binding.closeSync(fd)
 
   if (res < 0) throw createError(res)
   return res
@@ -277,11 +256,8 @@ function closeSync (fd) {
 function ftruncate (fd, len, cb) {
   const req = getReq()
 
-  const low = (len & 0xffffffff) >>> 0
-  const high = (len - low) / 0x100000000
-
   req.callback = cb
-  binding.pear_fs_ftruncate(req.handle, fd, low, high)
+  binding.ftruncate(req.handle, fd, len)
 }
 
 class Stats {
@@ -346,19 +322,19 @@ function toNumber (view, n) {
 function stat (path, cb) {
   const req = getReq()
 
-  req.buffer = b4a.allocUnsafe(16 * 8)
+  req.buffer = Buffer.allocUnsafe(16 * 8)
 
   req.callback = function (err, _, buf) {
     if (err) cb(err, null)
     else cb(null, new Stats(buf))
   }
 
-  binding.pear_fs_stat(req.handle, path, req.buffer)
+  binding.stat(req.handle, path, req.buffer)
 }
 
 function statSync (path) {
-  const buffer = b4a.allocUnsafe(16 * 8)
-  const res = binding.pear_fs_stat_sync(path, buffer)
+  const buffer = Buffer.allocUnsafe(16 * 8)
+  const res = binding.statSync(path, buffer)
   if (res < 0) throw createError(res)
   return new Stats(buffer)
 }
@@ -366,19 +342,19 @@ function statSync (path) {
 function lstat (path, cb) {
   const req = getReq()
 
-  req.buffer = b4a.allocUnsafe(16 * 8)
+  req.buffer = Buffer.allocUnsafe(16 * 8)
 
   req.callback = function (err, _, buf) {
     if (err) cb(err, null)
     else cb(null, new Stats(buf))
   }
 
-  binding.pear_fs_lstat(req.handle, path, req.buffer)
+  binding.lstat(req.handle, path, req.buffer)
 }
 
 function lstatSync (path) {
-  const buffer = b4a.allocUnsafe(16 * 8)
-  const res = binding.pear_fs_lstat_sync(path, buffer)
+  const buffer = Buffer.allocUnsafe(16 * 8)
+  const res = binding.lstatSync(path, buffer)
   if (res < 0) throw createError(res)
   return new Stats(buffer)
 }
@@ -386,19 +362,19 @@ function lstatSync (path) {
 function fstat (fd, cb) {
   const req = getReq()
 
-  req.buffer = b4a.allocUnsafe(16 * 8)
+  req.buffer = Buffer.allocUnsafe(16 * 8)
 
   req.callback = function (err, _, buf) {
     if (err) cb(err, null)
     else cb(null, new Stats(buf))
   }
 
-  binding.pear_fs_fstat(req.handle, fd, req.buffer)
+  binding.fstat(req.handle, fd, req.buffer)
 }
 
 function fstatSync (fd) {
-  const buffer = b4a.allocUnsafe(16 * 8)
-  const res = binding.pear_fs_fstat_sync(fd, buffer)
+  const buffer = Buffer.allocUnsafe(16 * 8)
+  const res = binding.fstatSync(fd, buffer)
   if (res < 0) throw createError(res)
   return new Stats(buffer)
 }
@@ -407,7 +383,7 @@ function mkdirp (path, mode, cb) {
   mkdir(path, { mode }, function (err) {
     if (err === null) return cb(null, 0, null)
 
-    if (err.errno !== binding.UV_ENOENT) {
+    if (err.code !== 'ENOENT') {
       stat(path, function (e, st) {
         if (e) return cb(e, e.errno, null)
         if (st.isDirectory()) return cb(null, 0, null)
@@ -416,11 +392,10 @@ function mkdirp (path, mode, cb) {
       return
     }
 
-    while (path.endsWith(sep)) path = path.slice(0, -1)
-    const i = path.lastIndexOf(sep)
-    if (i <= 0) return cb(err, err.errno, null)
+    const dirname = path.dirname(path)
+    if (dirname === '/' || dirname === '.') return cb(err, err.errno, null)
 
-    mkdirp(path.slice(0, i), mode, function (err) {
+    mkdirp(dirname, mode, function (err) {
       if (err) return cb(err, err.errno, null)
       mkdir(path, { mode }, cb)
     })
@@ -431,7 +406,7 @@ function rename (src, dst, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.pear_fs_rename(req.handle, src, dst)
+  binding.rename(req.handle, src, dst)
 }
 
 function mkdir (path, opts, cb) {
@@ -451,21 +426,45 @@ function mkdir (path, opts, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.pear_fs_mkdir(req.handle, path, mode)
+  binding.mkdir(req.handle, path, mode)
 }
 
 function rmdir (path, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.pear_fs_rmdir(req.handle, path)
+  binding.rmdir(req.handle, path)
 }
 
 function unlink (path, cb) {
   const req = getReq()
 
   req.callback = cb
-  binding.pear_fs_unlink(req.handle, path)
+  binding.unlink(req.handle, path)
+}
+
+function readlink (path, opts, cb) {
+  if (typeof opts === 'function') return readlink(path, null, opts)
+  if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
+  if (typeof opts === 'string') opts = { encoding: opts }
+  if (!opts) opts = {}
+
+  const {
+    encoding = 'utf8'
+  } = opts
+
+  const req = getReq()
+
+  req.buffer = Buffer.allocUnsafe(4097)
+
+  req.callback = function (err, _, buf) {
+    if (err) return cb(err, null)
+    buf = buf.subarray(0, buf.indexOf(0))
+    if (encoding !== 'buffer') return cb(null, Buffer.coerce(buf).toString(encoding))
+    cb(null, buf)
+  }
+
+  binding.readlink(req.handle, path, req.buffer)
 }
 
 function readFile (path, opts, cb) {
@@ -480,7 +479,7 @@ function readFile (path, opts, cb) {
     fstat(fd, function (err, st) {
       if (err) return closeAndError(err)
 
-      let buf = b4a.allocUnsafe(st.size)
+      let buf = Buffer.allocUnsafe(st.size)
       let len = 0
 
       read(fd, buf, loop)
@@ -496,7 +495,7 @@ function readFile (path, opts, cb) {
         if (len !== buf.byteLength) buf = buf.subarray(0, len)
         close(fd, function (err) {
           if (err) return cb(err)
-          if (opts.encoding) return cb(null, b4a.toString(buf, opts.encoding))
+          if (opts.encoding) return cb(null, buf.toString(opts.encoding))
           return cb(null, buf)
         })
       }
@@ -519,7 +518,7 @@ function readFileSync (path, opts) {
   try {
     const st = fstatSync(fd)
 
-    let buf = b4a.allocUnsafe(st.size)
+    let buf = Buffer.allocUnsafe(st.size)
     let len = 0
 
     while (true) {
@@ -529,7 +528,7 @@ function readFileSync (path, opts) {
     }
     if (len !== buf.byteLength) buf = buf.subarray(0, len)
 
-    if (opts.encoding) return b4a.toString(buf, opts.encoding)
+    if (opts.encoding) return Buffer.coerce(buf).toString(opts.encoding)
     return buf
   } finally {
     try {
@@ -541,12 +540,12 @@ function readFileSync (path, opts) {
 function writeFile (path, data, opts, cb) {
   if (typeof opts === 'function') return writeFile(path, data, null, opts)
   if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
-  if (typeof data !== 'string' && !b4a.isBuffer(data)) throw typeError('ERR_INVALID_ARG_TYPE', 'The data argument must be of type string or buffer')
+  if (typeof data !== 'string' && !Buffer.isBuffer(data)) throw typeError('ERR_INVALID_ARG_TYPE', 'The data argument must be of type string or buffer')
   if (typeof opts === 'string') opts = { encoding: opts }
   if (!opts) opts = {}
 
   if (opts.encoding || typeof data === 'string') {
-    data = b4a.from(data, opts.encoding)
+    data = Buffer.from(data, opts.encoding)
   }
 
   open(path, opts.flag || 'w', opts.mode, function (err, fd) {
@@ -580,7 +579,7 @@ function writeFileSync (path, buf, opts) {
   if (!opts) opts = {}
 
   if (opts.encoding || typeof buf === 'string') {
-    buf = b4a.from(buf, opts.encoding)
+    buf = Buffer.from(buf, opts.encoding)
   }
 
   const fd = openSync(path, opts.flag || 'w', opts.mode)
@@ -675,7 +674,7 @@ class FileReadStream extends Readable {
       return cb(null)
     }
 
-    const data = b4a.allocUnsafe(Math.min(this._missing, 65536))
+    const data = Buffer.allocUnsafe(Math.min(this._missing, 65536))
 
     read(this.fd, data, 0, data.byteLength, this._offset, (err, read) => {
       if (err) return cb(err)
@@ -757,6 +756,8 @@ exports.promises.stat = promisify(stat)
 exports.lstat = lstat
 exports.promises.lstat = promisify(lstat)
 
+exports.readlink = readlink
+
 exports.ReadStream = FileReadStream
 exports.createReadStream = (path, options) => new FileReadStream(path, options)
 
@@ -775,5 +776,5 @@ function promisify (fn) {
 }
 
 function map (s) {
-  return typeof s === 'string' ? b4a.from(s) : s
+  return typeof s === 'string' ? Buffer.from(s) : s
 }

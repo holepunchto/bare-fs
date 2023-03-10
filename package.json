@@ -12,7 +12,7 @@
     "prebuilds"
   ],
   "scripts": {
-    "test": "standard && brittle test/*.js",
+    "test": "standard && pear test/all.js",
     "install": "pear-dev rebuild",
     "prebuild": "pear-dev prebuild"
   },
@@ -27,7 +27,6 @@
   },
   "homepage": "https://github.com/holepunchto/pearjs-fs#readme",
   "dependencies": {
-    "napi-macros": "^2.2.2",
     "streamx": "^2.13.0"
   },
   "devDependencies": {

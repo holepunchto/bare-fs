@@ -27,6 +27,7 @@ fs.lstat
 fs.mkdir
 fs.rmdir
 fs.rename
+fs.readlink
 
 fs.readFile
 fs.writeFile
