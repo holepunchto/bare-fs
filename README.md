@@ -38,6 +38,7 @@ fs.promises.mkdir
 fs.promises.rmdir
 fs.promises.stat
 fs.promises.unlink
+fs.promises.readlink
 
 fs.createReadStream
 fs.createWriteStream

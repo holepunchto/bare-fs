@@ -757,6 +757,7 @@ exports.lstat = lstat
 exports.promises.lstat = promisify(lstat)
 
 exports.readlink = readlink
+exports.promises.readlink = promisify(readlink)
 
 exports.ReadStream = FileReadStream
 exports.createReadStream = (path, options) => new FileReadStream(path, options)
