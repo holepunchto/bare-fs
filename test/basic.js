@@ -17,7 +17,6 @@ test('stat', (t) => {
   t.plan(1)
 
   fs.stat('test/fixtures/foo.txt', (err, st) => {
-    t.comment(st)
     t.absent(err, 'stat')
   })
 })
