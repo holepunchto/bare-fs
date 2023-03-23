@@ -764,7 +764,7 @@ pear_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
   js_create_int32(env, req.result, &res);
 
   uv_buf_t buf = uv_buf_init((char *) data, data_len);
-  copy_stat(&req, data);
+  copy_stat(&req, &buf);
 
   uv_fs_req_cleanup(&req);
 
