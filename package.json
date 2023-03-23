@@ -1,6 +1,6 @@
 {
   "name": "@pearjs/fs",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Native file system for Javascript",
   "main": "index.js",
   "files": [
