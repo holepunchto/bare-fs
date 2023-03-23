@@ -1,8 +1,9 @@
-const path = require('path')
 const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
 
 const LE = (new Uint8Array(new Uint16Array([255]).buffer))[0] === 0xff
+
+const sep = process.platform === 'win32' ? '\\' : '/'
 
 const constants = exports.constants = {
   O_RDWR: binding.O_RDWR,
@@ -392,10 +393,11 @@ function mkdirp (path, mode, cb) {
       return
     }
 
-    const dirname = path.dirname(path)
-    if (dirname === '/' || dirname === '.') return cb(err, err.errno, null)
+    while (path.endsWith(sep)) path = path.slice(0, -1)
+    const i = path.lastIndexOf(sep)
+    if (i <= 0) return cb(err, err.errno, null)
 
-    mkdirp(dirname, mode, function (err) {
+    mkdirp(path.slice(0, i), mode, function (err) {
       if (err) return cb(err, err.errno, null)
       mkdir(path, { mode }, cb)
     })
