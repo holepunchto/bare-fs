@@ -1,15 +1,15 @@
-# @pearjs/fs
+# bare-fs
 
 Native file system for Javascript.
 
 ```
-npm install @pearjs/fs
+npm i bare-fs
 ```
 
 ## Usage
 
 ``` js
-const fs = require('@pearjs/fs')
+const fs = require('bare-fs')
 
 // currently supports
 

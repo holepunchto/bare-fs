@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(pear_fs C)
+project(bare_fs C)
 
-include(pear)
+include(bare)
 
-add_pear_module(pear_fs)
+add_bare_module(bare_fs)
 
 target_sources(
-  pear_fs
+  bare_fs
   PRIVATE
     binding.c
 )

@@ -1,5 +1,5 @@
 {
-  "name": "@pearjs/fs",
+  "name": "bare-fs",
   "version": "1.5.2",
   "description": "Native file system for Javascript",
   "main": "index.js",
@@ -12,20 +12,20 @@
     "prebuilds"
   ],
   "scripts": {
-    "test": "standard && pear test/all.js",
-    "install": "pear-dev rebuild",
-    "prebuild": "pear-dev prebuild"
+    "test": "standard && bare test/all.js",
+    "install": "bare-dev rebuild",
+    "prebuild": "bare-dev prebuild"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/holepunchto/pearjs-fs.git"
+    "url": "https://github.com/holepunchto/bare-fs.git"
   },
   "author": "Holepunch",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/holepunchto/pearjs-fs/issues"
+    "url": "https://github.com/holepunchto/bare-fs/issues"
   },
-  "homepage": "https://github.com/holepunchto/pearjs-fs#readme",
+  "homepage": "https://github.com/holepunchto/bare-fs#readme",
   "dependencies": {
     "streamx": "^2.13.0"
   },
