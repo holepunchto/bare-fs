@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <utf.h>
 #include <uv.h>
 
 typedef struct {
@@ -188,7 +189,7 @@ bare_fs_open (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   int32_t flags;
@@ -202,7 +203,7 @@ bare_fs_open (js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
 
-  uv_fs_open(loop, (uv_fs_t *) req, path, flags, mode, on_fs_response);
+  uv_fs_open(loop, (uv_fs_t *) req, (char *) path, flags, mode, on_fs_response);
 
   return NULL;
 }
@@ -214,7 +215,7 @@ bare_fs_open_sync (js_env_t *env, js_callback_info_t *info) {
 
   js_get_callback_info(env, info, &argc, argv, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[0], path, 4096, NULL);
 
   int32_t flags;
@@ -227,7 +228,7 @@ bare_fs_open_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_open(loop, &req, path, flags, mode, NULL);
+  uv_fs_open(loop, &req, (char *) path, flags, mode, NULL);
 
   js_value_t *res;
   js_create_int32(env, req.result, &res);
@@ -556,10 +557,10 @@ bare_fs_rename (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char src[4097];
+  utf8_t src[4097];
   js_get_value_string_utf8(env, argv[1], src, 4096, NULL);
 
-  char dest[4097];
+  utf8_t dest[4097];
   js_get_value_string_utf8(env, argv[2], dest, 4096, NULL);
 
   uv_loop_t *loop;
@@ -567,7 +568,7 @@ bare_fs_rename (js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
 
-  uv_fs_rename(loop, (uv_fs_t *) req, src, dest, on_fs_response);
+  uv_fs_rename(loop, (uv_fs_t *) req, (char *) src, (char *) dest, on_fs_response);
 
   return NULL;
 }
@@ -582,7 +583,7 @@ bare_fs_mkdir (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   int32_t mode;
@@ -593,7 +594,7 @@ bare_fs_mkdir (js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
 
-  uv_fs_mkdir(loop, (uv_fs_t *) req, path, mode, on_fs_response);
+  uv_fs_mkdir(loop, (uv_fs_t *) req, (char *) path, mode, on_fs_response);
 
   return NULL;
 }
@@ -608,7 +609,7 @@ bare_fs_rmdir (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   uv_loop_t *loop;
@@ -616,7 +617,7 @@ bare_fs_rmdir (js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
 
-  uv_fs_rmdir(loop, (uv_fs_t *) req, path, on_fs_response);
+  uv_fs_rmdir(loop, (uv_fs_t *) req, (char *) path, on_fs_response);
 
   return NULL;
 }
@@ -631,7 +632,7 @@ bare_fs_stat (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   void *data;
@@ -644,7 +645,7 @@ bare_fs_stat (js_env_t *env, js_callback_info_t *info) {
   req->env = env;
   req->buf = uv_buf_init(data, data_len);
 
-  uv_fs_stat(loop, (uv_fs_t *) req, path, on_fs_stat_response);
+  uv_fs_stat(loop, (uv_fs_t *) req, (char *) path, on_fs_stat_response);
 
   return NULL;
 }
@@ -656,7 +657,7 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
 
   js_get_callback_info(env, info, &argc, argv, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[0], path, 4096, NULL);
 
   void *data;
@@ -667,7 +668,7 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_stat(loop, &req, path, NULL);
+  uv_fs_stat(loop, &req, (char *) path, NULL);
 
   js_value_t *res;
   js_create_int32(env, req.result, &res);
@@ -690,7 +691,7 @@ bare_fs_lstat (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   void *data;
@@ -703,7 +704,7 @@ bare_fs_lstat (js_env_t *env, js_callback_info_t *info) {
   req->env = env;
   req->buf = uv_buf_init((char *) data, data_len);
 
-  uv_fs_lstat(loop, (uv_fs_t *) req, path, on_fs_stat_response);
+  uv_fs_lstat(loop, (uv_fs_t *) req, (char *) path, on_fs_stat_response);
 
   return NULL;
 }
@@ -715,7 +716,7 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
 
   js_get_callback_info(env, info, &argc, argv, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[0], path, 4096, NULL);
 
   void *data;
@@ -726,7 +727,7 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_lstat(loop, &req, path, NULL);
+  uv_fs_lstat(loop, &req, (char *) path, NULL);
 
   js_value_t *res;
   js_create_int32(env, req.result, &res);
@@ -808,7 +809,7 @@ bare_fs_unlink (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   uv_loop_t *loop;
@@ -816,7 +817,7 @@ bare_fs_unlink (js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
 
-  uv_fs_unlink(loop, (uv_fs_t *) req, path, on_fs_response);
+  uv_fs_unlink(loop, (uv_fs_t *) req, (char *) path, on_fs_response);
 
   return NULL;
 }
@@ -831,7 +832,7 @@ bare_fs_readlink (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   void *data;
@@ -844,7 +845,7 @@ bare_fs_readlink (js_env_t *env, js_callback_info_t *info) {
   req->env = env;
   req->buf = uv_buf_init((char *) data, data_len);
 
-  uv_fs_readlink(loop, (uv_fs_t *) req, path, on_fs_readlink_response);
+  uv_fs_readlink(loop, (uv_fs_t *) req, (char *) path, on_fs_readlink_response);
 
   return NULL;
 }
@@ -859,7 +860,7 @@ bare_fs_opendir (js_env_t *env, js_callback_info_t *info) {
   bare_fs_req_t *req;
   js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
 
-  char path[4097];
+  utf8_t path[4097];
   js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
 
   void *data;
@@ -872,7 +873,7 @@ bare_fs_opendir (js_env_t *env, js_callback_info_t *info) {
   req->env = env;
   req->buf = uv_buf_init((char *) data, data_len);
 
-  uv_fs_opendir(loop, (uv_fs_t *) req, path, on_fs_opendir_response);
+  uv_fs_opendir(loop, (uv_fs_t *) req, (char *) path, on_fs_opendir_response);
 
   return NULL;
 }
