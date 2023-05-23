@@ -113,22 +113,6 @@ on_fs_readlink_response (uv_fs_t *req) {
   on_fs_response(req);
 }
 
-static void
-on_fs_opendir_response (uv_fs_t *req) {
-  bare_fs_req_t *p = (bare_fs_req_t *) req;
-
-  copy_ptr_address(req, &p->buf);
-
-  on_fs_response(req);
-}
-
-static void
-on_fs_readdir_response (uv_fs_t *req) {
-  bare_fs_req_t *p = (bare_fs_req_t *) req;
-
-  on_fs_response(req);
-}
-
 static js_value_t *
 bare_fs_init (js_env_t *env, js_callback_info_t *info) {
   size_t argc = 3;
@@ -851,70 +835,6 @@ bare_fs_readlink (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
-bare_fs_opendir (js_env_t *env, js_callback_info_t *info) {
-  size_t argc = 3;
-  js_value_t *argv[3];
-
-  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
-
-  bare_fs_req_t *req;
-  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
-
-  utf8_t path[4097];
-  js_get_value_string_utf8(env, argv[1], path, 4096, NULL);
-
-  void *data;
-  size_t data_len;
-  js_get_typedarray_info(env, argv[2], NULL, &data, &data_len, NULL, NULL);
-
-  uv_loop_t *loop;
-  js_get_env_loop(env, &loop);
-
-  req->env = env;
-  req->buf = uv_buf_init((char *) data, data_len);
-
-  uv_fs_opendir(loop, (uv_fs_t *) req, (char *) path, on_fs_opendir_response);
-
-  return NULL;
-}
-
-static js_value_t *
-bare_fs_readdir (js_env_t *env, js_callback_info_t *info) {
-  size_t argc = 3;
-  js_value_t *argv[3];
-
-  js_get_callback_info(env, info, &argc, argv, NULL, NULL);
-
-  bare_fs_req_t *req;
-  js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
-
-  uv_dir_t **dir;
-  js_get_typedarray_info(env, argv[1], NULL, (void **) &dir, NULL, NULL, NULL);
-
-  void *data;
-  size_t data_len;
-  js_get_typedarray_info(env, argv[2], NULL, &data, &data_len, NULL, NULL);
-
-  uv_loop_t *loop;
-  js_get_env_loop(env, &loop);
-
-  req->env = env;
-  req->buf = uv_buf_init((char *) data, data_len);
-
-  (*dir)->dirents = data;
-  (*dir)->nentries = data_len / sizeof(uv_dirent_t);
-
-  uv_fs_readdir(loop, (uv_fs_t *) req, *dir, on_fs_readdir_response);
-
-  return NULL;
-}
-
-static js_value_t *
-bare_fs_to_dirent (js_env_t *env, js_callback_info_t *info) {
-  return NULL;
-}
-
-static js_value_t *
 init (js_env_t *env, js_value_t *exports) {
   {
     js_value_t *val;
@@ -1065,21 +985,6 @@ init (js_env_t *env, js_value_t *exports) {
     js_value_t *fn;
     js_create_function(env, "readlink", -1, bare_fs_readlink, NULL, &fn);
     js_set_named_property(env, exports, "readlink", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "opendir", -1, bare_fs_opendir, NULL, &fn);
-    js_set_named_property(env, exports, "opendir", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "readdir", -1, bare_fs_readdir, NULL, &fn);
-    js_set_named_property(env, exports, "readdir", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "toDirent", -1, bare_fs_to_dirent, NULL, &fn);
-    js_set_named_property(env, exports, "toDirent", fn);
   }
   {
     js_value_t *val;
