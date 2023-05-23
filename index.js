@@ -469,6 +469,58 @@ function readlink (path, opts, cb) {
   binding.readlink(req.handle, path, req.buffer)
 }
 
+function opendir (path, opts, cb) {
+  if (typeof opts === 'function') return opendir(path, null, opts)
+  if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
+  if (typeof opts === 'string') opts = { encoding: opts }
+  if (!opts) opts = {}
+
+  const {
+    encoding = 'utf8'
+  } = opts
+
+  const req = getReq()
+
+  req.buffer = Buffer.allocUnsafe(binding.sizeofFSDir)
+
+  req.callback = function (err, _, buf) {
+    if (err) return cb(err, null)
+    cb(null, new Dir(buf, encoding))
+  }
+
+  binding.opendir(req.handle, path, req.buffer)
+}
+
+function readdir (dir, opts, cb) {
+  if (typeof opts === 'function') return readdir(dir, null, opts)
+  if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
+  if (typeof opts === 'string') opts = { encoding: opts }
+  if (!opts) opts = {}
+
+  if (typeof dir === 'string') {
+    return opendir(dir, opts, (err, dir) => {
+      if (err) return cb(err, null)
+      return readdir(dir, opts, cb)
+    })
+  }
+
+  const {
+    encoding = 'utf8',
+    bufferSize = 32
+  } = opts
+
+  const req = getReq()
+
+  req.buffer = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
+
+  req.callback = function (err, _, buf) {
+    if (err) return cb(err, null)
+    binding.toDirent(dir._handle)
+  }
+
+  binding.readdir(req.handle, dir._handle, req.buffer)
+}
+
 function readFile (path, opts, cb) {
   if (typeof opts === 'function') return readFile(path, null, opts)
   if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
@@ -702,6 +754,19 @@ class FileReadStream extends Readable {
   }
 }
 
+class Dir extends Readable {
+  constructor (handle, encoding) {
+    super()
+
+    this._handle = handle
+    this._encoding = encoding
+  }
+
+  _read (cb) {
+    cb(null)
+  }
+}
+
 exports.promises = {}
 
 function typeError (code, message) {
@@ -760,6 +825,12 @@ exports.promises.lstat = promisify(lstat)
 
 exports.readlink = readlink
 exports.promises.readlink = promisify(readlink)
+
+exports.opendir = opendir
+exports.promises.opendir = promisify(opendir)
+
+exports.readdir = readdir
+exports.promises.readdir = promisify(readdir)
 
 exports.ReadStream = FileReadStream
 exports.createReadStream = (path, options) => new FileReadStream(path, options)
