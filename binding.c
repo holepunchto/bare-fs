@@ -71,6 +71,13 @@ copy_ptr_address (uv_fs_t *req, uv_buf_t *buf) {
   memcpy(buf->base, &req->ptr, buf->len);
 }
 
+static inline void
+copy_ptr_string (uv_fs_t *req, uv_buf_t *buf) {
+  if (req->result != 0) return;
+
+  strncpy(buf->base, req->ptr, buf->len);
+}
+
 static void
 on_fs_response (uv_fs_t *req) {
   bare_fs_req_t *p = (bare_fs_req_t *) req;
@@ -108,7 +115,7 @@ static void
 on_fs_readlink_response (uv_fs_t *req) {
   bare_fs_req_t *p = (bare_fs_req_t *) req;
 
-  copy_ptr(req, &p->buf);
+  copy_ptr_string(req, &p->buf);
 
   on_fs_response(req);
 }
