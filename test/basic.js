@@ -21,10 +21,11 @@ test('open + close sync', (t) => {
   t.pass()
 })
 
-test('stat', (t) => {
+test.solo('stat', (t) => {
   t.plan(2)
 
   fs.stat('test/fixtures/foo.txt', (err, st) => {
+    console.log(st)
     t.absent(err, 'stat')
     t.ok(st)
   })

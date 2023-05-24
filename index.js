@@ -1,8 +1,6 @@
 const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
 
-const LE = (new Uint8Array(new Uint16Array([255]).buffer))[0] === 0xff
-
 const sep = process.platform === 'win32' ? '\\' : '/'
 
 const constants = exports.constants = {
@@ -86,8 +84,6 @@ function alloc () {
     handle,
     view,
     type: 0,
-    buffer: null,
-    buffers: null,
     callback: null
   }
 
@@ -111,17 +107,13 @@ function onfsresponse (id, result) {
   }
 
   const callback = req.callback
-  const buffer = req.buffer
-  const buffers = req.buffers
 
   req.callback = null
-  req.buffer = null
-  req.buffers = null
 
   if (result < 0) {
     callback(createError(result), result, null)
   } else {
-    callback(null, result, buffer || buffers)
+    callback(null, result)
   }
 }
 
@@ -262,29 +254,27 @@ function ftruncate (fd, len, cb) {
 }
 
 class Stats {
-  constructor (buf) {
-    const view = new Uint32Array(buf.buffer, buf.byteOffset, 32)
-
-    this.dev = toNumber(view, 0)
-    this.mode = toNumber(view, 2)
-    this.nlink = toNumber(view, 4)
-    this.uid = toNumber(view, 6)
-    this.gid = toNumber(view, 8)
-    this.rdev = toNumber(view, 10)
-    this.ino = toNumber(view, 12)
-    this.size = toNumber(view, 14)
-    this.blksize = toNumber(view, 16)
-    this.blocks = toNumber(view, 18)
-    this.flags = toNumber(view, 20)
-    this.gen = toNumber(view, 22)
-    this.atimeMs = toNumber(view, 24)
-    this.mtimeMs = toNumber(view, 26)
-    this.ctimeMs = toNumber(view, 28)
-    this.birthtimeMs = toNumber(view, 30)
-    this.atime = new Date(this.atimeMs)
-    this.mtime = new Date(this.mtimeMs)
-    this.ctime = new Date(this.ctimeMs)
-    this.birthtime = new Date(this.birthtimeMs)
+  constructor (props) {
+    this.dev = props.dev
+    this.mode = props.mode
+    this.nlink = props.nlink
+    this.uid = props.uid
+    this.gid = props.gid
+    this.rdev = props.rdev
+    this.ino = props.ino
+    this.size = props.size
+    this.blksize = props.blksize
+    this.blocks = props.blocks
+    this.flags = props.flags
+    this.gen = props.gen
+    this.atimeMs = props.atim
+    this.mtimeMs = props.mtim
+    this.ctimeMs = props.ctim
+    this.birthtimeMs = props.birthtim
+    this.atime = new Date(props.atim)
+    this.mtime = new Date(props.mtim)
+    this.ctime = new Date(props.ctim)
+    this.birthtime = new Date(props.birthtim)
   }
 
   isDirectory () {
@@ -316,68 +306,172 @@ class Stats {
   }
 }
 
-function toNumber (view, n) {
-  return LE ? view[n] + view[n + 1] * 0x100000000 : view[n] * 0x100000000 + view[n + 1]
-}
-
 function stat (path, cb) {
-  const req = getReq()
-
-  req.buffer = Buffer.allocUnsafe(16 * 8)
-
-  req.callback = function (err, _, buf) {
-    if (err) cb(err, null)
-    else cb(null, new Stats(buf))
+  const data = {
+    dev: 0,
+    mode: 0,
+    nlink: 0,
+    uid: 0,
+    gid: 0,
+    rdev: 0,
+    ino: 0,
+    size: 0,
+    blksize: 0,
+    blocks: 0,
+    flags: 0,
+    gen: 0,
+    atim: 0,
+    mtim: 0,
+    ctim: 0,
+    birthtim: 0
   }
 
-  binding.stat(req.handle, path, req.buffer)
+  const req = getReq()
+
+  req.callback = function (err, _) {
+    if (err) cb(err, null)
+    else cb(null, new Stats(data))
+  }
+
+  binding.stat(req.handle, path, data)
 }
 
 function statSync (path) {
-  const buffer = Buffer.allocUnsafe(16 * 8)
-  const res = binding.statSync(path, buffer)
+  const data = {
+    dev: 0,
+    mode: 0,
+    nlink: 0,
+    uid: 0,
+    gid: 0,
+    rdev: 0,
+    ino: 0,
+    size: 0,
+    blksize: 0,
+    blocks: 0,
+    flags: 0,
+    gen: 0,
+    atim: 0,
+    mtim: 0,
+    ctim: 0,
+    birthtim: 0
+  }
+
+  const res = binding.statSync(path, data)
   if (res < 0) throw createError(res)
-  return new Stats(buffer)
+
+  return new Stats(data)
 }
 
 function lstat (path, cb) {
-  const req = getReq()
-
-  req.buffer = Buffer.allocUnsafe(16 * 8)
-
-  req.callback = function (err, _, buf) {
-    if (err) cb(err, null)
-    else cb(null, new Stats(buf))
+  const data = {
+    dev: 0,
+    mode: 0,
+    nlink: 0,
+    uid: 0,
+    gid: 0,
+    rdev: 0,
+    ino: 0,
+    size: 0,
+    blksize: 0,
+    blocks: 0,
+    flags: 0,
+    gen: 0,
+    atim: 0,
+    mtim: 0,
+    ctim: 0,
+    birthtim: 0
   }
 
-  binding.lstat(req.handle, path, req.buffer)
+  const req = getReq()
+
+  req.callback = function (err, _) {
+    if (err) cb(err, null)
+    else cb(null, new Stats(data))
+  }
+
+  binding.lstat(req.handle, path, data)
 }
 
 function lstatSync (path) {
-  const buffer = Buffer.allocUnsafe(16 * 8)
-  const res = binding.lstatSync(path, buffer)
+  const data = {
+    dev: 0,
+    mode: 0,
+    nlink: 0,
+    uid: 0,
+    gid: 0,
+    rdev: 0,
+    ino: 0,
+    size: 0,
+    blksize: 0,
+    blocks: 0,
+    flags: 0,
+    gen: 0,
+    atim: 0,
+    mtim: 0,
+    ctim: 0,
+    birthtim: 0
+  }
+
+  const res = binding.lstatSync(path, data)
   if (res < 0) throw createError(res)
-  return new Stats(buffer)
+
+  return new Stats(data)
 }
 
 function fstat (fd, cb) {
-  const req = getReq()
-
-  req.buffer = Buffer.allocUnsafe(16 * 8)
-
-  req.callback = function (err, _, buf) {
-    if (err) cb(err, null)
-    else cb(null, new Stats(buf))
+  const data = {
+    dev: 0,
+    mode: 0,
+    nlink: 0,
+    uid: 0,
+    gid: 0,
+    rdev: 0,
+    ino: 0,
+    size: 0,
+    blksize: 0,
+    blocks: 0,
+    flags: 0,
+    gen: 0,
+    atim: 0,
+    mtim: 0,
+    ctim: 0,
+    birthtim: 0
   }
 
-  binding.fstat(req.handle, fd, req.buffer)
+  const req = getReq()
+
+  req.callback = function (err, _) {
+    if (err) cb(err, null)
+    else cb(null, new Stats(data))
+  }
+
+  binding.fstat(req.handle, fd, data)
 }
 
 function fstatSync (fd) {
-  const buffer = Buffer.allocUnsafe(16 * 8)
-  const res = binding.fstatSync(fd, buffer)
+  const data = {
+    dev: 0,
+    mode: 0,
+    nlink: 0,
+    uid: 0,
+    gid: 0,
+    rdev: 0,
+    ino: 0,
+    size: 0,
+    blksize: 0,
+    blocks: 0,
+    flags: 0,
+    gen: 0,
+    atim: 0,
+    mtim: 0,
+    ctim: 0,
+    birthtim: 0
+  }
+
+  const res = binding.fstatSync(fd, data)
   if (res < 0) throw createError(res)
-  return new Stats(buffer)
+
+  return new Stats(data)
 }
 
 function mkdirp (path, mode, cb) {
@@ -455,18 +549,18 @@ function readlink (path, opts, cb) {
     encoding = 'utf8'
   } = opts
 
+  const data = Buffer.allocUnsafe(4096)
+
   const req = getReq()
 
-  req.buffer = Buffer.allocUnsafe(4097)
-
-  req.callback = function (err, _, buf) {
+  req.callback = function (err, _) {
     if (err) return cb(err, null)
-    buf = buf.subarray(0, buf.indexOf(0))
-    if (encoding !== 'buffer') return cb(null, Buffer.coerce(buf).toString(encoding))
-    cb(null, buf)
+    let path = data.subarray(0, data.indexOf(0))
+    if (encoding !== 'buffer') path = path.toString(encoding)
+    cb(null, path)
   }
 
-  binding.readlink(req.handle, path, req.buffer)
+  binding.readlink(req.handle, path, data)
 }
 
 function opendir (path, opts, cb) {
@@ -475,50 +569,16 @@ function opendir (path, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   if (!opts) opts = {}
 
-  const {
-    encoding = 'utf8'
-  } = opts
+  const data = Buffer.allocUnsafe(binding.sizeofFSDir)
 
   const req = getReq()
 
-  req.buffer = Buffer.allocUnsafe(binding.sizeofFSDir)
-
-  req.callback = function (err, _, buf) {
+  req.callback = function (err, _) {
     if (err) return cb(err, null)
-    cb(null, new Dir(buf, encoding))
+    cb(null, new Dir(data, opts))
   }
 
-  binding.opendir(req.handle, path, req.buffer)
-}
-
-function readdir (dir, opts, cb) {
-  if (typeof opts === 'function') return readdir(dir, null, opts)
-  if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
-  if (typeof opts === 'string') opts = { encoding: opts }
-  if (!opts) opts = {}
-
-  if (typeof dir === 'string') {
-    return opendir(dir, opts, (err, dir) => {
-      if (err) return cb(err, null)
-      return readdir(dir, opts, cb)
-    })
-  }
-
-  const {
-    encoding = 'utf8',
-    bufferSize = 32
-  } = opts
-
-  const req = getReq()
-
-  req.buffer = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
-
-  req.callback = function (err, _, buf) {
-    if (err) return cb(err, null)
-    binding.toDirent(dir._handle)
-  }
-
-  binding.readdir(req.handle, dir._handle, req.buffer)
+  binding.opendir(req.handle, path, data)
 }
 
 function readFile (path, opts, cb) {
@@ -755,15 +815,57 @@ class FileReadStream extends Readable {
 }
 
 class Dir extends Readable {
-  constructor (handle, encoding) {
+  constructor (handle, opts = {}) {
+    const {
+      encoding = 'utf8',
+      bufferSize = 32
+    } = opts
+
     super()
 
     this._handle = handle
+    this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * 32)
+    this._closed = false
+
     this._encoding = encoding
+    this._bufferSize = bufferSize
   }
 
   _read (cb) {
-    cb(null)
+    const self = this
+    const data = []
+
+    const req = getReq()
+
+    req.callback = function (err, _) {
+      if (err) return cb(err)
+      if (data.length === 0) self.push(null)
+      else for (const entry of data) self.push(entry)
+      cb(null)
+    }
+
+    binding.readdir(req.handle, this._handle, this._dirents, data)
+  }
+
+  _destroy (cb) {
+    if (this._closed) cb(null)
+    else this.close(cb)
+  }
+
+  close (cb) {
+    if (this._closed) return
+
+    const self = this
+
+    const req = getReq()
+
+    req.callback = function (err, _) {
+      if (err) return cb(err)
+      self._closed = true
+      cb(null)
+    }
+
+    binding.closedir(req.handle, this._handle)
   }
 }
 
@@ -828,9 +930,6 @@ exports.promises.readlink = promisify(readlink)
 
 exports.opendir = opendir
 exports.promises.opendir = promisify(opendir)
-
-exports.readdir = readdir
-exports.promises.readdir = promisify(readdir)
 
 exports.ReadStream = FileReadStream
 exports.createReadStream = (path, options) => new FileReadStream(path, options)
