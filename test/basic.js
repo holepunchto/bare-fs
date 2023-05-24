@@ -21,7 +21,7 @@ test('open + close sync', (t) => {
   t.pass()
 })
 
-test.solo('stat', (t) => {
+test('stat', (t) => {
   t.plan(2)
 
   fs.stat('test/fixtures/foo.txt', (err, st) => {
