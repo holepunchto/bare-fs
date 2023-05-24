@@ -25,7 +25,6 @@ test('stat', (t) => {
   t.plan(2)
 
   fs.stat('test/fixtures/foo.txt', (err, st) => {
-    console.log(st)
     t.absent(err, 'stat')
     t.ok(st)
   })
