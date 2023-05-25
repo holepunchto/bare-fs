@@ -208,12 +208,14 @@ on_fs_readdir_response (uv_fs_t *uv_req) {
       err = js_set_element(env, data, i, entry);
       assert(err == 0);
 
+      size_t name_len = strlen(dirent->name);
+
       js_value_t *name;
       void *data;
-      err = js_create_arraybuffer(env, strlen(dirent->name) + 1 /* NULL */, &data, &name);
+      err = js_create_arraybuffer(env, name_len, &data, &name);
       assert(err == 0);
 
-      strcpy(data, dirent->name);
+      memcpy(data, dirent->name, name_len);
 
       err = js_set_named_property(env, entry, "name", name);
       assert(err == 0);
