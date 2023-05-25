@@ -369,16 +369,16 @@ bare_fs_open_sync (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
-bare_fs_write (js_env_t *env, js_callback_info_t *info) {
+bare_fs_close (js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 6;
-  js_value_t *argv[6];
+  size_t argc = 2;
+  js_value_t *argv[2];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 6);
+  assert(argc == 2);
 
   bare_fs_req_t *req;
   err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
@@ -388,71 +388,35 @@ bare_fs_write (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
 
-  void *data;
-  err = js_get_typedarray_info(env, argv[2], NULL, &data, NULL, NULL, NULL);
-  assert(err == 0);
-
-  uint32_t offset;
-  err = js_get_value_uint32(env, argv[3], &offset);
-  assert(err == 0);
-
-  uint32_t len;
-  err = js_get_value_uint32(env, argv[4], &len);
-  assert(err == 0);
-
-  int64_t pos;
-  err = js_get_value_int64(env, argv[5], &pos);
-  assert(err == 0);
-
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_buf_t buf = uv_buf_init(data + offset, len);
-
-  uv_fs_write(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
+  uv_fs_close(loop, (uv_fs_t *) req, fd, on_fs_response);
 
   return NULL;
 }
 
 static js_value_t *
-bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
+bare_fs_close_sync (js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 5;
-  js_value_t *argv[5];
+  size_t argc = 1;
+  js_value_t *argv[1];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 5);
+  assert(argc == 1);
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[0], &fd);
   assert(err == 0);
 
-  void *data;
-  err = js_get_typedarray_info(env, argv[1], NULL, &data, NULL, NULL, NULL);
-  assert(err == 0);
-
-  uint32_t offset;
-  err = js_get_value_uint32(env, argv[2], &offset);
-  assert(err == 0);
-
-  uint32_t len;
-  err = js_get_value_uint32(env, argv[3], &len);
-  assert(err == 0);
-
-  int64_t pos;
-  err = js_get_value_int64(env, argv[4], &pos);
-  assert(err == 0);
-
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_buf_t buf = uv_buf_init(data + offset, len);
-
   uv_fs_t req;
-  uv_fs_write(loop, &req, fd, &buf, 1, pos, NULL);
+  uv_fs_close(loop, &req, fd, NULL);
 
   js_value_t *res;
   err = js_create_int32(env, req.result, &res);
@@ -461,58 +425,6 @@ bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_req_cleanup(&req);
 
   return res;
-}
-
-static js_value_t *
-bare_fs_writev (js_env_t *env, js_callback_info_t *info) {
-  int err;
-
-  size_t argc = 4;
-  js_value_t *argv[4];
-
-  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
-  assert(err == 0);
-
-  assert(argc == 4);
-
-  bare_fs_req_t *req;
-  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
-  assert(err == 0);
-
-  uint32_t fd;
-  err = js_get_value_uint32(env, argv[1], &fd);
-  assert(err == 0);
-
-  js_value_t *arr = argv[2];
-  js_value_t *item;
-
-  int64_t pos;
-  err = js_get_value_int64(env, argv[3], &pos);
-  assert(err == 0);
-
-  uv_loop_t *loop;
-  js_get_env_loop(env, &loop);
-
-  uint32_t bufs_len;
-  err = js_get_array_length(env, arr, &bufs_len);
-  assert(err == 0);
-
-  uv_buf_t *bufs = malloc(sizeof(uv_buf_t) * bufs_len);
-
-  for (uint32_t i = 0; i < bufs_len; i++) {
-    err = js_get_element(env, arr, i, &item);
-    assert(err == 0);
-
-    uv_buf_t *buf = &bufs[i];
-    err = js_get_typedarray_info(env, item, NULL, (void **) &buf->base, &buf->len, NULL, NULL);
-    assert(err == 0);
-  }
-
-  uv_fs_write(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, on_fs_response);
-
-  free(bufs);
-
-  return NULL;
 }
 
 static js_value_t *
@@ -663,6 +575,153 @@ bare_fs_readv (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_write (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 6;
+  js_value_t *argv[6];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 6);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[1], &fd);
+  assert(err == 0);
+
+  void *data;
+  err = js_get_typedarray_info(env, argv[2], NULL, &data, NULL, NULL, NULL);
+  assert(err == 0);
+
+  uint32_t offset;
+  err = js_get_value_uint32(env, argv[3], &offset);
+  assert(err == 0);
+
+  uint32_t len;
+  err = js_get_value_uint32(env, argv[4], &len);
+  assert(err == 0);
+
+  int64_t pos;
+  err = js_get_value_int64(env, argv[5], &pos);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_buf_t buf = uv_buf_init(data + offset, len);
+
+  uv_fs_write(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 5;
+  js_value_t *argv[5];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 5);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[0], &fd);
+  assert(err == 0);
+
+  void *data;
+  err = js_get_typedarray_info(env, argv[1], NULL, &data, NULL, NULL, NULL);
+  assert(err == 0);
+
+  uint32_t offset;
+  err = js_get_value_uint32(env, argv[2], &offset);
+  assert(err == 0);
+
+  uint32_t len;
+  err = js_get_value_uint32(env, argv[3], &len);
+  assert(err == 0);
+
+  int64_t pos;
+  err = js_get_value_int64(env, argv[4], &pos);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_buf_t buf = uv_buf_init(data + offset, len);
+
+  uv_fs_t req;
+  uv_fs_write(loop, &req, fd, &buf, 1, pos, NULL);
+
+  js_value_t *res;
+  err = js_create_int32(env, req.result, &res);
+  assert(err == 0);
+
+  uv_fs_req_cleanup(&req);
+
+  return res;
+}
+
+static js_value_t *
+bare_fs_writev (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[1], &fd);
+  assert(err == 0);
+
+  js_value_t *arr = argv[2];
+  js_value_t *item;
+
+  int64_t pos;
+  err = js_get_value_int64(env, argv[3], &pos);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uint32_t bufs_len;
+  err = js_get_array_length(env, arr, &bufs_len);
+  assert(err == 0);
+
+  uv_buf_t *bufs = malloc(sizeof(uv_buf_t) * bufs_len);
+
+  for (uint32_t i = 0; i < bufs_len; i++) {
+    err = js_get_element(env, arr, i, &item);
+    assert(err == 0);
+
+    uv_buf_t *buf = &bufs[i];
+    err = js_get_typedarray_info(env, item, NULL, (void **) &buf->base, &buf->len, NULL, NULL);
+    assert(err == 0);
+  }
+
+  uv_fs_write(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, on_fs_response);
+
+  free(bufs);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_ftruncate (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -692,65 +751,6 @@ bare_fs_ftruncate (js_env_t *env, js_callback_info_t *info) {
   uv_fs_ftruncate(loop, (uv_fs_t *) req, fd, len, on_fs_response);
 
   return NULL;
-}
-
-static js_value_t *
-bare_fs_close (js_env_t *env, js_callback_info_t *info) {
-  int err;
-
-  size_t argc = 2;
-  js_value_t *argv[2];
-
-  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
-  assert(err == 0);
-
-  assert(argc == 2);
-
-  bare_fs_req_t *req;
-  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
-  assert(err == 0);
-
-  uint32_t fd;
-  err = js_get_value_uint32(env, argv[1], &fd);
-  assert(err == 0);
-
-  uv_loop_t *loop;
-  js_get_env_loop(env, &loop);
-
-  uv_fs_close(loop, (uv_fs_t *) req, fd, on_fs_response);
-
-  return NULL;
-}
-
-static js_value_t *
-bare_fs_close_sync (js_env_t *env, js_callback_info_t *info) {
-  int err;
-
-  size_t argc = 1;
-  js_value_t *argv[1];
-
-  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
-  assert(err == 0);
-
-  assert(argc == 1);
-
-  uint32_t fd;
-  err = js_get_value_uint32(env, argv[0], &fd);
-  assert(err == 0);
-
-  uv_loop_t *loop;
-  js_get_env_loop(env, &loop);
-
-  uv_fs_t req;
-  uv_fs_close(loop, &req, fd, NULL);
-
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
-
-  uv_fs_req_cleanup(&req);
-
-  return res;
 }
 
 static js_value_t *
@@ -1415,8 +1415,13 @@ init (js_env_t *env, js_value_t *exports) {
   }
   {
     js_value_t *fn;
-    js_create_function(env, "ftruncate", -1, bare_fs_ftruncate, NULL, &fn);
-    js_set_named_property(env, exports, "ftruncate", fn);
+    js_create_function(env, "close", -1, bare_fs_close, NULL, &fn);
+    js_set_named_property(env, exports, "close", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "closeSync", -1, bare_fs_close_sync, NULL, &fn);
+    js_set_named_property(env, exports, "closeSync", fn);
   }
   {
     js_value_t *fn;
@@ -1450,13 +1455,8 @@ init (js_env_t *env, js_value_t *exports) {
   }
   {
     js_value_t *fn;
-    js_create_function(env, "close", -1, bare_fs_close, NULL, &fn);
-    js_set_named_property(env, exports, "close", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "closeSync", -1, bare_fs_close_sync, NULL, &fn);
-    js_set_named_property(env, exports, "closeSync", fn);
+    js_create_function(env, "ftruncate", -1, bare_fs_ftruncate, NULL, &fn);
+    js_set_named_property(env, exports, "ftruncate", fn);
   }
   {
     js_value_t *fn;
