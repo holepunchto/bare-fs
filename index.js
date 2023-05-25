@@ -668,11 +668,15 @@ function readdir (path, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   if (!opts) opts = {}
 
+  const {
+    withFileTypes = false
+  } = opts
+
   opendir(path, opts, async (err, dir) => {
     if (err) return cb(err, null)
     const result = []
     dir
-      .on('data', (entry) => result.push(entry))
+      .on('data', (entry) => result.push(withFileTypes ? entry : entry.name))
       .on('error', (err) => cb(err, null))
       .on('end', () => cb(null, result))
   })

@@ -106,3 +106,17 @@ test('readdir', (t) => {
     t.pass('iterated')
   })
 })
+
+test('readdir + withFileTypes: true', (t) => {
+  t.plan(2)
+
+  fs.readdir('test', { withFileTypes: true }, (err, dir) => {
+    t.absent(err, 'read')
+
+    for (const entry of dir) {
+      t.comment(entry)
+    }
+
+    t.pass('iterated')
+  })
+})
