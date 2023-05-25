@@ -1412,6 +1412,11 @@ init (js_env_t *env, js_value_t *exports) {
     js_set_named_property(env, exports, "sizeofFSDirent", val);
   }
   {
+    js_value_t *val;
+    js_create_uint32(env, sizeof(bare_fs_path_t), &val);
+    js_set_named_property(env, exports, "sizeofFSPath", val);
+  }
+  {
     js_value_t *fn;
     js_create_function(env, "init", -1, bare_fs_init, NULL, &fn);
     js_set_named_property(env, exports, "init", fn);
