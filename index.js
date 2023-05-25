@@ -589,6 +589,22 @@ function opendir (path, opts, cb) {
   binding.opendir(req.handle, path, data)
 }
 
+function readdir (path, opts, cb) {
+  if (typeof opts === 'function') return readdir(path, null, opts)
+  if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
+  if (typeof opts === 'string') opts = { encoding: opts }
+  if (!opts) opts = {}
+
+  opendir(path, opts, async (err, dir) => {
+    if (err) return cb(err, null)
+    const result = []
+    dir
+      .on('data', (entry) => result.push(entry))
+      .on('error', (err) => cb(err, null))
+      .on('end', () => cb(null, result))
+  })
+}
+
 function readFile (path, opts, cb) {
   if (typeof opts === 'function') return readFile(path, null, opts)
   if (typeof cb !== 'function') throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function')
@@ -981,6 +997,9 @@ exports.promises.readlink = promisify(readlink)
 
 exports.opendir = opendir
 exports.promises.opendir = promisify(opendir)
+
+exports.readdir = readdir
+exports.promises.readdir = promisify(readdir)
 
 exports.ReadStream = FileReadStream
 exports.createReadStream = (path, options) => new FileReadStream(path, options)

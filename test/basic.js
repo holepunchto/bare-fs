@@ -88,3 +88,17 @@ test('opendir + iterate entries', (t) => {
     t.pass('iterated')
   })
 })
+
+test('readdir', (t) => {
+  t.plan(2)
+
+  fs.readdir('test', (err, dir) => {
+    t.absent(err, 'read')
+
+    for (const entry of dir) {
+      t.comment(entry)
+    }
+
+    t.pass('iterated')
+  })
+})
