@@ -377,30 +377,13 @@ function stat (path, cb) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
   }
 
-  const data = {
-    dev: 0,
-    mode: 0,
-    nlink: 0,
-    uid: 0,
-    gid: 0,
-    rdev: 0,
-    ino: 0,
-    size: 0,
-    blksize: 0,
-    blocks: 0,
-    flags: 0,
-    gen: 0,
-    atim: 0,
-    mtim: 0,
-    ctim: 0,
-    birthtim: 0
-  }
+  const data = new Array(Stats.length)
 
   const req = getReq()
 
   req.callback = function (err, _) {
     if (err) cb(err, null)
-    else cb(null, new Stats(data))
+    else cb(null, new Stats(...data))
   }
 
   binding.stat(req.handle, path, data)
@@ -411,29 +394,12 @@ function statSync (path) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
   }
 
-  const data = {
-    dev: 0,
-    mode: 0,
-    nlink: 0,
-    uid: 0,
-    gid: 0,
-    rdev: 0,
-    ino: 0,
-    size: 0,
-    blksize: 0,
-    blocks: 0,
-    flags: 0,
-    gen: 0,
-    atim: 0,
-    mtim: 0,
-    ctim: 0,
-    birthtim: 0
-  }
+  const data = new Array(Stats.length)
 
   const res = binding.statSync(path, data)
   if (res < 0) throw createError(res)
 
-  return new Stats(data)
+  return new Stats(...data)
 }
 
 function lstat (path, cb) {
@@ -445,30 +411,13 @@ function lstat (path, cb) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
   }
 
-  const data = {
-    dev: 0,
-    mode: 0,
-    nlink: 0,
-    uid: 0,
-    gid: 0,
-    rdev: 0,
-    ino: 0,
-    size: 0,
-    blksize: 0,
-    blocks: 0,
-    flags: 0,
-    gen: 0,
-    atim: 0,
-    mtim: 0,
-    ctim: 0,
-    birthtim: 0
-  }
+  const data = new Array(Stats.length)
 
   const req = getReq()
 
   req.callback = function (err, _) {
     if (err) cb(err, null)
-    else cb(null, new Stats(data))
+    else cb(null, new Stats(...data))
   }
 
   binding.lstat(req.handle, path, data)
@@ -479,29 +428,12 @@ function lstatSync (path) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
   }
 
-  const data = {
-    dev: 0,
-    mode: 0,
-    nlink: 0,
-    uid: 0,
-    gid: 0,
-    rdev: 0,
-    ino: 0,
-    size: 0,
-    blksize: 0,
-    blocks: 0,
-    flags: 0,
-    gen: 0,
-    atim: 0,
-    mtim: 0,
-    ctim: 0,
-    birthtim: 0
-  }
+  const data = new Array(Stats.length)
 
   const res = binding.lstatSync(path, data)
   if (res < 0) throw createError(res)
 
-  return new Stats(data)
+  return new Stats(...data)
 }
 
 function fstat (fd, cb) {
@@ -517,30 +449,13 @@ function fstat (fd, cb) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
   }
 
-  const data = {
-    dev: 0,
-    mode: 0,
-    nlink: 0,
-    uid: 0,
-    gid: 0,
-    rdev: 0,
-    ino: 0,
-    size: 0,
-    blksize: 0,
-    blocks: 0,
-    flags: 0,
-    gen: 0,
-    atim: 0,
-    mtim: 0,
-    ctim: 0,
-    birthtim: 0
-  }
+  const data = new Array(Stats.length)
 
   const req = getReq()
 
   req.callback = function (err, _) {
     if (err) cb(err, null)
-    else cb(null, new Stats(data))
+    else cb(null, new Stats(...data))
   }
 
   binding.fstat(req.handle, fd, data)
@@ -555,29 +470,12 @@ function fstatSync (fd) {
     throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
   }
 
-  const data = {
-    dev: 0,
-    mode: 0,
-    nlink: 0,
-    uid: 0,
-    gid: 0,
-    rdev: 0,
-    ino: 0,
-    size: 0,
-    blksize: 0,
-    blocks: 0,
-    flags: 0,
-    gen: 0,
-    atim: 0,
-    mtim: 0,
-    ctim: 0,
-    birthtim: 0
-  }
+  const data = new Array(Stats.length)
 
   const res = binding.fstatSync(fd, data)
   if (res < 0) throw createError(res)
 
-  return new Stats(data)
+  return new Stats(...data)
 }
 
 function ftruncate (fd, len, cb) {
@@ -949,27 +847,25 @@ function writeFileSync (path, data, opts) {
 }
 
 class Stats {
-  constructor (props) {
-    this.dev = props.dev
-    this.mode = props.mode
-    this.nlink = props.nlink
-    this.uid = props.uid
-    this.gid = props.gid
-    this.rdev = props.rdev
-    this.ino = props.ino
-    this.size = props.size
-    this.blksize = props.blksize
-    this.blocks = props.blocks
-    this.flags = props.flags
-    this.gen = props.gen
-    this.atimeMs = props.atim
-    this.mtimeMs = props.mtim
-    this.ctimeMs = props.ctim
-    this.birthtimeMs = props.birthtim
-    this.atime = new Date(props.atim)
-    this.mtime = new Date(props.mtim)
-    this.ctime = new Date(props.ctim)
-    this.birthtime = new Date(props.birthtim)
+  constructor (dev, mode, nlink, uid, gid, rdev, blksize, ino, size, blocks, atimeMs, mtimeMs, ctimeMs, birthtimeMs) {
+    this.dev = dev
+    this.mode = mode
+    this.nlink = nlink
+    this.uid = uid
+    this.gid = gid
+    this.rdev = rdev
+    this.blksize = blksize
+    this.ino = ino
+    this.size = size
+    this.blocks = blocks
+    this.atimeMs = atimeMs
+    this.mtimeMs = mtimeMs
+    this.ctimeMs = ctimeMs
+    this.birthtimeMs = birthtimeMs
+    this.atime = new Date(atimeMs)
+    this.mtime = new Date(mtimeMs)
+    this.ctime = new Date(ctimeMs)
+    this.birthtime = new Date(birthtimeMs)
   }
 
   isDirectory () {

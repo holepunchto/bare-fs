@@ -93,13 +93,15 @@ on_fs_stat_response (uv_fs_t *uv_req) {
     err = js_get_reference_value(env, req->data, &data);
     assert(err == 0);
 
+    uint32_t i = 0;
+
 #define V(property) \
   { \
     js_value_t *value; \
     err = js_create_int64(env, uv_req->statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -108,12 +110,10 @@ on_fs_stat_response (uv_fs_t *uv_req) {
     V(uid)
     V(gid)
     V(rdev)
+    V(blksize)
     V(ino)
     V(size)
-    V(blksize)
     V(blocks)
-    V(flags)
-    V(gen)
 #undef V
 
 #define V(property) \
@@ -124,7 +124,7 @@ on_fs_stat_response (uv_fs_t *uv_req) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(atim)
@@ -924,13 +924,15 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_stat(loop, &req, (char *) path, NULL);
 
   if (req.result == 0) {
+    uint32_t i = 0;
+
 #define V(property) \
   { \
     js_value_t *value; \
     err = js_create_int64(env, req.statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -939,12 +941,10 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
     V(uid)
     V(gid)
     V(rdev)
+    V(blksize)
     V(ino)
     V(size)
-    V(blksize)
     V(blocks)
-    V(flags)
-    V(gen)
 #undef V
 
 #define V(property) \
@@ -955,7 +955,7 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(atim)
@@ -1030,13 +1030,15 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_lstat(loop, &req, (char *) path, NULL);
 
   if (req.result == 0) {
+    uint32_t i = 0;
+
 #define V(property) \
   { \
     js_value_t *value; \
     err = js_create_int64(env, req.statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -1045,12 +1047,10 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
     V(uid)
     V(gid)
     V(rdev)
+    V(blksize)
     V(ino)
     V(size)
-    V(blksize)
     V(blocks)
-    V(flags)
-    V(gen)
 #undef V
 
 #define V(property) \
@@ -1061,7 +1061,7 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(atim)
@@ -1136,13 +1136,15 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_fstat(loop, &req, fd, NULL);
 
   if (req.result == 0) {
+    uint32_t i = 0;
+
 #define V(property) \
   { \
     js_value_t *value; \
     err = js_create_int64(env, req.statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -1151,12 +1153,10 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
     V(uid)
     V(gid)
     V(rdev)
+    V(blksize)
     V(ino)
     V(size)
-    V(blksize)
     V(blocks)
-    V(flags)
-    V(gen)
 #undef V
 
 #define V(property) \
@@ -1167,7 +1167,7 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_named_property(env, data, #property, value); \
+    err = js_set_element(env, data, i++, value); \
     assert(err == 0); \
   }
     V(atim)

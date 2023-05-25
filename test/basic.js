@@ -26,6 +26,7 @@ test('stat', (t) => {
 
   fs.stat('test/fixtures/foo.txt', (err, st) => {
     t.absent(err, 'stat')
+    for (const [key, value] of Object.entries(st)) t.comment(key, value)
     t.ok(st)
   })
 })
@@ -33,6 +34,7 @@ test('stat', (t) => {
 test('stat sync', (t) => {
   const st = fs.statSync('test/fixtures/foo.txt')
 
+  for (const [key, value] of Object.entries(st)) t.comment(key, value)
   t.ok(st)
 })
 
@@ -44,6 +46,7 @@ test('fstat', (t) => {
 
     fs.fstat(fd, (err, st) => {
       t.absent(err, 'stat')
+      for (const [key, value] of Object.entries(st)) t.comment(key, value)
       t.ok(st)
 
       fs.close(fd, (err) => {
@@ -58,6 +61,7 @@ test('fstat sync', (t) => {
 
   const st = fs.fstatSync(fd)
 
+  for (const [key, value] of Object.entries(st)) t.comment(key, value)
   t.ok(st)
 
   fs.closeSync(fd)
