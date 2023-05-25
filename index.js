@@ -575,7 +575,7 @@ function opendir (path, opts, cb) {
 
   req.callback = function (err, _) {
     if (err) return cb(err, null)
-    cb(null, new Dir(data, opts))
+    cb(null, new Dir(path, data, opts))
   }
 
   binding.opendir(req.handle, path, data)
@@ -815,7 +815,7 @@ class FileReadStream extends Readable {
 }
 
 class Dir extends Readable {
-  constructor (handle, opts = {}) {
+  constructor (path, handle, opts = {}) {
     const {
       encoding = 'utf8',
       bufferSize = 32
@@ -823,12 +823,15 @@ class Dir extends Readable {
 
     super()
 
+    this._path = path
     this._handle = handle
-    this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * 32)
-    this._closed = false
-
+    this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
     this._encoding = encoding
-    this._bufferSize = bufferSize
+    this._closed = false
+  }
+
+  get path () {
+    return this._path
   }
 
   _read (cb) {

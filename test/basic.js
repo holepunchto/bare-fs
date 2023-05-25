@@ -62,3 +62,30 @@ test('fstat sync', (t) => {
 
   fs.closeSync(fd)
 })
+
+test('opendir + close', (t) => {
+  t.plan(2)
+
+  fs.opendir('test', (err, dir) => {
+    t.absent(err, 'opened')
+
+    dir.close((err) => {
+      t.absent(err, 'closed')
+    })
+  })
+})
+
+test('opendir + iterate entries', (t) => {
+  t.plan(2)
+
+  fs.opendir('test', async (err, dir) => {
+    t.absent(err, 'opened')
+
+    for await (const entry of dir) {
+      t.comment(entry)
+    }
+
+    console.log(dir.closed)
+    t.pass('iterated')
+  })
+})
