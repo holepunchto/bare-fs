@@ -85,7 +85,6 @@ test('opendir + iterate entries', (t) => {
       t.comment(entry)
     }
 
-    console.log(dir.closed)
     t.pass('iterated')
   })
 })

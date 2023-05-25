@@ -201,11 +201,28 @@ on_fs_readdir_response (uv_fs_t *uv_req) {
     for (size_t i = 0, n = uv_req->result; i < n; i++) {
       uv_dirent_t *dirent = &dir->dirents[i];
 
-      js_value_t *path;
-      err = js_create_string_utf8(env, (utf8_t *) dirent->name, -1, &path);
+      js_value_t *entry;
+      err = js_create_object(env, &entry);
       assert(err == 0);
 
-      err = js_set_element(env, data, i, path);
+      err = js_set_element(env, data, i, entry);
+      assert(err == 0);
+
+      js_value_t *name;
+      void *data;
+      err = js_create_arraybuffer(env, strlen(dirent->name), &data, &name);
+      assert(err == 0);
+
+      strcpy(data, dirent->name);
+
+      err = js_set_named_property(env, entry, "name", name);
+      assert(err == 0);
+
+      js_value_t *type;
+      err = js_create_uint32(env, dirent->type, &type);
+      assert(err == 0);
+
+      err = js_set_named_property(env, entry, "type", type);
       assert(err == 0);
     }
   }
@@ -549,6 +566,9 @@ bare_fs_readv (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_int64(env, argv[3], &pos);
   assert(err == 0);
 
+  err = js_create_reference(env, arr, 1, &req->data);
+  assert(err == 0);
+
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
@@ -694,6 +714,9 @@ bare_fs_writev (js_env_t *env, js_callback_info_t *info) {
 
   int64_t pos;
   err = js_get_value_int64(env, argv[3], &pos);
+  assert(err == 0);
+
+  err = js_create_reference(env, arr, 1, &req->data);
   assert(err == 0);
 
   uv_loop_t *loop;
@@ -1533,78 +1556,39 @@ init (js_env_t *env, js_value_t *exports) {
     js_create_function(env, "closedir", -1, bare_fs_closedir, NULL, &fn);
     js_set_named_property(env, exports, "closedir", fn);
   }
-  {
-    js_value_t *val;
-    js_create_uint32(env, O_RDWR, &val);
-    js_set_named_property(env, exports, "O_RDWR", val);
+#define V(name) \
+  { \
+    js_value_t *val; \
+    js_create_uint32(env, name, &val); \
+    js_set_named_property(env, exports, #name, val); \
   }
-  {
-    js_value_t *val;
-    js_create_uint32(env, O_RDONLY, &val);
-    js_set_named_property(env, exports, "O_RDONLY", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, O_WRONLY, &val);
-    js_set_named_property(env, exports, "O_WRONLY", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, O_CREAT, &val);
-    js_set_named_property(env, exports, "O_CREAT", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, O_TRUNC, &val);
-    js_set_named_property(env, exports, "O_TRUNC", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, O_APPEND, &val);
-    js_set_named_property(env, exports, "O_APPEND", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFMT, &val);
-    js_set_named_property(env, exports, "S_IFMT", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFREG, &val);
-    js_set_named_property(env, exports, "S_IFREG", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFDIR, &val);
-    js_set_named_property(env, exports, "S_IFDIR", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFCHR, &val);
-    js_set_named_property(env, exports, "S_IFCHR", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFLNK, &val);
-    js_set_named_property(env, exports, "S_IFLNK", val);
-  }
+  V(O_RDWR)
+  V(O_RDONLY)
+  V(O_WRONLY)
+  V(O_CREAT)
+  V(O_TRUNC)
+  V(O_APPEND)
+
+  V(S_IFMT)
+  V(S_IFREG)
+  V(S_IFDIR)
+  V(S_IFCHR)
+  V(S_IFLNK)
 #ifndef _WIN32
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFBLK, &val);
-    js_set_named_property(env, exports, "S_IFBLK", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFIFO, &val);
-    js_set_named_property(env, exports, "S_IFIFO", val);
-  }
-  {
-    js_value_t *val;
-    js_create_uint32(env, S_IFSOCK, &val);
-    js_set_named_property(env, exports, "S_IFSOCK", val);
-  }
+  V(S_IFBLK)
+  V(S_IFIFO)
+  V(S_IFSOCK)
 #endif
+
+  V(UV_DIRENT_UNKNOWN)
+  V(UV_DIRENT_FILE)
+  V(UV_DIRENT_DIR)
+  V(UV_DIRENT_LINK)
+  V(UV_DIRENT_FIFO)
+  V(UV_DIRENT_SOCKET)
+  V(UV_DIRENT_CHAR)
+  V(UV_DIRENT_BLOCK)
+#undef V
 
   return exports;
 }

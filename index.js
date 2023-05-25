@@ -10,6 +10,7 @@ const constants = exports.constants = {
   O_CREAT: binding.O_CREAT,
   O_TRUNC: binding.O_TRUNC,
   O_APPEND: binding.O_APPEND,
+
   S_IFMT: binding.S_IFMT,
   S_IFREG: binding.S_IFREG,
   S_IFDIR: binding.S_IFDIR,
@@ -17,7 +18,16 @@ const constants = exports.constants = {
   S_IFLNK: binding.S_IFLNK,
   S_IFBLK: binding.S_IFBLK || 0,
   S_IFIFO: binding.S_IFIFO || 0,
-  S_IFSOCK: binding.S_IFSOCK || 0
+  S_IFSOCK: binding.S_IFSOCK || 0,
+
+  UV_DIRENT_UNKNOWN: binding.UV_DIRENT_UNKNOWN,
+  UV_DIRENT_FILE: binding.UV_DIRENT_FILE,
+  UV_DIRENT_DIR: binding.UV_DIRENT_DIR,
+  UV_DIRENT_LINK: binding.UV_DIRENT_LINK,
+  UV_DIRENT_FIFO: binding.UV_DIRENT_FIFO,
+  UV_DIRENT_SOCKET: binding.UV_DIRENT_SOCKET,
+  UV_DIRENT_CHAR: binding.UV_DIRENT_CHAR,
+  UV_DIRENT_BLOCK: binding.UV_DIRENT_BLOCK
 }
 
 const reqs = []
@@ -127,42 +137,6 @@ function createError (errno) {
   return err
 }
 
-function write (fd, buf, offset, len, pos, cb) {
-  if (typeof cb === 'function') {
-    const req = getReq()
-
-    req.buffer = buf
-    req.callback = cb
-
-    binding.write(req.handle, fd, buf, offset, len, pos)
-    return
-  }
-
-  if (typeof offset === 'function') return write(fd, buf, 0, buf.byteLength, null, offset)
-  if (typeof len === 'function') return write(fd, buf, offset, buf.byteLength - offset, null, len)
-  if (typeof pos === 'function') return write(fd, buf, offset, len, null, pos)
-
-  throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received ' + cb)
-}
-
-function writeSync (fd, buf, offset = 0, len = buf.byteLength, pos = 0) {
-  return binding.writeSync(fd, buf, offset, len, pos)
-}
-
-function writev (fd, buffers, pos, cb) {
-  if (typeof pos === 'function') {
-    cb = pos
-    pos = 0
-  }
-
-  const req = getReq()
-
-  req.buffers = buffers
-  req.callback = cb
-
-  binding.writev(req.handle, fd, buffers, pos)
-}
-
 function read (fd, buf, offset, len, pos, cb) {
   if (typeof cb === 'function') {
     const req = getReq()
@@ -193,10 +167,44 @@ function readv (fd, buffers, pos, cb) {
 
   const req = getReq()
 
-  req.buffers = buffers
   req.callback = cb
 
   binding.readv(req.handle, fd, buffers, pos)
+}
+
+function write (fd, buf, offset, len, pos, cb) {
+  if (typeof cb === 'function') {
+    const req = getReq()
+
+    req.buffer = buf
+    req.callback = cb
+
+    binding.write(req.handle, fd, buf, offset, len, pos)
+    return
+  }
+
+  if (typeof offset === 'function') return write(fd, buf, 0, buf.byteLength, null, offset)
+  if (typeof len === 'function') return write(fd, buf, offset, buf.byteLength - offset, null, len)
+  if (typeof pos === 'function') return write(fd, buf, offset, len, null, pos)
+
+  throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received ' + cb)
+}
+
+function writeSync (fd, buf, offset = 0, len = buf.byteLength, pos = 0) {
+  return binding.writeSync(fd, buf, offset, len, pos)
+}
+
+function writev (fd, buffers, pos, cb) {
+  if (typeof pos === 'function') {
+    cb = pos
+    pos = 0
+  }
+
+  const req = getReq()
+
+  req.callback = cb
+
+  binding.writev(req.handle, fd, buffers, pos)
 }
 
 function open (filename, flags = 'r', mode = 0o666, cb) {
@@ -241,8 +249,8 @@ function close (fd, cb = noop) {
 
 function closeSync (fd) {
   const res = binding.closeSync(fd)
-
   if (res < 0) throw createError(res)
+
   return res
 }
 
@@ -823,15 +831,12 @@ class Dir extends Readable {
 
     super()
 
-    this._path = path
     this._handle = handle
     this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
     this._encoding = encoding
     this._closed = false
-  }
 
-  get path () {
-    return this._path
+    this.path = path
   }
 
   _read (cb) {
@@ -843,7 +848,13 @@ class Dir extends Readable {
     req.callback = function (err, _) {
       if (err) return cb(err)
       if (data.length === 0) self.push(null)
-      else for (const entry of data) self.push(entry)
+      else {
+        for (const entry of data) {
+          let name = Buffer.from(entry.name)
+          if (self._encoding !== 'buffer') name = name.toString(self._encoding)
+          self.push(new Dirent(self.path, name, entry.type))
+        }
+      }
       cb(null)
     }
 
@@ -869,6 +880,43 @@ class Dir extends Readable {
     }
 
     binding.closedir(req.handle, this._handle)
+  }
+}
+
+class Dirent {
+  constructor (path, name, type) {
+    this._type = type
+
+    this.path = path
+    this.name = name
+  }
+
+  isFile () {
+    return this._type === constants.UV_DIRENT_FILE
+  }
+
+  isDirectory () {
+    return this._type === constants.UV_DIRENT_DIR
+  }
+
+  isSymbolicLink () {
+    return this._type === constants.UV_DIRENT_LINK
+  }
+
+  isFIFO () {
+    return this._type === constants.UV_DIRENT_FIFO
+  }
+
+  isSocket () {
+    return this._type === constants.UV_DIRENT_SOCKET
+  }
+
+  isCharacterDevice () {
+    return this._type === constants.UV_DIRENT_CHAR
+  }
+
+  isBlockDevice () {
+    return this._type === constants.UV_DIRENT_BLOCK
   }
 }
 
