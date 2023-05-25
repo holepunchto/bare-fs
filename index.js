@@ -1148,7 +1148,7 @@ class Dir extends Readable {
     else this.close(cb)
   }
 
-  close (cb) {
+  close (cb = noop) {
     if (this._closed) return
 
     const self = this
