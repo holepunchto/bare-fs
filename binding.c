@@ -210,7 +210,7 @@ on_fs_readdir_response (uv_fs_t *uv_req) {
 
       js_value_t *name;
       void *data;
-      err = js_create_arraybuffer(env, strlen(dirent->name), &data, &name);
+      err = js_create_arraybuffer(env, strlen(dirent->name) + 1 /* NULL */, &data, &name);
       assert(err == 0);
 
       strcpy(data, dirent->name);
