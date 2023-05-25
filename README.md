@@ -11,47 +11,53 @@ npm i bare-fs
 ``` js
 const fs = require('bare-fs')
 
-// currently supports
+// Currently supports:
 
 fs.open
 fs.close
-fs.unlink
 fs.read
 fs.readv
 fs.write
 fs.writev
-fs.ftruncate
 fs.stat
-fs.fstat
 fs.lstat
+fs.fstat
+fs.ftruncate
 fs.mkdir
 fs.rmdir
+fs.unlink
 fs.rename
 fs.readlink
+fs.opendir
+fs.readdir
 
 fs.readFile
 fs.writeFile
 
-fs.promises.readFile
-fs.promises.writeFile
+fs.promises.stat
+fs.promises.lstat
 fs.promises.mkdir
 fs.promises.rmdir
-fs.promises.stat
 fs.promises.unlink
+fs.promises.rename
 fs.promises.readlink
+fs.promises.opendir
+fs.promises.readdir
+fs.promises.readFile
+fs.promises.writeFile
 
 fs.createReadStream
 fs.createWriteStream
 
-fs.writeFileSync
-fs.readFileSync
 fs.openSync
+fs.closeSync
 fs.readSync
 fs.writeSync
 fs.statSync
 fs.lstatSync
 fs.fstatSync
-fs.closeSync
+fs.readFileSync
+fs.writeFileSync
 ```
 
 ## License
