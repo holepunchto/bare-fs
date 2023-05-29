@@ -110,7 +110,7 @@ function getReq () {
   return used === reqs.length ? alloc() : reqs[used++]
 }
 
-function onresponse (id, result) {
+function onresponse (id, err, result) {
   const req = reqs[id]
   used--
 
@@ -124,21 +124,7 @@ function onresponse (id, result) {
 
   req.callback = null
 
-  if (result < 0) {
-    callback(createError(result), result, null)
-  } else {
-    callback(null, result)
-  }
-}
-
-function createError (errno) {
-  const [code, message] = process.errnos.get(errno)
-  const err = new Error(code + ': ' + message)
-
-  err.errno = errno
-  err.code = code
-
-  return err
+  callback(err, result)
 }
 
 function open (path, flags, mode, cb) {
@@ -175,10 +161,7 @@ function openSync (path, flags = 'r', mode = 0o666) {
   if (typeof flags === 'string') flags = flagsToNumber(flags)
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  const res = binding.openSync(path, flags, mode)
-  if (res < 0) throw createError(res)
-
-  return res
+  return binding.openSync(path, flags, mode)
 }
 
 function close (fd, cb = noop) {
@@ -208,10 +191,7 @@ function closeSync (fd) {
     throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
   }
 
-  const res = binding.closeSync(fd)
-  if (res < 0) throw createError(res)
-
-  return res
+  return binding.closeSync(fd)
 }
 
 function read (fd, buffer, offset, len, pos, cb) {
@@ -394,12 +374,7 @@ function statSync (path) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
   }
 
-  const data = new Array(Stats.length)
-
-  const res = binding.statSync(path, data)
-  if (res < 0) throw createError(res)
-
-  return new Stats(...data)
+  return new Stats(...binding.statSync(path))
 }
 
 function lstat (path, cb) {
@@ -428,12 +403,7 @@ function lstatSync (path) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
   }
 
-  const data = new Array(Stats.length)
-
-  const res = binding.lstatSync(path, data)
-  if (res < 0) throw createError(res)
-
-  return new Stats(...data)
+  return new Stats(...binding.lstatSync(path))
 }
 
 function fstat (fd, cb) {
@@ -470,12 +440,7 @@ function fstatSync (fd) {
     throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
   }
 
-  const data = new Array(Stats.length)
-
-  const res = binding.fstatSync(fd, data)
-  if (res < 0) throw createError(res)
-
-  return new Stats(...data)
+  return new Stats(...binding.fstatSync(fd))
 }
 
 function ftruncate (fd, len, cb) {

@@ -57,13 +57,32 @@ on_fs_response (uv_fs_t *uv_req) {
   err = js_get_reference_value(env, req->ctx, &ctx);
   assert(err == 0);
 
-  js_value_t *argv[2];
+  js_value_t *argv[3];
 
   err = js_create_uint32(env, req->id, &argv[0]);
   assert(err == 0);
 
-  err = js_create_int32(env, uv_req->result, &argv[1]);
-  assert(err == 0);
+  if (uv_req->result < 0) {
+    js_value_t *code;
+    err = js_create_string_utf8(env, (utf8_t *) uv_err_name(uv_req->result), -1, &code);
+    assert(err == 0);
+
+    js_value_t *message;
+    err = js_create_string_utf8(env, (utf8_t *) uv_strerror(uv_req->result), -1, &message);
+    assert(err == 0);
+
+    err = js_create_error(env, code, message, &argv[1]);
+    assert(err == 0);
+
+    err = js_get_null(env, &argv[2]);
+    assert(err == 0);
+  } else {
+    err = js_get_null(env, &argv[1]);
+    assert(err == 0);
+
+    err = js_create_int32(env, uv_req->result, &argv[2]);
+    assert(err == 0);
+  }
 
   uv_fs_req_cleanup(uv_req);
 
@@ -74,7 +93,7 @@ on_fs_response (uv_fs_t *uv_req) {
     req->data = NULL;
   }
 
-  js_call_function(req->env, ctx, on_response, 2, argv, NULL);
+  js_call_function(req->env, ctx, on_response, 3, argv, NULL);
 
   err = js_close_handle_scope(req->env, scope);
   assert(err == 0);
@@ -378,9 +397,14 @@ bare_fs_open_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_t req;
   uv_fs_open(loop, &req, (char *) path, flags, mode, NULL);
 
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
+  js_value_t *res = NULL;
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  } else {
+    err = js_create_int32(env, req.result, &res);
+    assert(err == 0);
+  }
 
   uv_fs_req_cleanup(&req);
 
@@ -437,13 +461,13 @@ bare_fs_close_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_t req;
   uv_fs_close(loop, &req, fd, NULL);
 
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
 
   uv_fs_req_cleanup(&req);
 
-  return res;
+  return NULL;
 }
 
 static js_value_t *
@@ -905,19 +929,17 @@ static js_value_t *
 bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 2;
-  js_value_t *argv[2];
+  size_t argc = 1;
+  js_value_t *argv[1];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 2);
+  assert(argc == 1);
 
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
-
-  js_value_t *data = argv[1];
 
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
@@ -925,7 +947,14 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_t req;
   uv_fs_stat(loop, &req, (char *) path, NULL);
 
-  if (req.result == 0) {
+  js_value_t *res = NULL;
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  } else {
+    err = js_create_array_with_length(env, 14, &res);
+    assert(err == 0);
+
     uint32_t i = 0;
 
 #define V(property) \
@@ -934,7 +963,7 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, req.statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_element(env, data, i++, value); \
+    err = js_set_element(env, res, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -957,7 +986,7 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_element(env, data, i++, value); \
+    err = js_set_element(env, res, i++, value); \
     assert(err == 0); \
   }
     V(atim)
@@ -966,10 +995,6 @@ bare_fs_stat_sync (js_env_t *env, js_callback_info_t *info) {
     V(birthtim)
 #undef V
   }
-
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
 
   uv_fs_req_cleanup(&req);
 
@@ -1011,19 +1036,17 @@ static js_value_t *
 bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 2;
-  js_value_t *argv[2];
+  size_t argc = 1;
+  js_value_t *argv[1];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 2);
+  assert(argc == 1);
 
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
-
-  js_value_t *data = argv[1];
 
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
@@ -1031,7 +1054,14 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_t req;
   uv_fs_lstat(loop, &req, (char *) path, NULL);
 
-  if (req.result == 0) {
+  js_value_t *res = NULL;
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  } else {
+    err = js_create_array_with_length(env, 14, &res);
+    assert(err == 0);
+
     uint32_t i = 0;
 
 #define V(property) \
@@ -1040,7 +1070,7 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, req.statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_element(env, data, i++, value); \
+    err = js_set_element(env, res, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -1063,7 +1093,7 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_element(env, data, i++, value); \
+    err = js_set_element(env, res, i++, value); \
     assert(err == 0); \
   }
     V(atim)
@@ -1072,10 +1102,6 @@ bare_fs_lstat_sync (js_env_t *env, js_callback_info_t *info) {
     V(birthtim)
 #undef V
   }
-
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
 
   uv_fs_req_cleanup(&req);
 
@@ -1117,19 +1143,17 @@ static js_value_t *
 bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 2;
-  js_value_t *argv[2];
+  size_t argc = 1;
+  js_value_t *argv[1];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 2);
+  assert(argc == 1);
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[0], &fd);
   assert(err == 0);
-
-  js_value_t *data = argv[1];
 
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
@@ -1137,7 +1161,14 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
   uv_fs_t req;
   uv_fs_fstat(loop, &req, fd, NULL);
 
-  if (req.result == 0) {
+  js_value_t *res = NULL;
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  } else {
+    err = js_create_array_with_length(env, 14, &res);
+    assert(err == 0);
+
     uint32_t i = 0;
 
 #define V(property) \
@@ -1146,7 +1177,7 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, req.statbuf.st_##property, &value); \
     assert(err == 0); \
 \
-    err = js_set_element(env, data, i++, value); \
+    err = js_set_element(env, res, i++, value); \
     assert(err == 0); \
   }
     V(dev)
@@ -1169,7 +1200,7 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
     err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
     assert(err == 0); \
 \
-    err = js_set_element(env, data, i++, value); \
+    err = js_set_element(env, res, i++, value); \
     assert(err == 0); \
   }
     V(atim)
@@ -1178,10 +1209,6 @@ bare_fs_fstat_sync (js_env_t *env, js_callback_info_t *info) {
     V(birthtim)
 #undef V
   }
-
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
 
   uv_fs_req_cleanup(&req);
 
