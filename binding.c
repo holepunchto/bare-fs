@@ -490,8 +490,8 @@ bare_fs_read (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
 
-  void *data;
-  err = js_get_typedarray_info(env, argv[2], NULL, &data, NULL, NULL, NULL);
+  uint8_t *data;
+  err = js_get_typedarray_info(env, argv[2], NULL, (void **) &data, NULL, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -509,7 +509,7 @@ bare_fs_read (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_buf_t buf = uv_buf_init(data + offset, len);
+  uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
   uv_fs_read(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
 
@@ -532,8 +532,8 @@ bare_fs_read_sync (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[0], &fd);
   assert(err == 0);
 
-  void *data;
-  err = js_get_typedarray_info(env, argv[1], NULL, &data, NULL, NULL, NULL);
+  uint8_t *data;
+  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &data, NULL, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -551,7 +551,7 @@ bare_fs_read_sync (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_buf_t buf = uv_buf_init(data + offset, len);
+  uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
   uv_fs_t req;
   uv_fs_read(loop, (uv_fs_t *) &req, fd, &buf, 1, pos, NULL);
@@ -640,8 +640,8 @@ bare_fs_write (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
 
-  void *data;
-  err = js_get_typedarray_info(env, argv[2], NULL, &data, NULL, NULL, NULL);
+  uint8_t *data;
+  err = js_get_typedarray_info(env, argv[2], NULL, (void **) &data, NULL, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -659,7 +659,7 @@ bare_fs_write (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_buf_t buf = uv_buf_init(data + offset, len);
+  uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
   uv_fs_write(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
 
@@ -682,8 +682,8 @@ bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[0], &fd);
   assert(err == 0);
 
-  void *data;
-  err = js_get_typedarray_info(env, argv[1], NULL, &data, NULL, NULL, NULL);
+  uint8_t *data;
+  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &data, NULL, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -701,7 +701,7 @@ bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_buf_t buf = uv_buf_init(data + offset, len);
+  uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
   uv_fs_t req;
   uv_fs_write(loop, &req, fd, &buf, 1, pos, NULL);
