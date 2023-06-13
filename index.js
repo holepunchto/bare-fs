@@ -1,4 +1,4 @@
-const { Readable, Writable } = require('streamx')
+const { Readable, Writable, getStreamError } = require('streamx')
 const binding = require('./binding')
 
 const sep = process.platform === 'win32' ? '\\' : '/'
@@ -981,7 +981,6 @@ class Dir extends Readable {
     this._handle = handle
     this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
     this._encoding = encoding
-    this._closed = false
 
     this.path = path
   }
@@ -1009,24 +1008,19 @@ class Dir extends Readable {
   }
 
   _destroy (cb) {
-    if (this._closed) cb(null)
-    else this.close(cb)
-  }
-
-  close (cb = noop) {
-    if (this._closed) return
-
-    const self = this
-
     const req = getReq()
 
     req.callback = function (err, _) {
-      if (err) return cb(err)
-      self._closed = true
-      cb(null)
+      cb(err)
     }
 
     binding.closedir(req.handle, this._handle)
+  }
+
+  close (cb = noop) {
+    if (this.destroyed) return cb(null)
+    this.once('close', () => cb(getStreamError(this)))
+    this.destroy()
   }
 }
 
