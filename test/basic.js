@@ -120,3 +120,20 @@ test('readdir + withFileTypes: true', (t) => {
     t.pass('iterated')
   })
 })
+
+test('readFile', (t) => {
+  t.plan(2)
+
+  fs.readFile('test/fixtures/read-file.txt', (err, data) => {
+    t.absent(err)
+    t.alike(data, Buffer.from('hello world'))
+  })
+})
+
+test('writeFile', (t) => {
+  t.plan(1)
+
+  fs.writeFile('test/fixtures/write-file.txt', Buffer.from('hello world'), (err) => {
+    t.absent(err)
+  })
+})
