@@ -225,7 +225,7 @@ function read (fd, buffer, offset, len, pos, cb) {
     }
   }
 
-  if (typeof position !== 'number') pos = -1
+  if (typeof pos !== 'number') pos = -1
 
   const req = getReq()
   req.callback = cb
@@ -264,7 +264,7 @@ function readv (fd, buffers, pos, cb) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
   }
 
-  if (typeof position !== 'number') pos = -1
+  if (typeof pos !== 'number') pos = -1
 
   const req = getReq()
   req.callback = cb
@@ -302,7 +302,7 @@ function write (fd, buffer, offset, len, pos, cb) {
     }
   }
 
-  if (typeof position !== 'number') pos = -1
+  if (typeof pos !== 'number') pos = -1
 
   const req = getReq()
   req.callback = cb
@@ -341,7 +341,7 @@ function writev (fd, buffers, pos, cb) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
   }
 
-  if (typeof position !== 'number') pos = -1
+  if (typeof pos !== 'number') pos = -1
 
   const req = getReq()
   req.callback = cb
