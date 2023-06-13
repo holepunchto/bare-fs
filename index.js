@@ -759,7 +759,7 @@ function writeFile (path, data, opts, cb) {
 
   if (typeof data === 'string') data = Buffer.from(data, opts.encoding)
 
-  open(path, opts.flag || 'w', opts || 0o666.mode, function (err, fd) {
+  open(path, opts.flag || 'w', opts.mode || 0o666, function (err, fd) {
     if (err) return cb(err)
 
     write(fd, data, loop)
