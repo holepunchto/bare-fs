@@ -73,16 +73,13 @@ on_fs_response (uv_fs_t *uv_req) {
 
     err = js_create_error(env, code, message, &argv[1]);
     assert(err == 0);
-
-    err = js_get_null(env, &argv[2]);
-    assert(err == 0);
   } else {
     err = js_get_null(env, &argv[1]);
     assert(err == 0);
-
-    err = js_create_int32(env, uv_req->result, &argv[2]);
-    assert(err == 0);
   }
+
+  err = js_create_int32(env, uv_req->result, &argv[2]);
+  assert(err == 0);
 
   uv_fs_req_cleanup(uv_req);
 
