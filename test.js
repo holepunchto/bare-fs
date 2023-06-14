@@ -1,5 +1,5 @@
 const test = require('brittle')
-const fs = require('..')
+const fs = require('.')
 
 test('open + close', (t) => {
   t.plan(2)
@@ -134,6 +134,42 @@ test('writeFile', (t) => {
   t.plan(1)
 
   fs.writeFile('test/fixtures/write-file.txt', Buffer.from('hello world'), (err) => {
+    t.absent(err)
+  })
+})
+
+test('mkdir', (t) => {
+  t.plan(3)
+
+  fs.mkdir('test/fixtures/foo', (err) => {
+    if (err) t.pass('dir exists')
+    else t.pass('made dir')
+
+    fs.stat('test/fixtures/foo', (err, st) => {
+      t.absent(err, 'stat')
+      t.ok(st.isDirectory(), 'is dir')
+    })
+  })
+})
+
+test('mkdir recursive', (t) => {
+  t.plan(3)
+
+  fs.mkdir('test/fixtures/foo/bar/baz', { recursive: true }, (err) => {
+    t.absent(err, 'made dir')
+
+    fs.stat('test/fixtures/foo/bar/baz', (err, st) => {
+      t.absent(err, 'stat')
+      t.ok(st.isDirectory(), 'is dir')
+    })
+  })
+})
+
+test('readlink', (t) => {
+  t.plan(1)
+
+  fs.readlink('test/fixtures/foo-link.txt', (err, link) => {
+    t.comment(link)
     t.absent(err)
   })
 })
