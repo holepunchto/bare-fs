@@ -2,6 +2,7 @@ const test = require('brittle')
 const fs = require('.')
 
 test('open + close', (t) => {
+  t.teardown(onteardown)
   t.plan(2)
 
   fs.open('test/fixtures/foo.txt', (err, fd) => {
@@ -14,6 +15,8 @@ test('open + close', (t) => {
 })
 
 test('open + close sync', (t) => {
+  t.teardown(onteardown)
+
   const fd = fs.openSync('test/fixtures/foo.txt')
 
   fs.closeSync(fd)
@@ -21,7 +24,215 @@ test('open + close sync', (t) => {
   t.pass()
 })
 
+test('read', (t) => {
+  t.teardown(onteardown)
+  t.plan(5)
+
+  fs.open('test/fixtures/foo.txt', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.alloc(4)
+
+    fs.read(fd, data, 0, 4, 0, (err, len) => {
+      t.absent(err)
+      t.is(len, 4)
+      t.alike(data, Buffer.from('foo\n'))
+
+      fs.close(fd, (err) => {
+        t.absent(err, 'closed')
+      })
+    })
+  })
+})
+
+test('read + offset', (t) => {
+  t.teardown(onteardown)
+  t.plan(5)
+
+  fs.open('test/fixtures/foo.txt', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.alloc(4)
+
+    fs.read(fd, data, 2, 2, 0, (err, len) => {
+      t.absent(err)
+      t.is(len, 2)
+      t.alike(data, Buffer.from('\x00\x00fo'))
+
+      fs.close(fd, (err) => {
+        t.absent(err, 'closed')
+      })
+    })
+  })
+})
+
+test('read + position', (t) => {
+  t.teardown(onteardown)
+  t.plan(5)
+
+  fs.open('test/fixtures/foo.txt', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.alloc(2)
+
+    fs.read(fd, data, 0, 2, 2, (err, len) => {
+      t.absent(err)
+      t.is(len, 2)
+      t.alike(data, Buffer.from('o\n'))
+
+      fs.close(fd, (err) => {
+        t.absent(err, 'closed')
+      })
+    })
+  })
+})
+
+test('read + current position', (t) => {
+  t.teardown(onteardown)
+  t.plan(8)
+
+  fs.open('test/fixtures/foo.txt', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.alloc(2)
+
+    fs.read(fd, data, 0, 2, -1, (err, len) => {
+      t.absent(err)
+      t.is(len, 2)
+      t.alike(data, Buffer.from('fo'))
+
+      fs.read(fd, data, 0, 2, -1, (err, len) => {
+        t.absent(err)
+        t.is(len, 2)
+        t.alike(data, Buffer.from('o\n'))
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'closed')
+        })
+      })
+    })
+  })
+})
+
+test('write', (t) => {
+  t.teardown(onteardown)
+  t.plan(7)
+
+  fs.open('test/fixtures/foo.txt', 'w+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.from('foo\n')
+
+    fs.write(fd, data, 0, 4, 0, (err, len) => {
+      t.absent(err)
+      t.is(len, 4)
+
+      const data = Buffer.alloc(4)
+
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err)
+        t.is(len, 4)
+        t.alike(data, Buffer.from('foo\n'))
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'closed')
+        })
+      })
+    })
+  })
+})
+
+test('write + offset', (t) => {
+  t.teardown(onteardown)
+  t.plan(7)
+
+  fs.open('test/fixtures/foo.txt', 'w+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.from('foo\n')
+
+    fs.write(fd, data, 2, 4, 2, (err, len) => {
+      t.absent(err)
+      t.is(len, 4)
+
+      const data = Buffer.alloc(4)
+
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err)
+        t.is(len, 4)
+        t.alike(data, Buffer.from('\x00\x00o\n'))
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'closed')
+        })
+      })
+    })
+  })
+})
+
+test('write + position', (t) => {
+  t.teardown(onteardown)
+  t.plan(7)
+
+  fs.open('test/fixtures/foo.txt', 'w+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.from('o\n')
+
+    fs.write(fd, data, 0, 2, 2, (err, len) => {
+      t.absent(err)
+      t.is(len, 2)
+
+      const data = Buffer.alloc(4)
+
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err)
+        t.is(len, 4)
+        t.alike(data, Buffer.from('\x00\x00o\n'))
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'closed')
+        })
+      })
+    })
+  })
+})
+
+test('write + current position', (t) => {
+  t.teardown(onteardown)
+  t.plan(9)
+
+  fs.open('test/fixtures/foo.txt', 'w+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.from('foo\n')
+
+    fs.write(fd, data, 0, 2, -1, (err, len) => {
+      t.absent(err)
+      t.is(len, 2)
+
+      fs.write(fd, data, 2, 2, -1, (err, len) => {
+        t.absent(err)
+        t.is(len, 2)
+
+        const data = Buffer.alloc(4)
+
+        fs.read(fd, data, 0, 4, 0, (err, len) => {
+          t.absent(err)
+          t.is(len, 4)
+          t.alike(data, Buffer.from('foo\n'))
+
+          fs.close(fd, (err) => {
+            t.absent(err, 'closed')
+          })
+        })
+      })
+    })
+  })
+})
+
 test('stat', (t) => {
+  t.teardown(onteardown)
   t.plan(2)
 
   fs.stat('test/fixtures/foo.txt', (err, st) => {
@@ -32,6 +243,8 @@ test('stat', (t) => {
 })
 
 test('stat sync', (t) => {
+  t.teardown(onteardown)
+
   const st = fs.statSync('test/fixtures/foo.txt')
 
   for (const [key, value] of Object.entries(st)) t.comment(key, value)
@@ -39,6 +252,7 @@ test('stat sync', (t) => {
 })
 
 test('fstat', (t) => {
+  t.teardown(onteardown)
   t.plan(4)
 
   fs.open('test/fixtures/foo.txt', (err, fd) => {
@@ -57,6 +271,8 @@ test('fstat', (t) => {
 })
 
 test('fstat sync', (t) => {
+  t.teardown(onteardown)
+
   const fd = fs.openSync('test/fixtures/foo.txt')
 
   const st = fs.fstatSync(fd)
@@ -68,6 +284,7 @@ test('fstat sync', (t) => {
 })
 
 test('opendir + close', (t) => {
+  t.teardown(onteardown)
   t.plan(2)
 
   fs.opendir('test/fixtures', (err, dir) => {
@@ -80,6 +297,7 @@ test('opendir + close', (t) => {
 })
 
 test('opendir + iterate entries', (t) => {
+  t.teardown(onteardown)
   t.plan(2)
 
   fs.opendir('test/fixtures', async (err, dir) => {
@@ -94,9 +312,10 @@ test('opendir + iterate entries', (t) => {
 })
 
 test('readdir', (t) => {
+  t.teardown(onteardown)
   t.plan(2)
 
-  fs.readdir('test', (err, dir) => {
+  fs.readdir('test/fixtures', (err, dir) => {
     t.absent(err, 'read')
 
     for (const entry of dir) {
@@ -108,9 +327,10 @@ test('readdir', (t) => {
 })
 
 test('readdir + withFileTypes: true', (t) => {
+  t.teardown(onteardown)
   t.plan(2)
 
-  fs.readdir('test', { withFileTypes: true }, (err, dir) => {
+  fs.readdir('test/fixtures', { withFileTypes: true }, (err, dir) => {
     t.absent(err, 'read')
 
     for (const entry of dir) {
@@ -122,6 +342,7 @@ test('readdir + withFileTypes: true', (t) => {
 })
 
 test('writeFile + readFile', (t) => {
+  t.teardown(onteardown)
   t.plan(3)
 
   fs.writeFile('test/fixtures/foo.txt', Buffer.from('foo\n'), (err) => {
@@ -135,6 +356,7 @@ test('writeFile + readFile', (t) => {
 })
 
 test('mkdir', (t) => {
+  t.teardown(onteardown)
   t.plan(3)
 
   fs.mkdir('test/fixtures/foo', (err) => {
@@ -149,6 +371,7 @@ test('mkdir', (t) => {
 })
 
 test('mkdir recursive', (t) => {
+  t.teardown(onteardown)
   t.plan(3)
 
   fs.mkdir('test/fixtures/foo/bar/baz', { recursive: true }, (err) => {
@@ -162,10 +385,15 @@ test('mkdir recursive', (t) => {
 })
 
 test('readlink', (t) => {
-  t.plan(1)
+  t.teardown(onteardown)
+  t.plan(2)
 
   fs.readlink('test/fixtures/foo-link.txt', (err, link) => {
-    t.comment(link)
+    t.is(link, 'foo.txt')
     t.absent(err)
   })
 })
+
+async function onteardown () {
+  fs.writeFileSync('test/fixtures/foo.txt', Buffer.from('foo\n'))
+}
