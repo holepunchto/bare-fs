@@ -70,7 +70,7 @@ test('fstat sync', (t) => {
 test('opendir + close', (t) => {
   t.plan(2)
 
-  fs.opendir('test', (err, dir) => {
+  fs.opendir('test/fixtures', (err, dir) => {
     t.absent(err, 'opened')
 
     dir.close((err) => {
@@ -82,7 +82,7 @@ test('opendir + close', (t) => {
 test('opendir + iterate entries', (t) => {
   t.plan(2)
 
-  fs.opendir('test', async (err, dir) => {
+  fs.opendir('test/fixtures', async (err, dir) => {
     t.absent(err, 'opened')
 
     for await (const entry of dir) {
@@ -121,20 +121,16 @@ test('readdir + withFileTypes: true', (t) => {
   })
 })
 
-test('readFile', (t) => {
-  t.plan(2)
+test('writeFile + readFile', (t) => {
+  t.plan(3)
 
-  fs.readFile('test/fixtures/read-file.txt', (err, data) => {
+  fs.writeFile('test/fixtures/foo.txt', Buffer.from('foo\n'), (err) => {
     t.absent(err)
-    t.alike(data, Buffer.from('hello world'))
-  })
-})
 
-test('writeFile', (t) => {
-  t.plan(1)
-
-  fs.writeFile('test/fixtures/write-file.txt', Buffer.from('hello world'), (err) => {
-    t.absent(err)
+    fs.readFile('test/fixtures/foo.txt', (err, data) => {
+      t.absent(err)
+      t.alike(data, Buffer.from('foo\n'))
+    })
   })
 })
 

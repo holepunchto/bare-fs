@@ -1,4 +1,4 @@
-const { Readable, Writable, getStreamError } = require('streamx')
+const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
 
 const sep = process.platform === 'win32' ? '\\' : '/'
@@ -1019,8 +1019,10 @@ class Dir extends Readable {
 
   close (cb = noop) {
     if (this.destroyed) return cb(null)
-    this.once('close', () => cb(getStreamError(this)))
-    this.destroy()
+    this
+      .once('error', (err) => cb(err))
+      .once('close', () => cb(null))
+      .destroy()
   }
 }
 
