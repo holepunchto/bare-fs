@@ -26,4 +26,5 @@ jobs:
           npm install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: bare-dev install
       - run: npm test
