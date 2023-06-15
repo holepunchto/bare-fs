@@ -283,6 +283,28 @@ test('fstat sync', (t) => {
   fs.closeSync(fd)
 })
 
+test('lstat', (t) => {
+  t.teardown(onteardown)
+  t.plan(3)
+
+  fs.lstat('test/fixtures/foo-link.txt', (err, st) => {
+    t.absent(err, 'stat')
+    t.ok(st.isSymbolicLink())
+    for (const [key, value] of Object.entries(st)) t.comment(key, value)
+    t.ok(st)
+  })
+})
+
+test('lstat sync', (t) => {
+  t.teardown(onteardown)
+
+  const st = fs.lstatSync('test/fixtures/foo-link.txt')
+
+  t.ok(st.isSymbolicLink())
+  for (const [key, value] of Object.entries(st)) t.comment(key, value)
+  t.ok(st)
+})
+
 test('opendir + close', (t) => {
   t.teardown(onteardown)
   t.plan(2)
