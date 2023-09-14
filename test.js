@@ -114,6 +114,31 @@ test('read + current position', (t) => {
   })
 })
 
+test('read out of buffer bounds', (t) => {
+  t.teardown(onteardown)
+  t.plan(6)
+
+  fs.open('test/fixtures/foo.txt', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.alloc(4)
+
+    fs.read(fd, data, 0, 4, 0, (err, len) => {
+      t.absent(err)
+      t.is(len, 4)
+
+      fs.read(fd, data, 6, 4, 0, (err, len) => {
+        t.absent(err)
+        t.is(len, 0)
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'closed')
+        })
+      })
+    })
+  })
+})
+
 test('write', (t) => {
   t.teardown(onteardown)
   t.plan(7)
@@ -225,6 +250,31 @@ test('write + current position', (t) => {
           fs.close(fd, (err) => {
             t.absent(err, 'closed')
           })
+        })
+      })
+    })
+  })
+})
+
+test('write out of buffer bounds', (t) => {
+  t.teardown(onteardown)
+  t.plan(6)
+
+  fs.open('test/fixtures/foo.txt', 'w+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = Buffer.from('foo\n')
+
+    fs.write(fd, data, 0, 6, 0, (err, len) => {
+      t.absent(err)
+      t.is(len, 4)
+
+      fs.write(fd, data, 6, 4, 0, (err, len) => {
+        t.absent(err)
+        t.is(len, 0)
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'closed')
         })
       })
     })

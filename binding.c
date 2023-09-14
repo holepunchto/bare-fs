@@ -488,7 +488,8 @@ bare_fs_read (js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   uint8_t *data;
-  err = js_get_typedarray_info(env, argv[2], NULL, (void **) &data, NULL, NULL, NULL);
+  size_t data_len;
+  err = js_get_typedarray_info(env, argv[2], NULL, (void **) &data, &data_len, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -498,6 +499,9 @@ bare_fs_read (js_env_t *env, js_callback_info_t *info) {
   uint32_t len;
   err = js_get_value_uint32(env, argv[4], &len);
   assert(err == 0);
+
+  if (offset >= data_len) len = 0;
+  else if (offset + len >= data_len) len = data_len - offset;
 
   int64_t pos;
   err = js_get_value_int64(env, argv[5], &pos);
@@ -530,7 +534,8 @@ bare_fs_read_sync (js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   uint8_t *data;
-  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &data, NULL, NULL, NULL);
+  size_t data_len;
+  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &data, &data_len, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -540,6 +545,9 @@ bare_fs_read_sync (js_env_t *env, js_callback_info_t *info) {
   uint32_t len;
   err = js_get_value_uint32(env, argv[3], &len);
   assert(err == 0);
+
+  if (offset >= data_len) len = 0;
+  else if (offset + len >= data_len) len = data_len - offset;
 
   int64_t pos;
   err = js_get_value_int64(env, argv[4], &pos);
@@ -638,7 +646,8 @@ bare_fs_write (js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   uint8_t *data;
-  err = js_get_typedarray_info(env, argv[2], NULL, (void **) &data, NULL, NULL, NULL);
+  size_t data_len;
+  err = js_get_typedarray_info(env, argv[2], NULL, (void **) &data, &data_len, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -648,6 +657,9 @@ bare_fs_write (js_env_t *env, js_callback_info_t *info) {
   uint32_t len;
   err = js_get_value_uint32(env, argv[4], &len);
   assert(err == 0);
+
+  if (offset >= data_len) len = 0;
+  else if (offset + len >= data_len) len = data_len - offset;
 
   int64_t pos;
   err = js_get_value_int64(env, argv[5], &pos);
@@ -680,7 +692,8 @@ bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   uint8_t *data;
-  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &data, NULL, NULL, NULL);
+  size_t data_len;
+  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &data, &data_len, NULL, NULL);
   assert(err == 0);
 
   uint32_t offset;
@@ -690,6 +703,9 @@ bare_fs_write_sync (js_env_t *env, js_callback_info_t *info) {
   uint32_t len;
   err = js_get_value_uint32(env, argv[3], &len);
   assert(err == 0);
+
+  if (offset >= data_len) len = 0;
+  else if (offset + len >= data_len) len = data_len - offset;
 
   int64_t pos;
   err = js_get_value_int64(env, argv[4], &pos);
