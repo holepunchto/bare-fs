@@ -30,6 +30,7 @@ fs.rename
 fs.readlink
 fs.opendir
 fs.readdir
+fs.chmod
 
 fs.readFile
 fs.writeFile
@@ -45,6 +46,7 @@ fs.promises.opendir
 fs.promises.readdir
 fs.promises.readFile
 fs.promises.writeFile
+fs.promises.chmod
 
 fs.createReadStream
 fs.createWriteStream
@@ -58,6 +60,7 @@ fs.lstatSync
 fs.fstatSync
 fs.readFileSync
 fs.writeFileSync
+fs.chmodSync
 ```
 
 ## License

@@ -800,6 +800,73 @@ bare_fs_ftruncate (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_chmod (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[2], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_chmod(loop, (uv_fs_t *) req, (char *) path, mode, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_chmod_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[1], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_chmod(loop, &req, (char *) path, mode, NULL);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_rename (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -1514,6 +1581,16 @@ init (js_env_t *env, js_value_t *exports) {
   }
   {
     js_value_t *fn;
+    js_create_function(env, "chmod", -1, bare_fs_chmod, NULL, &fn);
+    js_set_named_property(env, exports, "chmod", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "chmodSync", -1, bare_fs_chmod_sync, NULL, &fn);
+    js_set_named_property(env, exports, "chmodSync", fn);
+  }
+  {
+    js_value_t *fn;
     js_create_function(env, "rename", -1, bare_fs_rename, NULL, &fn);
     js_set_named_property(env, exports, "rename", fn);
   }
@@ -1605,10 +1682,42 @@ init (js_env_t *env, js_value_t *exports) {
   V(S_IFDIR)
   V(S_IFCHR)
   V(S_IFLNK)
-#ifndef _WIN32
+#ifdef S_IFBLK
   V(S_IFBLK)
+#endif
+#ifdef S_IFIFO
   V(S_IFIFO)
+#endif
+#ifdef S_IFSOCK
   V(S_IFSOCK)
+#endif
+
+#ifdef S_IRUSR
+  V(S_IRUSR)
+#endif
+#ifdef S_IWUSR
+  V(S_IWUSR)
+#endif
+#ifdef S_IXUSR
+  V(S_IXUSR)
+#endif
+#ifdef S_IRGRP
+  V(S_IRGRP)
+#endif
+#ifdef S_IWGRP
+  V(S_IWGRP)
+#endif
+#ifdef S_IXGRP
+  V(S_IXGRP)
+#endif
+#ifdef S_IROTH
+  V(S_IROTH)
+#endif
+#ifdef S_IWOTH
+  V(S_IWOTH)
+#endif
+#ifdef S_IXOTH
+  V(S_IXOTH)
 #endif
 
   V(UV_DIRENT_UNKNOWN)

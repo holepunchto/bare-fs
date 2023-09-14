@@ -20,6 +20,16 @@ const constants = exports.constants = {
   S_IFIFO: binding.S_IFIFO || 0,
   S_IFSOCK: binding.S_IFSOCK || 0,
 
+  S_IRUSR: binding.S_IRUSR || 0,
+  S_IWUSR: binding.S_IWUSR || 0,
+  S_IXUSR: binding.S_IXUSR || 0,
+  S_IRGRP: binding.S_IRGRP || 0,
+  S_IWGRP: binding.S_IWGRP || 0,
+  S_IXGRP: binding.S_IXGRP || 0,
+  S_IROTH: binding.S_IROTH || 0,
+  S_IWOTH: binding.S_IWOTH || 0,
+  S_IXOTH: binding.S_IXOTH || 0,
+
   UV_DIRENT_UNKNOWN: binding.UV_DIRENT_UNKNOWN,
   UV_DIRENT_FILE: binding.UV_DIRENT_FILE,
   UV_DIRENT_DIR: binding.UV_DIRENT_DIR,
@@ -462,6 +472,28 @@ function ftruncate (fd, len, cb) {
   const req = getReq()
   req.callback = cb
   binding.ftruncate(req.handle, fd, len)
+}
+
+function chmod (path, mode, cb) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof mode === 'string') mode = modeToNumber(mode)
+
+  const req = getReq()
+  req.callback = cb
+  binding.chmod(req.handle, path, mode)
+}
+
+function chmodSync (path, mode) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof mode === 'string') mode = modeToNumber(mode)
+
+  binding.chmodSync(path, mode)
 }
 
 function mkdirp (path, mode, cb) {
@@ -1072,58 +1104,50 @@ function typeError (code, message) {
 
 function noop () {}
 
-exports.open = open
+exports.chmod = chmod
 exports.close = close
-exports.read = read
-exports.readv = readv
-exports.write = write
-exports.writev = writev
 exports.fstat = fstat
 exports.ftruncate = ftruncate
-
-exports.openSync = openSync
-exports.closeSync = closeSync
-exports.readSync = readSync
-exports.writeSync = writeSync
-exports.statSync = statSync
-exports.lstatSync = lstatSync
-exports.fstatSync = fstatSync
-
-exports.stat = stat
-exports.promises.stat = promisify(stat)
-
 exports.lstat = lstat
-exports.promises.lstat = promisify(lstat)
-
 exports.mkdir = mkdir
-exports.promises.mkdir = promisify(mkdir)
-
-exports.rmdir = rmdir
-exports.promises.rmdir = promisify(rmdir)
-
-exports.unlink = unlink
-exports.promises.unlink = promisify(unlink)
-
-exports.rename = rename
-exports.promises.rename = promisify(rename)
-
-exports.readlink = readlink
-exports.promises.readlink = promisify(readlink)
-
+exports.open = open
 exports.opendir = opendir
-exports.promises.opendir = promisify(opendir)
-
-exports.readdir = readdir
-exports.promises.readdir = promisify(readdir)
-
+exports.read = read
 exports.readFile = readFile
-exports.promises.readFile = promisify(readFile)
-
+exports.readdir = readdir
+exports.readlink = readlink
+exports.readv = readv
+exports.rename = rename
+exports.rmdir = rmdir
+exports.stat = stat
+exports.unlink = unlink
+exports.write = write
 exports.writeFile = writeFile
-exports.promises.writeFile = promisify(writeFile)
+exports.writev = writev
 
+exports.chmodSync = chmodSync
+exports.closeSync = closeSync
+exports.fstatSync = fstatSync
+exports.lstatSync = lstatSync
+exports.openSync = openSync
 exports.readFileSync = readFileSync
+exports.readSync = readSync
+exports.statSync = statSync
 exports.writeFileSync = writeFileSync
+exports.writeSync = writeSync
+
+exports.promises.chmod = promisify(chmod)
+exports.promises.lstat = promisify(lstat)
+exports.promises.mkdir = promisify(mkdir)
+exports.promises.opendir = promisify(opendir)
+exports.promises.readFile = promisify(readFile)
+exports.promises.readdir = promisify(readdir)
+exports.promises.readlink = promisify(readlink)
+exports.promises.rename = promisify(rename)
+exports.promises.rmdir = promisify(rmdir)
+exports.promises.stat = promisify(stat)
+exports.promises.unlink = promisify(unlink)
+exports.promises.writeFile = promisify(writeFile)
 
 exports.Stats = Stats
 
