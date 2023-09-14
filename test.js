@@ -151,9 +151,9 @@ test('write + offset', (t) => {
 
     const data = Buffer.from('foo\n')
 
-    fs.write(fd, data, 2, 4, 2, (err, len) => {
+    fs.write(fd, data, 2, 2, 2, (err, len) => {
       t.absent(err)
-      t.is(len, 4)
+      t.is(len, 2)
 
       const data = Buffer.alloc(4)
 
