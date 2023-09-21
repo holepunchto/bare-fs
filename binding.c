@@ -1370,29 +1370,102 @@ bare_fs_readlink_sync (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
 
-  js_value_t *data = argv[1];
-
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
   uv_fs_readlink(loop, &req, (char *) path, NULL);
 
-  if (req.result == 0) {
+  js_value_t *res = NULL;
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  } else {
     char *path;
-    err = js_get_typedarray_info(env, data, NULL, (void **) &path, NULL, NULL, NULL);
+    err = js_get_typedarray_info(env, argv[1], NULL, (void **) &path, NULL, NULL, NULL);
     assert(err == 0);
 
     strncpy(path, req.ptr, sizeof(bare_fs_path_t));
   }
 
-  js_value_t *res;
-  err = js_create_int32(env, req.result, &res);
-  assert(err == 0);
-
   uv_fs_req_cleanup(&req);
 
   return res;
+}
+
+static js_value_t *
+bare_fs_symlink (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t target;
+  err = js_get_value_string_utf8(env, argv[1], target, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[2], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t flags;
+  err = js_get_value_int32(env, argv[3], &flags);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_symlink(loop, (uv_fs_t *) req, (char *) target, (char *) path, flags, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_symlink_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_path_t target;
+  err = js_get_value_string_utf8(env, argv[0], target, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t flags;
+  err = js_get_value_int32(env, argv[2], &flags);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_symlink(loop, &req, (char *) target, (char *) path, flags, NULL);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
 }
 
 static js_value_t *
@@ -1667,6 +1740,16 @@ init (js_env_t *env, js_value_t *exports) {
   }
   {
     js_value_t *fn;
+    js_create_function(env, "symlink", -1, bare_fs_symlink, NULL, &fn);
+    js_set_named_property(env, exports, "symlink", fn);
+  }
+  {
+    js_value_t *fn;
+    js_create_function(env, "symlinkSync", -1, bare_fs_symlink_sync, NULL, &fn);
+    js_set_named_property(env, exports, "symlinkSync", fn);
+  }
+  {
+    js_value_t *fn;
     js_create_function(env, "opendir", -1, bare_fs_opendir, NULL, &fn);
     js_set_named_property(env, exports, "opendir", fn);
   }
@@ -1744,6 +1827,9 @@ init (js_env_t *env, js_value_t *exports) {
   V(UV_DIRENT_SOCKET)
   V(UV_DIRENT_CHAR)
   V(UV_DIRENT_BLOCK)
+
+  V(UV_FS_SYMLINK_DIR)
+  V(UV_FS_SYMLINK_JUNCTION)
 #undef V
 
   return exports;

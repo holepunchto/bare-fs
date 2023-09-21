@@ -1,7 +1,8 @@
+const { sep, resolve, isAbsolute, toNamespacedPath } = require('path')
 const { Readable, Writable, getStreamError } = require('streamx')
 const binding = require('./binding')
 
-const sep = process.platform === 'win32' ? '\\' : '/'
+const isWindows = process.platform === 'win32'
 
 const constants = exports.constants = {
   O_RDWR: binding.O_RDWR,
@@ -37,7 +38,10 @@ const constants = exports.constants = {
   UV_DIRENT_FIFO: binding.UV_DIRENT_FIFO,
   UV_DIRENT_SOCKET: binding.UV_DIRENT_SOCKET,
   UV_DIRENT_CHAR: binding.UV_DIRENT_CHAR,
-  UV_DIRENT_BLOCK: binding.UV_DIRENT_BLOCK
+  UV_DIRENT_BLOCK: binding.UV_DIRENT_BLOCK,
+
+  UV_FS_SYMLINK_DIR: binding.UV_FS_SYMLINK_DIR,
+  UV_FS_SYMLINK_JUNCTION: binding.UV_FS_SYMLINK_JUNCTION
 }
 
 const reqs = []
@@ -623,6 +627,126 @@ function readlink (path, opts, cb) {
   binding.readlink(req.handle, path, data)
 }
 
+function readlinkSync (path, opts) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  const {
+    encoding = 'utf8'
+  } = opts
+
+  const data = Buffer.allocUnsafe(binding.sizeofFSPath)
+
+  binding.readlinkSync(path, data)
+
+  path = data.subarray(0, data.indexOf(0))
+  if (encoding !== 'buffer') path = path.toString(encoding)
+  return path
+}
+
+function normalizeSymlinkTarget (target, type, path) {
+  if (isWindows) {
+    if (type === 'junction') target = resolve(path, '..', target)
+
+    if (isAbsolute(target)) return toNamespacedPath(target)
+
+    return target.replace(/\//g, sep)
+  }
+
+  return target
+}
+
+function symlink (target, path, type, cb) {
+  if (typeof target !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof type === 'function') {
+    cb = type
+    type = null
+  } else if (typeof cb !== 'function') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+  }
+
+  if (typeof type === 'string') {
+    switch (type) {
+      case 'file':
+        type = 0
+        break
+      case 'dir':
+        type = constants.UV_FS_SYMLINK_DIR
+        break
+      case 'junction':
+        type = constants.UV_FS_SYMLINK_JUNCTION
+        break
+      default:
+        throw typeError('ERR_FS_INVALID_SYMLINK_TYPE', 'Symlink type must be one of "dir", "file", or "junction". Received "' + type + '"')
+    }
+  } else if (typeof type !== 'number') {
+    if (isWindows) {
+      target = resolve(path, '..', target)
+
+      stat(target, (err, st) => {
+        type = err === null && st.isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
+
+        symlink(target, path, type, path, cb)
+      })
+
+      return
+    }
+
+    type = 0
+  }
+
+  const req = getReq()
+  req.callback = cb
+  binding.symlink(req.handle, normalizeSymlinkTarget(target), toNamespacedPath(path), type)
+}
+
+function symlinkSync (target, path, type) {
+  if (typeof target !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof type === 'string') {
+    switch (type) {
+      case 'file':
+        type = 0
+        break
+      case 'dir':
+        type = constants.UV_FS_SYMLINK_DIR
+        break
+      case 'junction':
+        type = constants.UV_FS_SYMLINK_JUNCTION
+        break
+      default:
+        throw typeError('ERR_FS_INVALID_SYMLINK_TYPE', 'Symlink type must be one of "dir", "file", or "junction". Received "' + type + '"')
+    }
+  } else if (typeof type !== 'number') {
+    if (isWindows) {
+      target = resolve(path, '..', target)
+
+      type = statSync(target).isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
+    } else {
+      type = 0
+    }
+  }
+
+  binding.symlinkSync(normalizeSymlinkTarget(target), toNamespacedPath(path), type)
+}
+
 function opendir (path, opts, cb) {
   if (typeof path !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
@@ -1120,6 +1244,7 @@ exports.readv = readv
 exports.rename = rename
 exports.rmdir = rmdir
 exports.stat = stat
+exports.symlink = symlink
 exports.unlink = unlink
 exports.write = write
 exports.writeFile = writeFile
@@ -1132,7 +1257,9 @@ exports.lstatSync = lstatSync
 exports.openSync = openSync
 exports.readFileSync = readFileSync
 exports.readSync = readSync
+exports.readlinkSync = readlinkSync
 exports.statSync = statSync
+exports.symlinkSync = symlinkSync
 exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
 
@@ -1146,6 +1273,7 @@ exports.promises.readlink = promisify(readlink)
 exports.promises.rename = promisify(rename)
 exports.promises.rmdir = promisify(rmdir)
 exports.promises.stat = promisify(stat)
+exports.promises.symlink = promisify(symlink)
 exports.promises.unlink = promisify(unlink)
 exports.promises.writeFile = promisify(writeFile)
 
