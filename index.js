@@ -500,6 +500,36 @@ function chmodSync (path, mode) {
   binding.chmodSync(path, mode)
 }
 
+function fchmod (fd, mode, cb) {
+  if (typeof fd !== 'number') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+  }
+
+  if (fd < 0 || fd > 0x7fffffff) {
+    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+  }
+
+  if (typeof mode === 'string') mode = modeToNumber(mode)
+
+  const req = getReq()
+  req.callback = cb
+  binding.fchmod(req.handle, fd, mode)
+}
+
+function fchmodSync (fd, mode) {
+  if (typeof fd !== 'number') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+  }
+
+  if (fd < 0 || fd > 0x7fffffff) {
+    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+  }
+
+  if (typeof mode === 'string') mode = modeToNumber(mode)
+
+  binding.fchmodSync(fd, mode)
+}
+
 function mkdirp (path, mode, cb) {
   mkdir(path, { mode }, function (err) {
     if (err === null) return cb(null, 0, null)
@@ -548,6 +578,38 @@ function mkdir (path, opts, cb) {
   binding.mkdir(req.handle, path, mode)
 }
 
+function mkdirpSync (path, mode) {
+  try {
+    mkdirSync(path, { mode })
+  } catch (err) {
+    if (err.code !== 'ENOENT' && statSync(path).isDirectory()) {
+      return
+    }
+
+    while (path.endsWith(sep)) path = path.slice(0, -1)
+    const i = path.lastIndexOf(sep)
+    if (i <= 0) throw err
+
+    mkdirpSync(path.slice(0, i), { mode })
+    mkdirSync(path, { mode })
+  }
+}
+
+function mkdirSync (path, opts) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'number') opts = { mode: opts }
+  else if (!opts) opts = {}
+
+  const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
+
+  if (opts.recursive) return mkdirpSync(path, mode)
+
+  binding.mkdirSync(path, mode)
+}
+
 function rmdir (path, cb) {
   if (typeof path !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
@@ -562,6 +624,14 @@ function rmdir (path, cb) {
   binding.rmdir(req.handle, path)
 }
 
+function rmdirSync (path) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  binding.rmdirSync(path)
+}
+
 function unlink (path, cb) {
   if (typeof path !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
@@ -574,6 +644,14 @@ function unlink (path, cb) {
   const req = getReq()
   req.callback = cb
   binding.unlink(req.handle, path)
+}
+
+function unlinkSync (path) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  binding.unlinkSync(path)
 }
 
 function rename (src, dst, cb) {
@@ -592,6 +670,18 @@ function rename (src, dst, cb) {
   const req = getReq()
   req.callback = cb
   binding.rename(req.handle, src, dst)
+}
+
+function renameSync (src, dst) {
+  if (typeof src !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+  }
+
+  if (typeof dst !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+  }
+
+  binding.renameSync(src, dst)
 }
 
 function readlink (path, opts, cb) {
@@ -1230,6 +1320,7 @@ function noop () {}
 
 exports.chmod = chmod
 exports.close = close
+exports.fchmod = fchmod
 exports.fstat = fstat
 exports.ftruncate = ftruncate
 exports.lstat = lstat
@@ -1252,14 +1343,19 @@ exports.writev = writev
 
 exports.chmodSync = chmodSync
 exports.closeSync = closeSync
+exports.fchmodSync = fchmodSync
 exports.fstatSync = fstatSync
 exports.lstatSync = lstatSync
+exports.mkdirSync = mkdirSync
 exports.openSync = openSync
 exports.readFileSync = readFileSync
 exports.readSync = readSync
 exports.readlinkSync = readlinkSync
+exports.renameSync = renameSync
+exports.rmdirSync = rmdirSync
 exports.statSync = statSync
 exports.symlinkSync = symlinkSync
+exports.unlinkSync = unlinkSync
 exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
 

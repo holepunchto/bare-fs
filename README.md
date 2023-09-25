@@ -15,6 +15,7 @@ const fs = require('bare-fs')
 
 fs.chmod
 fs.close
+fs.chmod
 fs.fstat
 fs.ftruncate
 fs.lstat
@@ -55,12 +56,18 @@ fs.createWriteStream
 
 fs.chmodSync
 fs.closeSync
+fs.fchmodSync
 fs.fstatSync
 fs.lstatSync
+fs.mkdirSync
 fs.openSync
 fs.readSync
+fs.readlinkSync
+fs.renameSync
+fs.rmdirSync
 fs.statSync
 fs.symlinkSync
+fs.unlinkSync
 fs.writeSync
 
 fs.readFileSync

@@ -883,6 +883,73 @@ bare_fs_chmod_sync (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_fchmod (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[1], &fd);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[2], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_fchmod(loop, (uv_fs_t *) req, fd, mode, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_fchmod_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[0], &fd);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[1], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_fchmod(loop, &req, fd, mode, NULL);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_rename (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -910,6 +977,41 @@ bare_fs_rename (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_rename(loop, (uv_fs_t *) req, (char *) src, (char *) dest, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_rename_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_path_t src;
+  err = js_get_value_string_utf8(env, argv[0], src, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  bare_fs_path_t dest;
+  err = js_get_value_string_utf8(env, argv[1], dest, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_rename(loop, &req, (char *) src, (char *) dest, on_fs_response);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
 
   return NULL;
 }
@@ -947,6 +1049,41 @@ bare_fs_mkdir (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_mkdir_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[1], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_mkdir(loop, &req, (char *) path, mode, on_fs_response);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_rmdir (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -970,6 +1107,37 @@ bare_fs_rmdir (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_rmdir(loop, (uv_fs_t *) req, (char *) path, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_rmdir_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_rmdir(loop, &req, (char *) path, on_fs_response);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
 
   return NULL;
 }
@@ -1324,6 +1492,37 @@ bare_fs_unlink (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_unlink_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_unlink(loop, &req, (char *) path, on_fs_response);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_readlink (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -1568,6 +1767,8 @@ bare_fs_closedir (js_env_t *env, js_callback_info_t *info) {
 
 static js_value_t *
 init (js_env_t *env, js_value_t *exports) {
+  int err;
+
   {
     js_value_t *val;
     js_create_uint32(env, sizeof(bare_fs_t), &val);
@@ -1598,177 +1799,65 @@ init (js_env_t *env, js_value_t *exports) {
     js_create_uint32(env, sizeof(bare_fs_path_t), &val);
     js_set_named_property(env, exports, "sizeofFSPath", val);
   }
-  {
-    js_value_t *fn;
-    js_create_function(env, "init", -1, bare_fs_init, NULL, &fn);
-    js_set_named_property(env, exports, "init", fn);
+#define V(name, fn) \
+  { \
+    js_value_t *val; \
+    err = js_create_function(env, name, -1, fn, NULL, &val); \
+    assert(err == 0); \
+    js_set_named_property(env, exports, name, val); \
+    assert(err == 0); \
   }
-  {
-    js_value_t *fn;
-    js_create_function(env, "destroy", -1, bare_fs_destroy, NULL, &fn);
-    js_set_named_property(env, exports, "destroy", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "initReq", -1, bare_fs_req_init, NULL, &fn);
-    js_set_named_property(env, exports, "initReq", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "open", -1, bare_fs_open, NULL, &fn);
-    js_set_named_property(env, exports, "open", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "openSync", -1, bare_fs_open_sync, NULL, &fn);
-    js_set_named_property(env, exports, "openSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "close", -1, bare_fs_close, NULL, &fn);
-    js_set_named_property(env, exports, "close", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "closeSync", -1, bare_fs_close_sync, NULL, &fn);
-    js_set_named_property(env, exports, "closeSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "read", -1, bare_fs_read, NULL, &fn);
-    js_set_named_property(env, exports, "read", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "readSync", -1, bare_fs_read_sync, NULL, &fn);
-    js_set_named_property(env, exports, "readSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "readv", -1, bare_fs_readv, NULL, &fn);
-    js_set_named_property(env, exports, "readv", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "write", -1, bare_fs_write, NULL, &fn);
-    js_set_named_property(env, exports, "write", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "writeSync", -1, bare_fs_write_sync, NULL, &fn);
-    js_set_named_property(env, exports, "writeSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "writev", -1, bare_fs_writev, NULL, &fn);
-    js_set_named_property(env, exports, "writev", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "ftruncate", -1, bare_fs_ftruncate, NULL, &fn);
-    js_set_named_property(env, exports, "ftruncate", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "chmod", -1, bare_fs_chmod, NULL, &fn);
-    js_set_named_property(env, exports, "chmod", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "chmodSync", -1, bare_fs_chmod_sync, NULL, &fn);
-    js_set_named_property(env, exports, "chmodSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "rename", -1, bare_fs_rename, NULL, &fn);
-    js_set_named_property(env, exports, "rename", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "mkdir", -1, bare_fs_mkdir, NULL, &fn);
-    js_set_named_property(env, exports, "mkdir", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "rmdir", -1, bare_fs_rmdir, NULL, &fn);
-    js_set_named_property(env, exports, "rmdir", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "stat", -1, bare_fs_stat, NULL, &fn);
-    js_set_named_property(env, exports, "stat", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "statSync", -1, bare_fs_stat_sync, NULL, &fn);
-    js_set_named_property(env, exports, "statSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "lstat", -1, bare_fs_lstat, NULL, &fn);
-    js_set_named_property(env, exports, "lstat", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "lstatSync", -1, bare_fs_lstat_sync, NULL, &fn);
-    js_set_named_property(env, exports, "lstatSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "fstat", -1, bare_fs_fstat, NULL, &fn);
-    js_set_named_property(env, exports, "fstat", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "fstatSync", -1, bare_fs_fstat_sync, NULL, &fn);
-    js_set_named_property(env, exports, "fstatSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "unlink", -1, bare_fs_unlink, NULL, &fn);
-    js_set_named_property(env, exports, "unlink", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "readlink", -1, bare_fs_readlink, NULL, &fn);
-    js_set_named_property(env, exports, "readlink", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "readlinkSync", -1, bare_fs_readlink_sync, NULL, &fn);
-    js_set_named_property(env, exports, "readlinkSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "symlink", -1, bare_fs_symlink, NULL, &fn);
-    js_set_named_property(env, exports, "symlink", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "symlinkSync", -1, bare_fs_symlink_sync, NULL, &fn);
-    js_set_named_property(env, exports, "symlinkSync", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "opendir", -1, bare_fs_opendir, NULL, &fn);
-    js_set_named_property(env, exports, "opendir", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "readdir", -1, bare_fs_readdir, NULL, &fn);
-    js_set_named_property(env, exports, "readdir", fn);
-  }
-  {
-    js_value_t *fn;
-    js_create_function(env, "closedir", -1, bare_fs_closedir, NULL, &fn);
-    js_set_named_property(env, exports, "closedir", fn);
-  }
+
+  V("init", bare_fs_init)
+  V("destroy", bare_fs_destroy)
+  V("initReq", bare_fs_req_init)
+  V("open", bare_fs_open)
+  V("openSync", bare_fs_open_sync)
+  V("close", bare_fs_close)
+  V("closeSync", bare_fs_close_sync)
+  V("read", bare_fs_read)
+  V("readSync", bare_fs_read_sync)
+  V("readv", bare_fs_readv)
+  V("write", bare_fs_write)
+  V("writeSync", bare_fs_write_sync)
+  V("writev", bare_fs_writev)
+  V("ftruncate", bare_fs_ftruncate)
+  V("chmod", bare_fs_chmod)
+  V("chmodSync", bare_fs_chmod_sync)
+  V("fchmod", bare_fs_fchmod)
+  V("fchmodSync", bare_fs_fchmod_sync)
+  V("rename", bare_fs_rename)
+  V("renameSync", bare_fs_rename_sync)
+  V("mkdir", bare_fs_mkdir)
+  V("mkdirSync", bare_fs_mkdir_sync)
+  V("rmdir", bare_fs_rmdir)
+  V("rmdirSync", bare_fs_rmdir_sync)
+  V("stat", bare_fs_stat)
+  V("statSync", bare_fs_stat_sync)
+  V("lstat", bare_fs_lstat)
+  V("lstatSync", bare_fs_lstat_sync)
+  V("fstat", bare_fs_fstat)
+  V("fstatSync", bare_fs_fstat_sync)
+  V("unlink", bare_fs_unlink)
+  V("unlinkSync", bare_fs_unlink_sync)
+  V("readlink", bare_fs_readlink)
+  V("readlinkSync", bare_fs_readlink_sync)
+  V("symlink", bare_fs_symlink)
+  V("symlinkSync", bare_fs_symlink_sync)
+  V("opendir", bare_fs_opendir)
+  V("readdir", bare_fs_readdir)
+  V("closedir", bare_fs_closedir)
+#undef V
+
 #define V(name) \
   { \
     js_value_t *val; \
-    js_create_uint32(env, name, &val); \
-    js_set_named_property(env, exports, #name, val); \
+    err = js_create_uint32(env, name, &val); \
+    assert(err == 0); \
+    err = js_set_named_property(env, exports, #name, val); \
+    assert(err == 0); \
   }
+
   V(O_RDWR)
   V(O_RDONLY)
   V(O_WRONLY)
