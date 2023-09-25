@@ -1005,7 +1005,7 @@ bare_fs_rename_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_rename(loop, &req, (char *) src, (char *) dest, on_fs_response);
+  uv_fs_rename(loop, &req, (char *) src, (char *) dest, NULL);
 
   if (req.result < 0) {
     js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
@@ -1072,7 +1072,7 @@ bare_fs_mkdir_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_mkdir(loop, &req, (char *) path, mode, on_fs_response);
+  uv_fs_mkdir(loop, &req, (char *) path, mode, NULL);
 
   if (req.result < 0) {
     js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
@@ -1131,7 +1131,7 @@ bare_fs_rmdir_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_rmdir(loop, &req, (char *) path, on_fs_response);
+  uv_fs_rmdir(loop, &req, (char *) path, NULL);
 
   if (req.result < 0) {
     js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
@@ -1511,7 +1511,7 @@ bare_fs_unlink_sync (js_env_t *env, js_callback_info_t *info) {
   js_get_env_loop(env, &loop);
 
   uv_fs_t req;
-  uv_fs_unlink(loop, &req, (char *) path, on_fs_response);
+  uv_fs_unlink(loop, &req, (char *) path, NULL);
 
   if (req.result < 0) {
     js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
