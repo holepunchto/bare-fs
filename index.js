@@ -55,10 +55,6 @@ binding.init(fs.handle, fs, onresponse)
 
 process.on('exit', () => binding.destroy(fs.handle))
 
-if (process.thread) {
-  process.thread.on('exit', () => binding.destroy(fs.handle))
-}
-
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber (flags) {
   switch (flags) {
