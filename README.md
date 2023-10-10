@@ -26,6 +26,7 @@ fs.read
 fs.readdir
 fs.readlink
 fs.readv
+fs.realpath
 fs.rename
 fs.rmdir
 fs.stat
@@ -44,6 +45,7 @@ fs.promises.opendir
 fs.promises.readFile
 fs.promises.readdir
 fs.promises.readlink
+fs.promises.realpath
 fs.promises.rename
 fs.promises.rmdir
 fs.promises.stat
@@ -63,6 +65,7 @@ fs.mkdirSync
 fs.openSync
 fs.readSync
 fs.readlinkSync
+fs.realpathSync
 fs.renameSync
 fs.rmdirSync
 fs.statSync

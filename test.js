@@ -1,12 +1,13 @@
 const test = require('brittle')
+const path = require('path')
 const fs = require('.')
 
 test('open + close', async (t) => {
   t.plan(2)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt')
+  const file = await withFile(t, 'test/fixtures/foo.txt')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     fs.close(fd, (err) => {
@@ -16,9 +17,9 @@ test('open + close', async (t) => {
 })
 
 test('open + close sync', async (t) => {
-  const path = await withFile(t, 'test/fixtures/foo.txt')
+  const file = await withFile(t, 'test/fixtures/foo.txt')
 
-  const fd = fs.openSync(path)
+  const fd = fs.openSync(file)
 
   fs.closeSync(fd)
 
@@ -28,9 +29,9 @@ test('open + close sync', async (t) => {
 test('read', async (t) => {
   t.plan(5)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.alloc(4)
@@ -50,9 +51,9 @@ test('read', async (t) => {
 test('read + offset', async (t) => {
   t.plan(5)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.alloc(4)
@@ -72,9 +73,9 @@ test('read + offset', async (t) => {
 test('read + position', async (t) => {
   t.plan(5)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.alloc(2)
@@ -94,9 +95,9 @@ test('read + position', async (t) => {
 test('read + current position', async (t) => {
   t.plan(8)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.alloc(2)
@@ -122,9 +123,9 @@ test('read + current position', async (t) => {
 test('read out of buffer bounds', async (t) => {
   t.plan(6)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.alloc(4)
@@ -148,9 +149,9 @@ test('read out of buffer bounds', async (t) => {
 test('write', async (t) => {
   t.plan(7)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', false)
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
 
-  fs.open(path, 'w+', (err, fd) => {
+  fs.open(file, 'w+', (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.from('foo\n')
@@ -177,9 +178,9 @@ test('write', async (t) => {
 test('write + offset', async (t) => {
   t.plan(7)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', false)
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
 
-  fs.open(path, 'w+', (err, fd) => {
+  fs.open(file, 'w+', (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.from('foo\n')
@@ -206,9 +207,9 @@ test('write + offset', async (t) => {
 test('write + position', async (t) => {
   t.plan(7)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', false)
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
 
-  fs.open(path, 'w+', (err, fd) => {
+  fs.open(file, 'w+', (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.from('o\n')
@@ -235,9 +236,9 @@ test('write + position', async (t) => {
 test('write + current position', async (t) => {
   t.plan(9)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', false)
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
 
-  fs.open(path, 'w+', (err, fd) => {
+  fs.open(file, 'w+', (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.from('foo\n')
@@ -269,9 +270,9 @@ test('write + current position', async (t) => {
 test('write out of buffer bounds', async (t) => {
   t.plan(6)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', false)
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
 
-  fs.open(path, 'w+', (err, fd) => {
+  fs.open(file, 'w+', (err, fd) => {
     t.absent(err, 'opened')
 
     const data = Buffer.from('foo\n')
@@ -295,9 +296,9 @@ test('write out of buffer bounds', async (t) => {
 test('stat', async (t) => {
   t.plan(2)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.stat(path, (err, st) => {
+  fs.stat(file, (err, st) => {
     t.absent(err, 'stat')
     for (const [key, value] of Object.entries(st)) t.comment(key, value)
     t.ok(st)
@@ -305,9 +306,9 @@ test('stat', async (t) => {
 })
 
 test('stat sync', async (t) => {
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  const st = fs.statSync(path)
+  const st = fs.statSync(file)
 
   for (const [key, value] of Object.entries(st)) t.comment(key, value)
   t.ok(st)
@@ -316,9 +317,9 @@ test('stat sync', async (t) => {
 test('fstat', async (t) => {
   t.plan(4)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  fs.open(path, (err, fd) => {
+  fs.open(file, (err, fd) => {
     t.absent(err, 'opened')
 
     fs.fstat(fd, (err, st) => {
@@ -334,9 +335,9 @@ test('fstat', async (t) => {
 })
 
 test('fstat sync', async (t) => {
-  const path = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
-  const fd = fs.openSync(path)
+  const fd = fs.openSync(file)
 
   const st = fs.fstatSync(fd)
 
@@ -350,9 +351,9 @@ test('lstat', async (t) => {
   t.plan(3)
 
   const target = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const path = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
 
-  fs.lstat(path, (err, st) => {
+  fs.lstat(link, (err, st) => {
     t.absent(err, 'stat')
     t.ok(st.isSymbolicLink())
     for (const [key, value] of Object.entries(st)) t.comment(key, value)
@@ -362,9 +363,9 @@ test('lstat', async (t) => {
 
 test('lstat sync', async (t) => {
   const target = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const path = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
 
-  const st = fs.lstatSync(path)
+  const st = fs.lstatSync(link)
 
   t.ok(st.isSymbolicLink())
   for (const [key, value] of Object.entries(st)) t.comment(key, value)
@@ -436,12 +437,12 @@ test('readdir + withFileTypes: true', async (t) => {
 test('writeFile + readFile', async (t) => {
   t.plan(3)
 
-  const path = await withFile(t, 'test/fixtures/foo.txt', false)
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
 
-  fs.writeFile(path, Buffer.from('foo\n'), (err) => {
+  fs.writeFile(file, Buffer.from('foo\n'), (err) => {
     t.absent(err)
 
-    fs.readFile(path, (err, data) => {
+    fs.readFile(file, (err, data) => {
       t.absent(err)
       t.alike(data, Buffer.from('foo\n'))
     })
@@ -481,13 +482,32 @@ test('mkdir recursive', async (t) => {
   })
 })
 
+test('realpath', async (t) => {
+  t.plan(2)
+
+  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+
+  fs.realpath(link, (err, link) => {
+    t.absent(err)
+    t.is(link, path.resolve('test/fixtures/foo.txt'))
+  })
+})
+
+test('readlink sync', async (t) => {
+  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+
+  t.is(fs.realpathSync(link), path.resolve('test/fixtures/foo.txt'))
+})
+
 test('readlink', async (t) => {
   t.plan(2)
 
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const path = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
 
-  fs.readlink(path, (err, link) => {
+  fs.readlink(link, (err, link) => {
     t.absent(err)
     t.is(link, 'foo.txt')
   })
@@ -495,21 +515,21 @@ test('readlink', async (t) => {
 
 test('readlink sync', async (t) => {
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const path = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
 
-  t.is(fs.readlinkSync(path), 'foo.txt')
+  t.is(fs.readlinkSync(link), 'foo.txt')
 })
 
 test('symlink', async (t) => {
   t.plan(3)
 
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const path = await withSymlink(t, 'test/fixtures/foo-link.txt')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt')
 
-  fs.symlink('foo.txt', path, (err) => {
+  fs.symlink('foo.txt', link, (err) => {
     t.absent(err)
 
-    fs.readlink(path, (err, link) => {
+    fs.readlink(link, (err, link) => {
       t.absent(err)
       t.is(link, 'foo.txt')
     })
@@ -518,11 +538,11 @@ test('symlink', async (t) => {
 
 test('symlink sync', async (t) => {
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const path = await withSymlink(t, 'test/fixtures/foo-link.txt')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt')
 
-  fs.symlinkSync('foo.txt', path)
+  fs.symlinkSync('foo.txt', link)
 
-  t.is(fs.readlinkSync(path), 'foo.txt')
+  t.is(fs.readlinkSync(link), 'foo.txt')
 })
 
 async function withFile (t, path, data = Buffer.alloc(0)) {

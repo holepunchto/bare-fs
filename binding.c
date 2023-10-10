@@ -154,6 +154,29 @@ on_fs_stat_response (uv_fs_t *uv_req) {
 }
 
 static void
+on_fs_realpath_response (uv_fs_t *uv_req) {
+  int err;
+
+  bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
+
+  js_env_t *env = req->env;
+
+  if (uv_req->result == 0) {
+    js_value_t *data;
+    err = js_get_reference_value(env, req->data, &data);
+    assert(err == 0);
+
+    char *path;
+    err = js_get_typedarray_info(env, data, NULL, (void **) &path, NULL, NULL, NULL);
+    assert(err == 0);
+
+    strncpy(path, uv_req->ptr, sizeof(bare_fs_path_t));
+  }
+
+  on_fs_response(uv_req);
+}
+
+static void
 on_fs_readlink_response (uv_fs_t *uv_req) {
   int err;
 
@@ -1523,6 +1546,76 @@ bare_fs_unlink_sync (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_realpath (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  err = js_create_reference(env, argv[2], 1, &req->data);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_realpath(loop, (uv_fs_t *) req, (char *) path, on_fs_realpath_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_realpath_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_realpath(loop, &req, (char *) path, NULL);
+
+  js_value_t *res = NULL;
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  } else {
+    char *path;
+    err = js_get_typedarray_info(env, argv[1], NULL, (void **) &path, NULL, NULL, NULL);
+    assert(err == 0);
+
+    strncpy(path, req.ptr, sizeof(bare_fs_path_t));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return res;
+}
+
+static js_value_t *
 bare_fs_readlink (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -1840,6 +1933,8 @@ init (js_env_t *env, js_value_t *exports) {
   V("fstatSync", bare_fs_fstat_sync)
   V("unlink", bare_fs_unlink)
   V("unlinkSync", bare_fs_unlink_sync)
+  V("realpath", bare_fs_realpath)
+  V("realpathSync", bare_fs_realpath_sync)
   V("readlink", bare_fs_readlink)
   V("readlinkSync", bare_fs_readlink_sync)
   V("symlink", bare_fs_symlink)

@@ -680,6 +680,60 @@ function renameSync (src, dst) {
   binding.renameSync(src, dst)
 }
 
+function realpath (path, opts, cb) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  } else if (typeof cb !== 'function') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  const {
+    encoding = 'utf8'
+  } = opts
+
+  const data = Buffer.allocUnsafe(binding.sizeofFSPath)
+
+  const req = getReq()
+
+  req.callback = function (err, _) {
+    if (err) return cb(err, null)
+    let path = data.subarray(0, data.indexOf(0))
+    if (encoding !== 'buffer') path = path.toString(encoding)
+    cb(null, path)
+  }
+
+  binding.realpath(req.handle, path, data)
+}
+
+function realpathSync (path, opts) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  const {
+    encoding = 'utf8'
+  } = opts
+
+  const data = Buffer.allocUnsafe(binding.sizeofFSPath)
+
+  binding.realpathSync(path, data)
+
+  path = data.subarray(0, data.indexOf(0))
+  if (encoding !== 'buffer') path = path.toString(encoding)
+  return path
+}
+
 function readlink (path, opts, cb) {
   if (typeof path !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
@@ -1328,6 +1382,7 @@ exports.readFile = readFile
 exports.readdir = readdir
 exports.readlink = readlink
 exports.readv = readv
+exports.realpath = realpath
 exports.rename = rename
 exports.rmdir = rmdir
 exports.stat = stat
@@ -1347,6 +1402,7 @@ exports.openSync = openSync
 exports.readFileSync = readFileSync
 exports.readSync = readSync
 exports.readlinkSync = readlinkSync
+exports.realpathSync = realpathSync
 exports.renameSync = renameSync
 exports.rmdirSync = rmdirSync
 exports.statSync = statSync
@@ -1362,6 +1418,7 @@ exports.promises.opendir = promisify(opendir)
 exports.promises.readFile = promisify(readFile)
 exports.promises.readdir = promisify(readdir)
 exports.promises.readlink = promisify(readlink)
+exports.promises.realpath = promisify(realpath)
 exports.promises.rename = promisify(rename)
 exports.promises.rmdir = promisify(rmdir)
 exports.promises.stat = promisify(stat)
