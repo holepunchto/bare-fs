@@ -63,7 +63,9 @@ fs.fstatSync
 fs.lstatSync
 fs.mkdirSync
 fs.openSync
+fs.opendirSync
 fs.readSync
+fs.readdirSync
 fs.readlinkSync
 fs.realpathSync
 fs.renameSync

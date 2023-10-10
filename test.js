@@ -375,9 +375,9 @@ test('lstat sync', async (t) => {
 test('opendir + close', async (t) => {
   t.plan(2)
 
-  const dir = await withDir(t, 'test/fixtures/dir')
+  await withDir(t, 'test/fixtures/dir')
 
-  fs.opendir(dir, (err, dir) => {
+  fs.opendir('test/fixtures/dir', (err, dir) => {
     t.absent(err, 'opened')
 
     dir.close((err) => {
@@ -386,12 +386,21 @@ test('opendir + close', async (t) => {
   })
 })
 
-test('opendir + iterate entries', async (t) => {
+test('opendirSync + closeSync', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+
+  const dir = fs.opendirSync('test/fixtures/dir')
+
+  dir.closeSync()
+})
+
+test('opendir + asyncIterator', async (t) => {
   t.plan(2)
 
-  const dir = await withDir(t, 'test/fixtures/dir')
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
 
-  fs.opendir(dir, async (err, dir) => {
+  fs.opendir('test/fixtures/dir', async (err, dir) => {
     t.absent(err, 'opened')
 
     for await (const entry of dir) {
@@ -402,15 +411,29 @@ test('opendir + iterate entries', async (t) => {
   })
 })
 
+test('opendirSync + iterator', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
+
+  const dir = fs.opendirSync('test/fixtures/dir')
+
+  for (const entry of dir) {
+    t.comment(entry)
+  }
+
+  t.pass('iterated')
+})
+
 test('readdir', async (t) => {
   t.plan(2)
 
-  const dir = await withDir(t, 'test/fixtures/dir')
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
 
-  fs.readdir(dir, (err, dir) => {
+  fs.readdir('test/fixtures/dir', (err, files) => {
     t.absent(err, 'read')
 
-    for (const entry of dir) {
+    for (const entry of files) {
       t.comment(entry)
     }
 
@@ -421,17 +444,44 @@ test('readdir', async (t) => {
 test('readdir + withFileTypes: true', async (t) => {
   t.plan(2)
 
-  const dir = await withDir(t, 'test/fixtures/dir')
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
 
-  fs.readdir(dir, { withFileTypes: true }, (err, dir) => {
+  fs.readdir('test/fixtures/dir', { withFileTypes: true }, (err, files) => {
     t.absent(err, 'read')
 
-    for (const entry of dir) {
+    for (const entry of files) {
       t.comment(entry)
     }
 
     t.pass('iterated')
   })
+})
+
+test('readdirSync', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
+
+  const files = fs.readdirSync('test/fixtures/dir')
+
+  for (const entry of files) {
+    t.comment(entry)
+  }
+
+  t.pass('iterated')
+})
+
+test('readdirSync + withFileTypes: true', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
+
+  const files = fs.readdirSync('test/fixtures/dir', { withFileTypes: true })
+
+  for (const entry of files) {
+    t.comment(entry)
+  }
+
+  t.pass('iterated')
 })
 
 test('writeFile + readFile', async (t) => {
@@ -468,9 +518,8 @@ test('mkdir', async (t) => {
 test('mkdir recursive', async (t) => {
   t.plan(3)
 
-  const dir = await withDir(t, 'test/fixtures/foo/bar/baz', false)
-  await withDir(t, 'test/fixtures/foo/bar', false)
   await withDir(t, 'test/fixtures/foo', false)
+  const dir = await withDir(t, 'test/fixtures/foo/bar/baz', false)
 
   fs.mkdir(dir, { recursive: true }, (err) => {
     t.absent(err, 'made dir')
@@ -549,7 +598,7 @@ async function withFile (t, path, data = Buffer.alloc(0)) {
   if (data) await fs.promises.writeFile(path, data)
 
   t.teardown(() =>
-    fs.promises.unlink(path).catch()
+    fs.promises.rm(path, { force: true })
   )
 
   return path
@@ -559,7 +608,7 @@ async function withSymlink (t, path, target = false) {
   if (target) await fs.promises.symlink(target, path)
 
   t.teardown(() =>
-    fs.promises.unlink(path).catch()
+    fs.promises.rm(path, { force: true })
   )
 
   return path
@@ -569,7 +618,7 @@ async function withDir (t, path, create = true) {
   if (create) await fs.promises.mkdir(path, { recursive: true })
 
   t.teardown(() =>
-    fs.promises.rmdir(path).catch()
+    fs.promises.rm(path, { force: true, recursive: true })
   )
 
   return path

@@ -1,5 +1,5 @@
 const { sep, resolve, isAbsolute, toNamespacedPath } = require('path')
-const { Readable, Writable, getStreamError } = require('streamx')
+const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
 
 const isWindows = process.platform === 'win32'
@@ -526,7 +526,7 @@ function fchmodSync (fd, mode) {
   binding.fchmodSync(fd, mode)
 }
 
-function mkdirp (path, mode, cb) {
+function mkdirRecursive (path, mode, cb) {
   mkdir(path, { mode }, function (err) {
     if (err === null) return cb(null, 0, null)
 
@@ -543,7 +543,7 @@ function mkdirp (path, mode, cb) {
     const i = path.lastIndexOf(sep)
     if (i <= 0) return cb(err, err.errno, null)
 
-    mkdirp(path.slice(0, i), mode, function (err) {
+    mkdirRecursive(path.slice(0, i), mode, function (err) {
       if (err) return cb(err, err.errno, null)
       mkdir(path, { mode }, cb)
     })
@@ -567,14 +567,14 @@ function mkdir (path, opts, cb) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirp(path, mode, cb)
+  if (opts.recursive) return mkdirRecursive(path, mode, cb)
 
   const req = getReq()
   req.callback = cb
   binding.mkdir(req.handle, path, mode)
 }
 
-function mkdirpSync (path, mode) {
+function mkdirResursiveSync (path, mode) {
   try {
     mkdirSync(path, { mode })
   } catch (err) {
@@ -586,7 +586,7 @@ function mkdirpSync (path, mode) {
     const i = path.lastIndexOf(sep)
     if (i <= 0) throw err
 
-    mkdirpSync(path.slice(0, i), { mode })
+    mkdirResursiveSync(path.slice(0, i), { mode })
     mkdirSync(path, { mode })
   }
 }
@@ -601,7 +601,7 @@ function mkdirSync (path, opts) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirpSync(path, mode)
+  if (opts.recursive) return mkdirResursiveSync(path, mode)
 
   binding.mkdirSync(path, mode)
 }
@@ -626,6 +626,107 @@ function rmdirSync (path) {
   }
 
   binding.rmdirSync(path)
+}
+
+function rmRecursive (path, opts, cb) {
+  rmdir(path, function (err) {
+    if (err === null) return cb(null)
+
+    if (err.code !== 'ENOTEMPTY') return cb(err)
+
+    readdir(path, function (err, files) {
+      if (err) return cb(err)
+
+      if (files.length === 0) return rmdir(path, cb)
+
+      let missing = files.length
+      let done = false
+
+      for (const file of files) {
+        rm(path + sep + file, opts, function (err) {
+          if (done) return
+
+          if (err) {
+            done = true
+            return cb(err)
+          }
+
+          if (--missing === 0) rmdir(path, cb)
+        })
+      }
+    })
+  })
+}
+
+function rm (path, opts, cb) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  } else if (typeof cb !== 'function') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+  }
+
+  if (!opts) opts = {}
+
+  lstat(path, function (err, st) {
+    if (err) {
+      return cb(err.code === 'ENOENT' && opts.force ? null : err)
+    }
+
+    if (st.isDirectory()) {
+      if (opts.recursive) return rmRecursive(path, opts, cb)
+
+      const err = new Error('is a directory')
+      err.code = 'EISDIR'
+      return cb(err)
+    }
+
+    unlink(path, cb)
+  })
+}
+
+function rmRecursiveSync (path, opts) {
+  try {
+    rmdirSync(path)
+  } catch (err) {
+    if (err.code !== 'ENOTEMPTY') throw err
+
+    const files = readdirSync(path)
+
+    for (const file of files) {
+      rmSync(path + sep + file, opts)
+    }
+
+    rmdirSync(path)
+  }
+}
+
+function rmSync (path, opts) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (!opts) opts = {}
+
+  try {
+    const st = lstatSync(path)
+
+    if (st.isDirectory()) {
+      if (opts.recursive) return rmRecursiveSync(path, opts)
+
+      const err = new Error('is a directory')
+      err.code = 'EISDIR'
+      throw err
+    }
+
+    unlinkSync(path)
+  } catch (err) {
+    if (err.code !== 'ENOENT' || !opts.force) throw err
+  }
 }
 
 function unlink (path, cb) {
@@ -914,6 +1015,19 @@ function opendir (path, opts, cb) {
   binding.opendir(req.handle, path, data)
 }
 
+function opendirSync (path, opts) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  const data = Buffer.allocUnsafe(binding.sizeofFSDir)
+  binding.opendirSync(path, data)
+  return new Dir(path, data, opts)
+}
+
 function readdir (path, opts, cb) {
   if (typeof path !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
@@ -927,7 +1041,7 @@ function readdir (path, opts, cb) {
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
-  if (!opts) opts = {}
+  else if (!opts) opts = {}
 
   const {
     withFileTypes = false
@@ -936,11 +1050,35 @@ function readdir (path, opts, cb) {
   opendir(path, opts, async (err, dir) => {
     if (err) return cb(err, null)
     const result = []
-    dir
-      .on('data', (entry) => result.push(withFileTypes ? entry : entry.name))
-      .on('error', (err) => cb(err, null))
-      .on('end', () => cb(null, result))
+    for await (const entry of dir) {
+      result.push(withFileTypes ? entry : entry.name)
+    }
+    cb(null, result)
   })
+}
+
+function readdirSync (path, opts) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  const {
+    withFileTypes = false
+  } = opts
+
+  const dir = opendirSync(path, opts)
+  const result = []
+
+  while (true) {
+    const entry = dir.readSync()
+    if (entry === null) break
+    result.push(withFileTypes ? entry : entry.name)
+  }
+
+  return result
 }
 
 function readFile (path, opts, cb) {
@@ -1265,96 +1403,158 @@ class FileReadStream extends Readable {
   }
 }
 
-class Dir extends Readable {
+class Dir {
   constructor (path, handle, opts = {}) {
     const {
       encoding = 'utf8',
       bufferSize = 32
     } = opts
 
-    super()
-
     this._handle = handle
     this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
     this._encoding = encoding
+    this._buffer = []
+    this._ended = false
 
     this.path = path
   }
 
-  _read (cb) {
-    const self = this
-    const data = []
+  read (cb) {
+    if (!cb) return promisify(this.read.bind(this))
 
+    if (this._buffer.length) return queueMicrotask(() => cb(null, this._buffer.shift()))
+    if (this._ended) return queueMicrotask(() => cb(null, null))
+
+    const data = []
     const req = getReq()
 
-    req.callback = function (err, _) {
-      if (err) return cb(err)
-      if (data.length === 0) self.push(null)
+    req.callback = (err, _) => {
+      if (err) return cb(err, null)
+      if (data.length === 0) this._ended = true
       else {
         for (const entry of data) {
           let name = Buffer.from(entry.name)
-          if (self._encoding !== 'buffer') name = name.toString(self._encoding)
-          self.push(new Dirent(self.path, name, entry.type))
+          if (this._encoding !== 'buffer') name = name.toString(this._encoding)
+          this._buffer.push(new Dirent(this.path, name, entry.type))
         }
       }
-      cb(null)
+
+      if (this._ended) return cb(null, null)
+      cb(null, this._buffer.shift())
     }
 
     binding.readdir(req.handle, this._handle, this._dirents, data)
   }
 
-  _destroy (cb) {
+  readSync () {
+    if (this._buffer.length) return this._buffer.shift()
+    if (this._ended) return null
+
+    const data = []
+
+    binding.readdirSync(this._handle, this._dirents, data)
+
+    if (data.length === 0) this._ended = true
+    else {
+      for (const entry of data) {
+        let name = Buffer.from(entry.name)
+        if (this._encoding !== 'buffer') name = name.toString(this._encoding)
+        this._buffer.push(new Dirent(this.path, name, entry.type))
+      }
+    }
+
+    if (this._ended) return null
+    return this._buffer.shift()
+  }
+
+  close (cb) {
+    if (!cb) return promisify(this.close.bind(this))
+
     const req = getReq()
 
-    req.callback = function (err, _) {
+    req.callback = (err, _) => {
+      this._handle = null
       cb(err)
     }
 
     binding.closedir(req.handle, this._handle)
   }
 
-  close (cb = noop) {
-    if (this.destroyed) return cb(null)
-    this
-      .once('close', () => cb(getStreamError(this)))
-      .destroy()
+  closeSync () {
+    binding.closedirSync(this._handle)
+    this._handle = null
+  }
+
+  [Symbol.iterator] () {
+    return {
+      next: () => {
+        if (this._buffer.length) {
+          return { done: false, value: this._buffer.shift() }
+        }
+
+        if (this._ended) {
+          this.closeSync()
+
+          return { done: true }
+        }
+
+        const entry = this.readSync()
+
+        return { done: entry === null, value: entry }
+      }
+    }
+  }
+
+  [Symbol.asyncIterator] () {
+    return {
+      next: () => new Promise((resolve, reject) => {
+        if (this._buffer.length) {
+          return resolve({ done: false, value: this._buffer.shift() })
+        }
+
+        if (this._ended) {
+          return this.close((err) => err ? reject(err) : resolve({ done: true }))
+        }
+
+        this.read((err, entry) => err ? reject(err) : resolve({ done: entry === null, value: entry }))
+      })
+    }
   }
 }
 
 class Dirent {
   constructor (path, name, type) {
-    this._type = type
-
+    this.type = type
     this.path = path
     this.name = name
   }
 
   isFile () {
-    return this._type === constants.UV_DIRENT_FILE
+    return this.type === constants.UV_DIRENT_FILE
   }
 
   isDirectory () {
-    return this._type === constants.UV_DIRENT_DIR
+    return this.type === constants.UV_DIRENT_DIR
   }
 
   isSymbolicLink () {
-    return this._type === constants.UV_DIRENT_LINK
+    return this.type === constants.UV_DIRENT_LINK
   }
 
   isFIFO () {
-    return this._type === constants.UV_DIRENT_FIFO
+    return this.type === constants.UV_DIRENT_FIFO
   }
 
   isSocket () {
-    return this._type === constants.UV_DIRENT_SOCKET
+    return this.type === constants.UV_DIRENT_SOCKET
   }
 
   isCharacterDevice () {
-    return this._type === constants.UV_DIRENT_CHAR
+    return this.type === constants.UV_DIRENT_CHAR
   }
 
   isBlockDevice () {
-    return this._type === constants.UV_DIRENT_BLOCK
+    return this.type === constants.UV_DIRENT_BLOCK
   }
 }
 
@@ -1384,6 +1584,7 @@ exports.readlink = readlink
 exports.readv = readv
 exports.realpath = realpath
 exports.rename = rename
+exports.rm = rm
 exports.rmdir = rmdir
 exports.stat = stat
 exports.symlink = symlink
@@ -1399,11 +1600,14 @@ exports.fstatSync = fstatSync
 exports.lstatSync = lstatSync
 exports.mkdirSync = mkdirSync
 exports.openSync = openSync
+exports.opendirSync = opendirSync
 exports.readFileSync = readFileSync
 exports.readSync = readSync
+exports.readdirSync = readdirSync
 exports.readlinkSync = readlinkSync
 exports.realpathSync = realpathSync
 exports.renameSync = renameSync
+exports.rmSync = rmSync
 exports.rmdirSync = rmdirSync
 exports.statSync = statSync
 exports.symlinkSync = symlinkSync
@@ -1420,6 +1624,7 @@ exports.promises.readdir = promisify(readdir)
 exports.promises.readlink = promisify(readlink)
 exports.promises.realpath = promisify(realpath)
 exports.promises.rename = promisify(rename)
+exports.promises.rm = promisify(rm)
 exports.promises.rmdir = promisify(rmdir)
 exports.promises.stat = promisify(stat)
 exports.promises.symlink = promisify(symlink)
