@@ -1300,109 +1300,6 @@ class Stats {
   }
 }
 
-class FileWriteStream extends Writable {
-  constructor (path, opts = {}) {
-    super({ map })
-
-    this.path = path
-    this.fd = 0
-    this.flags = opts.flags || 'w'
-    this.mode = opts.mode || 0o666
-  }
-
-  _open (cb) {
-    open(this.path, this.flags, this.mode, (err, fd) => {
-      if (err) return cb(err)
-      this.fd = fd
-      cb(null)
-    })
-  }
-
-  _writev (datas, cb) {
-    writev(this.fd, datas, cb)
-  }
-
-  _destroy (cb) {
-    if (!this.fd) return cb(null)
-    close(this.fd, () => cb(null))
-  }
-}
-
-class FileReadStream extends Readable {
-  constructor (path, opts = {}) {
-    super()
-
-    this.path = path
-    this.fd = 0
-
-    this._offset = opts.start || 0
-    this._missing = 0
-
-    if (opts.length) this._missing = opts.length
-    else if (typeof opts.end === 'number') this._missing = opts.end - this._offset + 1
-    else this._missing = -1
-  }
-
-  _open (cb) {
-    open(this.path, constants.O_RDONLY, (err, fd) => {
-      if (err) return cb(err)
-
-      const onerror = (err) => close(fd, () => cb(err))
-
-      fstat(fd, (err, st) => {
-        if (err) return onerror(err)
-        if (!st.isFile()) return onerror(new Error(this.path + ' is not a file'))
-
-        this.fd = fd
-        if (this._missing === -1) this._missing = st.size
-
-        if (st.size < this._offset) {
-          this._offset = st.size
-          this._missing = 0
-          return cb(null)
-        }
-        if (st.size < this._offset + this._missing) {
-          this._missing = st.size - this._offset
-          return cb(null)
-        }
-
-        cb(null)
-      })
-    })
-  }
-
-  _read (cb) {
-    if (!this._missing) {
-      this.push(null)
-      return cb(null)
-    }
-
-    const data = Buffer.allocUnsafe(Math.min(this._missing, 65536))
-
-    read(this.fd, data, 0, data.byteLength, this._offset, (err, read) => {
-      if (err) return cb(err)
-
-      if (!read) {
-        this.push(null)
-        return cb(null)
-      }
-
-      if (this._missing < read) read = this._missing
-      this.push(data.subarray(0, read))
-      this._missing -= read
-      this._offset += read
-      if (!this._missing) this.push(null)
-
-      cb(null)
-    })
-  }
-
-  _destroy (cb) {
-    if (!this.fd) return cb(null)
-    close(this.fd, () => cb(null))
-  }
-}
-
 class Dir {
   constructor (path, handle, opts = {}) {
     const {
@@ -1558,6 +1455,109 @@ class Dirent {
   }
 }
 
+class FileWriteStream extends Writable {
+  constructor (path, opts = {}) {
+    super({ map })
+
+    this.path = path
+    this.fd = 0
+    this.flags = opts.flags || 'w'
+    this.mode = opts.mode || 0o666
+  }
+
+  _open (cb) {
+    open(this.path, this.flags, this.mode, (err, fd) => {
+      if (err) return cb(err)
+      this.fd = fd
+      cb(null)
+    })
+  }
+
+  _writev (datas, cb) {
+    writev(this.fd, datas, cb)
+  }
+
+  _destroy (cb) {
+    if (!this.fd) return cb(null)
+    close(this.fd, () => cb(null))
+  }
+}
+
+class FileReadStream extends Readable {
+  constructor (path, opts = {}) {
+    super()
+
+    this.path = path
+    this.fd = 0
+
+    this._offset = opts.start || 0
+    this._missing = 0
+
+    if (opts.length) this._missing = opts.length
+    else if (typeof opts.end === 'number') this._missing = opts.end - this._offset + 1
+    else this._missing = -1
+  }
+
+  _open (cb) {
+    open(this.path, constants.O_RDONLY, (err, fd) => {
+      if (err) return cb(err)
+
+      const onerror = (err) => close(fd, () => cb(err))
+
+      fstat(fd, (err, st) => {
+        if (err) return onerror(err)
+        if (!st.isFile()) return onerror(new Error(this.path + ' is not a file'))
+
+        this.fd = fd
+        if (this._missing === -1) this._missing = st.size
+
+        if (st.size < this._offset) {
+          this._offset = st.size
+          this._missing = 0
+          return cb(null)
+        }
+        if (st.size < this._offset + this._missing) {
+          this._missing = st.size - this._offset
+          return cb(null)
+        }
+
+        cb(null)
+      })
+    })
+  }
+
+  _read (cb) {
+    if (!this._missing) {
+      this.push(null)
+      return cb(null)
+    }
+
+    const data = Buffer.allocUnsafe(Math.min(this._missing, 65536))
+
+    read(this.fd, data, 0, data.byteLength, this._offset, (err, read) => {
+      if (err) return cb(err)
+
+      if (!read) {
+        this.push(null)
+        return cb(null)
+      }
+
+      if (this._missing < read) read = this._missing
+      this.push(data.subarray(0, read))
+      this._missing -= read
+      this._offset += read
+      if (!this._missing) this.push(null)
+
+      cb(null)
+    })
+  }
+
+  _destroy (cb) {
+    if (!this.fd) return cb(null)
+    close(this.fd, () => cb(null))
+  }
+}
+
 exports.promises = {}
 
 function typeError (code, message) {
@@ -1632,6 +1632,8 @@ exports.promises.unlink = promisify(unlink)
 exports.promises.writeFile = promisify(writeFile)
 
 exports.Stats = Stats
+exports.Dir = Dir
+exports.Dirent = Dirent
 
 exports.ReadStream = FileReadStream
 exports.createReadStream = function createReadStream (path, opts) {
