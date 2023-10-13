@@ -26,6 +26,40 @@ test('open + close sync', async (t) => {
   t.pass()
 })
 
+test('access', async (t) => {
+  t.plan(1)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+
+  fs.access(file, (err) => {
+    t.absent(err, 'accessed')
+  })
+})
+
+test('access, file missing', async (t) => {
+  t.plan(1)
+
+  fs.access('test/fixtures/foo.txt', (err) => {
+    t.ok(err, 'file missing')
+  })
+})
+
+test('access sync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+
+  fs.accessSync(file)
+})
+
+test('access async, file missing', async (t) => {
+  try {
+    fs.accessSync('test/fixtures/foo.txt')
+
+    t.fail('should fail')
+  } catch {
+    t.pass('file missing')
+  }
+})
+
 test('read', async (t) => {
   t.plan(5)
 

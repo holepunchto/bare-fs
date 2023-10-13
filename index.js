@@ -12,6 +12,11 @@ const constants = exports.constants = {
   O_TRUNC: binding.O_TRUNC,
   O_APPEND: binding.O_APPEND,
 
+  F_OK: binding.F_OK || 0,
+  R_OK: binding.R_OK || 0,
+  W_OK: binding.W_OK || 0,
+  X_OK: binding.X_OK || 0,
+
   S_IFMT: binding.S_IFMT,
   S_IFREG: binding.S_IFREG,
   S_IFDIR: binding.S_IFDIR,
@@ -202,6 +207,33 @@ function closeSync (fd) {
   }
 
   return binding.closeSync(fd)
+}
+
+function access (path, mode, cb) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof cb !== 'function') {
+    if (typeof mode === 'function') {
+      cb = mode
+      mode = constants.F_OK
+    } else {
+      throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    }
+  }
+
+  const req = getReq()
+  req.callback = cb
+  binding.access(req.handle, path, mode)
+}
+
+function accessSync (path, mode = constants.F_OK) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  binding.accessSync(path, mode)
 }
 
 function read (fd, buffer, offset, len, pos, cb) {
@@ -1568,6 +1600,7 @@ function typeError (code, message) {
 
 function noop () {}
 
+exports.access = access
 exports.chmod = chmod
 exports.close = close
 exports.fchmod = fchmod
@@ -1593,6 +1626,7 @@ exports.write = write
 exports.writeFile = writeFile
 exports.writev = writev
 
+exports.accessSync = accessSync
 exports.chmodSync = chmodSync
 exports.closeSync = closeSync
 exports.fchmodSync = fchmodSync
@@ -1615,6 +1649,7 @@ exports.unlinkSync = unlinkSync
 exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
 
+exports.promises.access = promisify(access)
 exports.promises.chmod = promisify(chmod)
 exports.promises.lstat = promisify(lstat)
 exports.promises.mkdir = promisify(mkdir)

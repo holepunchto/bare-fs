@@ -491,6 +491,73 @@ bare_fs_close_sync (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_access (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[2], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_access(loop, (uv_fs_t *) req, (char *) path, mode, on_fs_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_access_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[1], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_access(loop, &req, (char *) path, mode, NULL);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_read (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -2047,6 +2114,8 @@ init (js_env_t *env, js_value_t *exports) {
   V("openSync", bare_fs_open_sync)
   V("close", bare_fs_close)
   V("closeSync", bare_fs_close_sync)
+  V("access", bare_fs_access)
+  V("accessSync", bare_fs_access_sync)
   V("read", bare_fs_read)
   V("readSync", bare_fs_read_sync)
   V("readv", bare_fs_readv)
@@ -2101,6 +2170,19 @@ init (js_env_t *env, js_value_t *exports) {
   V(O_CREAT)
   V(O_TRUNC)
   V(O_APPEND)
+
+#ifdef F_OK
+  V(F_OK)
+#endif
+#ifdef R_OK
+  V(R_OK)
+#endif
+#ifdef W_OK
+  V(W_OK)
+#endif
+#ifdef X_OK
+  V(X_OK)
+#endif
 
   V(S_IFMT)
   V(S_IFREG)

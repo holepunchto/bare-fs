@@ -13,6 +13,7 @@ const fs = require('bare-fs')
 
 // Currently supports:
 
+fs.access
 fs.chmod
 fs.close
 fs.chmod
@@ -38,6 +39,7 @@ fs.writev
 fs.readFile
 fs.writeFile
 
+fs.promises.access
 fs.promises.chmod
 fs.promises.lstat
 fs.promises.mkdir
@@ -56,6 +58,7 @@ fs.promises.writeFile
 fs.createReadStream
 fs.createWriteStream
 
+fs.accessSync
 fs.chmodSync
 fs.closeSync
 fs.fchmodSync
