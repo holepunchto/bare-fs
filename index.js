@@ -1422,14 +1422,18 @@ class Dir {
         }
 
         if (this._ended) {
-          this.closeSync()
-
           return { done: true }
         }
 
         const entry = this.readSync()
 
-        return { done: entry === null, value: entry }
+        if (entry) {
+          return { done: false, value: entry }
+        }
+
+        this.closeSync()
+
+        return { done: true }
       }
     }
   }
@@ -1442,10 +1446,18 @@ class Dir {
         }
 
         if (this._ended) {
-          return this.close((err) => err ? reject(err) : resolve({ done: true }))
+          return resolve({ done: true })
         }
 
-        this.read((err, entry) => err ? reject(err) : resolve({ done: entry === null, value: entry }))
+        this.read((err, entry) => {
+          if (err) return reject(err)
+
+          if (entry) {
+            return resolve({ done: false, value: entry })
+          }
+
+          this.close((err) => err ? reject(err) : resolve({ done: true }))
+        })
       })
     }
   }
