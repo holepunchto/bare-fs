@@ -1658,6 +1658,8 @@ class Watcher extends EventEmitter {
   }
 
   _onclose () {
+    this._handle = null
+
     this.emit('close')
   }
 
