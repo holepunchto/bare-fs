@@ -1,3 +1,4 @@
+const EventEmitter = require('events')
 const { sep, resolve, isAbsolute, toNamespacedPath } = require('path')
 const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
@@ -1281,6 +1282,24 @@ function writeFileSync (path, data, opts) {
   }
 }
 
+function watch (path, opts, cb) {
+  if (typeof path !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  }
+
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  const watcher = new Watcher(path, opts)
+  if (cb) watcher.on('change', cb)
+  return watcher
+}
+
 class Stats {
   constructor (dev, mode, nlink, uid, gid, rdev, blksize, ino, size, blocks, atimeMs, mtimeMs, ctimeMs, birthtimeMs) {
     this.dev = dev
@@ -1602,6 +1621,111 @@ class FileReadStream extends Readable {
   }
 }
 
+class Watcher extends EventEmitter {
+  constructor (path, opts) {
+    const {
+      persistent = true,
+      recursive = false,
+      encoding = 'utf8'
+    } = opts
+
+    super()
+
+    this._closed = false
+    this._encoding = encoding
+    this._handle = binding.watcherInit(path, recursive, this, this._onevent, this._onclose)
+
+    if (!persistent) this.unref()
+  }
+
+  _onevent (err, events, filename) {
+    if (err) {
+      this.close()
+      this.emit('error', err)
+    } else {
+      let eventType
+
+      if (events & binding.UV_RENAME) {
+        eventType = 'rename'
+      } else if (events & binding.UV_CHANGE) {
+        eventType = 'change'
+      }
+
+      this.emit('change', eventType, this._encoding === 'buffer'
+        ? Buffer.from(filename)
+        : Buffer.from(filename).toString(this._encoding)
+      )
+    }
+  }
+
+  _onclose () {
+    this.emit('close')
+  }
+
+  close () {
+    if (this._closed) return
+    this._closed = true
+
+    binding.watcherClose(this._handle)
+  }
+
+  ref () {
+    if (this._handle) binding.watcherRef(this._handle)
+    return this
+  }
+
+  unref () {
+    if (this._handle) binding.watcherUnref(this._handle)
+    return this
+  }
+
+  [Symbol.asyncIterator] () {
+    const buffer = []
+    let done = false
+    let error = null
+    let next = null
+
+    this
+      .on('change', (eventType, filename) => {
+        if (next) {
+          next.resolve({ done: false, value: { eventType, filename } })
+          next = null
+        } else {
+          buffer.push({ eventType, filename })
+        }
+      })
+      .on('error', (err) => {
+        done = true
+        error = err
+
+        if (next) {
+          next.reject(error)
+          next = null
+        }
+      })
+      .on('close', () => {
+        done = true
+
+        if (next) {
+          next.resolve({ done })
+          next = null
+        }
+      })
+
+    return {
+      next: () => new Promise((resolve, reject) => {
+        if (error) return reject(error)
+
+        if (buffer.length) return resolve({ done: false, value: buffer.shift() })
+
+        if (done) return resolve({ done })
+
+        next = { resolve, reject }
+      })
+    }
+  }
+}
+
 exports.promises = {}
 
 function typeError (code, message) {
@@ -1634,6 +1758,7 @@ exports.rmdir = rmdir
 exports.stat = stat
 exports.symlink = symlink
 exports.unlink = unlink
+exports.watch = watch
 exports.write = write
 exports.writeFile = writeFile
 exports.writev = writev
@@ -1678,9 +1803,12 @@ exports.promises.symlink = promisify(symlink)
 exports.promises.unlink = promisify(unlink)
 exports.promises.writeFile = promisify(writeFile)
 
+exports.promises.watch = watch // Already async iterable
+
 exports.Stats = Stats
 exports.Dir = Dir
 exports.Dirent = Dirent
+exports.Watcher = Watcher
 
 exports.ReadStream = FileReadStream
 exports.createReadStream = function createReadStream (path, opts) {

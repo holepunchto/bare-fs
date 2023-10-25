@@ -33,6 +33,7 @@ fs.rmdir
 fs.stat
 fs.symlink
 fs.unlink
+fs.watch
 fs.write
 fs.writev
 
@@ -53,6 +54,7 @@ fs.promises.rmdir
 fs.promises.stat
 fs.promises.symlink
 fs.promises.unlink
+fs.promises.watch
 fs.promises.writeFile
 
 fs.createReadStream
