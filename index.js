@@ -1643,18 +1643,17 @@ class Watcher extends EventEmitter {
       this.close()
       this.emit('error', err)
     } else {
-      let eventType
-
-      if (events & binding.UV_RENAME) {
-        eventType = 'rename'
-      } else if (events & binding.UV_CHANGE) {
-        eventType = 'change'
-      }
-
-      this.emit('change', eventType, this._encoding === 'buffer'
+      const path = this._encoding === 'buffer'
         ? Buffer.from(filename)
         : Buffer.from(filename).toString(this._encoding)
-      )
+
+      if (events & binding.UV_RENAME) {
+        this.emit('change', 'rename', path)
+      }
+
+      if (events & binding.UV_CHANGE) {
+        this.emit('change', 'change', path)
+      }
     }
   }
 
