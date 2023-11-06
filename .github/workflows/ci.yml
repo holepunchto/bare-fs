@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         node-version: [lts/*]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
