@@ -1,1 +1,1 @@
-module.exports = process.addon(__dirname)
+module.exports = require.addon()
