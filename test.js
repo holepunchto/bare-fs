@@ -1,5 +1,5 @@
 const test = require('brittle')
-const path = require('path')
+const path = require('bare-path')
 const fs = require('.')
 
 test('open + close', async (t) => {

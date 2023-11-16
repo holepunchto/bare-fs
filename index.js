@@ -1,9 +1,11 @@
-const EventEmitter = require('events')
-const { sep, resolve, isAbsolute, toNamespacedPath } = require('path')
+/* global Bare */
+const EventEmitter = require('bare-events')
+const os = require('bare-os')
+const path = require('bare-path')
 const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
 
-const isWindows = process.platform === 'win32'
+const isWindows = os.platform() === 'win32'
 
 const constants = exports.constants = {
   O_RDWR: binding.O_RDWR,
@@ -59,7 +61,7 @@ const fs = {
 
 binding.init(fs.handle, fs, onresponse)
 
-process.on('exit', () => binding.destroy(fs.handle))
+Bare.on('exit', () => binding.destroy(fs.handle))
 
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber (flags) {
@@ -143,9 +145,9 @@ function onresponse (id, err, result) {
   callback(err, result)
 }
 
-function open (path, flags, mode, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function open (filepath, flags, mode, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof cb !== 'function') {
@@ -166,18 +168,18 @@ function open (path, flags, mode, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.open(req.handle, path, flags, mode)
+  binding.open(req.handle, filepath, flags, mode)
 }
 
-function openSync (path, flags = 'r', mode = 0o666) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function openSync (filepath, flags = 'r', mode = 0o666) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof flags === 'string') flags = flagsToNumber(flags)
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  return binding.openSync(path, flags, mode)
+  return binding.openSync(filepath, flags, mode)
 }
 
 function close (fd, cb = noop) {
@@ -210,9 +212,9 @@ function closeSync (fd) {
   return binding.closeSync(fd)
 }
 
-function access (path, mode, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function access (filepath, mode, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof cb !== 'function') {
@@ -226,15 +228,15 @@ function access (path, mode, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.access(req.handle, path, mode)
+  binding.access(req.handle, filepath, mode)
 }
 
-function accessSync (path, mode = constants.F_OK) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function accessSync (filepath, mode = constants.F_OK) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  binding.accessSync(path, mode)
+  binding.accessSync(filepath, mode)
 }
 
 function read (fd, buffer, offset, len, pos, cb) {
@@ -391,9 +393,9 @@ function writev (fd, buffers, pos, cb) {
   binding.writev(req.handle, fd, buffers, pos)
 }
 
-function stat (path, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function stat (filepath, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof cb !== 'function') {
@@ -409,20 +411,20 @@ function stat (path, cb) {
     else cb(null, new Stats(...data))
   }
 
-  binding.stat(req.handle, path, data)
+  binding.stat(req.handle, filepath, data)
 }
 
-function statSync (path) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function statSync (filepath) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  return new Stats(...binding.statSync(path))
+  return new Stats(...binding.statSync(filepath))
 }
 
-function lstat (path, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function lstat (filepath, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof cb !== 'function') {
@@ -438,15 +440,15 @@ function lstat (path, cb) {
     else cb(null, new Stats(...data))
   }
 
-  binding.lstat(req.handle, path, data)
+  binding.lstat(req.handle, filepath, data)
 }
 
-function lstatSync (path) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function lstatSync (filepath) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  return new Stats(...binding.lstatSync(path))
+  return new Stats(...binding.lstatSync(filepath))
 }
 
 function fstat (fd, cb) {
@@ -507,26 +509,26 @@ function ftruncate (fd, len, cb) {
   binding.ftruncate(req.handle, fd, len)
 }
 
-function chmod (path, mode, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function chmod (filepath, mode, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
   const req = getReq()
   req.callback = cb
-  binding.chmod(req.handle, path, mode)
+  binding.chmod(req.handle, filepath, mode)
 }
 
-function chmodSync (path, mode) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function chmodSync (filepath, mode) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  binding.chmodSync(path, mode)
+  binding.chmodSync(filepath, mode)
 }
 
 function fchmod (fd, mode, cb) {
@@ -559,12 +561,12 @@ function fchmodSync (fd, mode) {
   binding.fchmodSync(fd, mode)
 }
 
-function mkdirRecursive (path, mode, cb) {
-  mkdir(path, { mode }, function (err) {
+function mkdirRecursive (filepath, mode, cb) {
+  mkdir(filepath, { mode }, function (err) {
     if (err === null) return cb(null, 0, null)
 
     if (err.code !== 'ENOENT') {
-      stat(path, function (e, st) {
+      stat(filepath, function (e, st) {
         if (e) return cb(e, e.errno, null)
         if (st.isDirectory()) return cb(null, 0, null)
         cb(err, err.errno, null)
@@ -572,20 +574,20 @@ function mkdirRecursive (path, mode, cb) {
       return
     }
 
-    while (path.endsWith(sep)) path = path.slice(0, -1)
-    const i = path.lastIndexOf(sep)
+    while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
+    const i = filepath.lastIndexOf(path.sep)
     if (i <= 0) return cb(err, err.errno, null)
 
-    mkdirRecursive(path.slice(0, i), mode, function (err) {
+    mkdirRecursive(filepath.slice(0, i), mode, function (err) {
       if (err) return cb(err, err.errno, null)
-      mkdir(path, { mode }, cb)
+      mkdir(filepath, { mode }, cb)
     })
   })
 }
 
-function mkdir (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function mkdir (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -600,33 +602,33 @@ function mkdir (path, opts, cb) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirRecursive(path, mode, cb)
+  if (opts.recursive) return mkdirRecursive(filepath, mode, cb)
 
   const req = getReq()
   req.callback = cb
-  binding.mkdir(req.handle, path, mode)
+  binding.mkdir(req.handle, filepath, mode)
 }
 
-function mkdirResursiveSync (path, mode) {
+function mkdirResursiveSync (filepath, mode) {
   try {
-    mkdirSync(path, { mode })
+    mkdirSync(filepath, { mode })
   } catch (err) {
-    if (err.code !== 'ENOENT' && statSync(path).isDirectory()) {
+    if (err.code !== 'ENOENT' && statSync(filepath).isDirectory()) {
       return
     }
 
-    while (path.endsWith(sep)) path = path.slice(0, -1)
-    const i = path.lastIndexOf(sep)
+    while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
+    const i = filepath.lastIndexOf(path.sep)
     if (i <= 0) throw err
 
-    mkdirResursiveSync(path.slice(0, i), { mode })
-    mkdirSync(path, { mode })
+    mkdirResursiveSync(filepath.slice(0, i), { mode })
+    mkdirSync(filepath, { mode })
   }
 }
 
-function mkdirSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function mkdirSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'number') opts = { mode: opts }
@@ -634,14 +636,14 @@ function mkdirSync (path, opts) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirResursiveSync(path, mode)
+  if (opts.recursive) return mkdirResursiveSync(filepath, mode)
 
-  binding.mkdirSync(path, mode)
+  binding.mkdirSync(filepath, mode)
 }
 
-function rmdir (path, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function rmdir (filepath, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof cb !== 'function') {
@@ -650,33 +652,33 @@ function rmdir (path, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.rmdir(req.handle, path)
+  binding.rmdir(req.handle, filepath)
 }
 
-function rmdirSync (path) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function rmdirSync (filepath) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  binding.rmdirSync(path)
+  binding.rmdirSync(filepath)
 }
 
-function rmRecursive (path, opts, cb) {
-  rmdir(path, function (err) {
+function rmRecursive (filepath, opts, cb) {
+  rmdir(filepath, function (err) {
     if (err === null) return cb(null)
 
     if (err.code !== 'ENOTEMPTY') return cb(err)
 
-    readdir(path, function (err, files) {
+    readdir(filepath, function (err, files) {
       if (err) return cb(err)
 
-      if (files.length === 0) return rmdir(path, cb)
+      if (files.length === 0) return rmdir(filepath, cb)
 
       let missing = files.length
       let done = false
 
       for (const file of files) {
-        rm(path + sep + file, opts, function (err) {
+        rm(filepath + path.sep + file, opts, function (err) {
           if (done) return
 
           if (err) {
@@ -684,16 +686,16 @@ function rmRecursive (path, opts, cb) {
             return cb(err)
           }
 
-          if (--missing === 0) rmdir(path, cb)
+          if (--missing === 0) rmdir(filepath, cb)
         })
       }
     })
   })
 }
 
-function rm (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function rm (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -705,66 +707,66 @@ function rm (path, opts, cb) {
 
   if (!opts) opts = {}
 
-  lstat(path, function (err, st) {
+  lstat(filepath, function (err, st) {
     if (err) {
       return cb(err.code === 'ENOENT' && opts.force ? null : err)
     }
 
     if (st.isDirectory()) {
-      if (opts.recursive) return rmRecursive(path, opts, cb)
+      if (opts.recursive) return rmRecursive(filepath, opts, cb)
 
       const err = new Error('is a directory')
       err.code = 'EISDIR'
       return cb(err)
     }
 
-    unlink(path, cb)
+    unlink(filepath, cb)
   })
 }
 
-function rmRecursiveSync (path, opts) {
+function rmRecursiveSync (filepath, opts) {
   try {
-    rmdirSync(path)
+    rmdirSync(filepath)
   } catch (err) {
     if (err.code !== 'ENOTEMPTY') throw err
 
-    const files = readdirSync(path)
+    const files = readdirSync(filepath)
 
     for (const file of files) {
-      rmSync(path + sep + file, opts)
+      rmSync(filepath + path.sep + file, opts)
     }
 
-    rmdirSync(path)
+    rmdirSync(filepath)
   }
 }
 
-function rmSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function rmSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (!opts) opts = {}
 
   try {
-    const st = lstatSync(path)
+    const st = lstatSync(filepath)
 
     if (st.isDirectory()) {
-      if (opts.recursive) return rmRecursiveSync(path, opts)
+      if (opts.recursive) return rmRecursiveSync(filepath, opts)
 
       const err = new Error('is a directory')
       err.code = 'EISDIR'
       throw err
     }
 
-    unlinkSync(path)
+    unlinkSync(filepath)
   } catch (err) {
     if (err.code !== 'ENOENT' || !opts.force) throw err
   }
 }
 
-function unlink (path, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function unlink (filepath, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof cb !== 'function') {
@@ -773,15 +775,15 @@ function unlink (path, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.unlink(req.handle, path)
+  binding.unlink(req.handle, filepath)
 }
 
-function unlinkSync (path) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function unlinkSync (filepath) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  binding.unlinkSync(path)
+  binding.unlinkSync(filepath)
 }
 
 function rename (src, dst, cb) {
@@ -814,9 +816,9 @@ function renameSync (src, dst) {
   binding.renameSync(src, dst)
 }
 
-function realpath (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function realpath (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -844,12 +846,12 @@ function realpath (path, opts, cb) {
     cb(null, path)
   }
 
-  binding.realpath(req.handle, path, data)
+  binding.realpath(req.handle, filepath, data)
 }
 
-function realpathSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function realpathSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -861,16 +863,16 @@ function realpathSync (path, opts) {
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
-  binding.realpathSync(path, data)
+  binding.realpathSync(filepath, data)
 
-  path = data.subarray(0, data.indexOf(0))
-  if (encoding !== 'buffer') path = path.toString(encoding)
-  return path
+  filepath = data.subarray(0, data.indexOf(0))
+  if (encoding !== 'buffer') filepath = filepath.toString(encoding)
+  return filepath
 }
 
-function readlink (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function readlink (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -898,12 +900,12 @@ function readlink (path, opts, cb) {
     cb(null, path)
   }
 
-  binding.readlink(req.handle, path, data)
+  binding.readlink(req.handle, filepath, data)
 }
 
-function readlinkSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function readlinkSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -915,32 +917,32 @@ function readlinkSync (path, opts) {
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
-  binding.readlinkSync(path, data)
+  binding.readlinkSync(filepath, data)
 
-  path = data.subarray(0, data.indexOf(0))
-  if (encoding !== 'buffer') path = path.toString(encoding)
-  return path
+  filepath = data.subarray(0, data.indexOf(0))
+  if (encoding !== 'buffer') filepath = filepath.toString(encoding)
+  return filepath
 }
 
-function normalizeSymlinkTarget (target, type, path) {
+function normalizeSymlinkTarget (target, type, filepath) {
   if (isWindows) {
-    if (type === 'junction') target = resolve(path, '..', target)
+    if (type === 'junction') target = path.resolve(filepath, '..', target)
 
-    if (isAbsolute(target)) return toNamespacedPath(target)
+    if (path.isAbsolute(target)) return path.toNamespacedPath(target)
 
-    return target.replace(/\//g, sep)
+    return target.replace(/\//g, path.sep)
   }
 
   return target
 }
 
-function symlink (target, path, type, cb) {
+function symlink (target, filepath, type, cb) {
   if (typeof target !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof type === 'function') {
@@ -966,12 +968,12 @@ function symlink (target, path, type, cb) {
     }
   } else if (typeof type !== 'number') {
     if (isWindows) {
-      target = resolve(path, '..', target)
+      target = path.resolve(filepath, '..', target)
 
       stat(target, (err, st) => {
         type = err === null && st.isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
 
-        symlink(target, path, type, path, cb)
+        symlink(target, filepath, type, filepath, cb)
       })
 
       return
@@ -982,16 +984,16 @@ function symlink (target, path, type, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.symlink(req.handle, normalizeSymlinkTarget(target), toNamespacedPath(path), type)
+  binding.symlink(req.handle, normalizeSymlinkTarget(target), path.toNamespacedPath(filepath), type)
 }
 
-function symlinkSync (target, path, type) {
+function symlinkSync (target, filepath, type) {
   if (typeof target !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof type === 'string') {
@@ -1010,7 +1012,7 @@ function symlinkSync (target, path, type) {
     }
   } else if (typeof type !== 'number') {
     if (isWindows) {
-      target = resolve(path, '..', target)
+      target = path.resolve(filepath, '..', target)
 
       type = statSync(target).isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
     } else {
@@ -1018,12 +1020,12 @@ function symlinkSync (target, path, type) {
     }
   }
 
-  binding.symlinkSync(normalizeSymlinkTarget(target), toNamespacedPath(path), type)
+  binding.symlinkSync(normalizeSymlinkTarget(target), path.toNamespacedPath(filepath), type)
 }
 
-function opendir (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function opendir (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -1042,28 +1044,28 @@ function opendir (path, opts, cb) {
 
   req.callback = function (err, _) {
     if (err) return cb(err, null)
-    cb(null, new Dir(path, data, opts))
+    cb(null, new Dir(filepath, data, opts))
   }
 
-  binding.opendir(req.handle, path, data)
+  binding.opendir(req.handle, filepath, data)
 }
 
-function opendirSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function opendirSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
   const data = Buffer.allocUnsafe(binding.sizeofFSDir)
-  binding.opendirSync(path, data)
-  return new Dir(path, data, opts)
+  binding.opendirSync(filepath, data)
+  return new Dir(filepath, data, opts)
 }
 
-function readdir (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function readdir (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -1080,7 +1082,7 @@ function readdir (path, opts, cb) {
     withFileTypes = false
   } = opts
 
-  opendir(path, opts, async (err, dir) => {
+  opendir(filepath, opts, async (err, dir) => {
     if (err) return cb(err, null)
     const result = []
     for await (const entry of dir) {
@@ -1090,9 +1092,9 @@ function readdir (path, opts, cb) {
   })
 }
 
-function readdirSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function readdirSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1102,7 +1104,7 @@ function readdirSync (path, opts) {
     withFileTypes = false
   } = opts
 
-  const dir = opendirSync(path, opts)
+  const dir = opendirSync(filepath, opts)
   const result = []
 
   while (true) {
@@ -1114,9 +1116,9 @@ function readdirSync (path, opts) {
   return result
 }
 
-function readFile (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function readFile (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -1133,7 +1135,7 @@ function readFile (path, opts, cb) {
     encoding = 'buffer'
   } = opts
 
-  open(path, opts.flag || 'r', function (err, fd) {
+  open(filepath, opts.flag || 'r', function (err, fd) {
     if (err) return cb(err)
 
     fstat(fd, function (err, st) {
@@ -1169,9 +1171,9 @@ function readFile (path, opts, cb) {
   })
 }
 
-function readFileSync (path, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function readFileSync (filepath, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1181,7 +1183,7 @@ function readFileSync (path, opts) {
     encoding = 'buffer'
   } = opts
 
-  const fd = openSync(path, opts.flag || 'r')
+  const fd = openSync(filepath, opts.flag || 'r')
 
   try {
     const st = fstatSync(fd)
@@ -1205,9 +1207,9 @@ function readFileSync (path, opts) {
   }
 }
 
-function writeFile (path, data, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function writeFile (filepath, data, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
@@ -1226,7 +1228,7 @@ function writeFile (path, data, opts, cb) {
 
   if (typeof data === 'string') data = Buffer.from(data, opts.encoding)
 
-  open(path, opts.flag || 'w', opts.mode || 0o666, function (err, fd) {
+  open(filepath, opts.flag || 'w', opts.mode || 0o666, function (err, fd) {
     if (err) return cb(err)
 
     write(fd, data, loop)
@@ -1252,9 +1254,9 @@ function writeFile (path, data, opts, cb) {
   })
 }
 
-function writeFileSync (path, data, opts) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function writeFileSync (filepath, data, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
@@ -1266,7 +1268,7 @@ function writeFileSync (path, data, opts) {
 
   if (typeof data === 'string') data = Buffer.from(data, opts.encoding)
 
-  const fd = openSync(path, opts.flag || 'w', opts.mode)
+  const fd = openSync(filepath, opts.flag || 'w', opts.mode)
 
   try {
     let len = 0
@@ -1282,9 +1284,9 @@ function writeFileSync (path, data, opts) {
   }
 }
 
-function watch (path, opts, cb) {
-  if (typeof path !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof path) + ' (' + path + ')')
+function watch (filepath, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
   }
 
   if (typeof opts === 'function') {
@@ -1295,7 +1297,7 @@ function watch (path, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const watcher = new Watcher(path, opts)
+  const watcher = new Watcher(filepath, opts)
   if (cb) watcher.on('change', cb)
   return watcher
 }
