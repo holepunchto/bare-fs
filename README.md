@@ -17,6 +17,7 @@ fs.access
 fs.chmod
 fs.close
 fs.chmod
+fs.exists
 fs.fstat
 fs.ftruncate
 fs.lstat
@@ -63,6 +64,7 @@ fs.createWriteStream
 fs.accessSync
 fs.chmodSync
 fs.closeSync
+fs.existsSync
 fs.fchmodSync
 fs.fstatSync
 fs.lstatSync

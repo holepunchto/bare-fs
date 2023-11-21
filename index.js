@@ -239,6 +239,31 @@ function accessSync (filepath, mode = constants.F_OK) {
   binding.accessSync(filepath, mode)
 }
 
+function exists (filepath, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+  }
+
+  if (typeof cb !== 'function') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+  }
+
+  return access(filepath, (err) => cb(!!err)) // eslint-disable-line n/no-callback-literal
+}
+
+function existsSync (filepath) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+  }
+
+  try {
+    accessSync(filepath)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function read (fd, buffer, offset, len, pos, cb) {
   if (typeof fd !== 'number') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
@@ -1742,6 +1767,7 @@ function noop () {}
 exports.access = access
 exports.chmod = chmod
 exports.close = close
+exports.exists = exists
 exports.fchmod = fchmod
 exports.fstat = fstat
 exports.ftruncate = ftruncate
@@ -1769,6 +1795,7 @@ exports.writev = writev
 exports.accessSync = accessSync
 exports.chmodSync = chmodSync
 exports.closeSync = closeSync
+exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
 exports.fstatSync = fstatSync
 exports.lstatSync = lstatSync
