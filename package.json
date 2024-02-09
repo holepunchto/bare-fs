@@ -11,9 +11,7 @@
     "CMakeLists.txt",
     "prebuilds"
   ],
-  "addon": {
-    "target": "bare_fs"
-  },
+  "addon": true,
   "scripts": {
     "test": "standard && bare test.js"
   },
