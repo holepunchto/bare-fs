@@ -605,7 +605,21 @@ function mkdirRecursive (filepath, mode, cb) {
 
     mkdirRecursive(filepath.slice(0, i), mode, function (err) {
       if (err) return cb(err, err.errno, null)
-      mkdir(filepath, { mode }, cb)
+
+      mkdir(filepath, { mode }, function (err) {
+        if (err === null) return cb(null, 0, null)
+
+        if (err.code !== 'ENOENT') {
+          stat(filepath, function (e, st) {
+            if (e) return cb(e, e.errno, null)
+            if (st.isDirectory()) return cb(null, 0, null)
+            cb(err, err.errno, null)
+          })
+          return
+        }
+
+        cb(null, 0, null)
+      })
     })
   })
 }
@@ -647,7 +661,16 @@ function mkdirResursiveSync (filepath, mode) {
     if (i <= 0) throw err
 
     mkdirResursiveSync(filepath.slice(0, i), { mode })
-    mkdirSync(filepath, { mode })
+
+    try {
+      mkdirSync(filepath, { mode })
+    } catch (err) {
+      if (err.code !== 'ENOENT' && statSync(filepath).isDirectory()) {
+        return
+      }
+
+      throw err
+    }
   }
 }
 
