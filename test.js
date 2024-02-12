@@ -1,6 +1,9 @@
 const test = require('brittle')
 const path = require('bare-path')
+const os = require('bare-os')
 const fs = require('.')
+
+const isWindows = os.platform() === 'win32'
 
 test('open + close', async (t) => {
   t.plan(2)
@@ -568,64 +571,64 @@ test('mkdir recursive', async (t) => {
 test('realpath', async (t) => {
   t.plan(2)
 
-  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+  await withDir(t, 'test/fixtures/foo')
+  const link = await withSymlink(t, 'test/fixtures/foo-link', 'foo')
 
   fs.realpath(link, (err, link) => {
     t.absent(err)
-    t.is(link, path.resolve('test/fixtures/foo.txt'))
+    t.is(link, path.resolve('test/fixtures/foo'))
   })
 })
 
-test('readlink sync', async (t) => {
-  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+test('realpath sync', async (t) => {
+  await withDir(t, 'test/fixtures/foo')
+  const link = await withSymlink(t, 'test/fixtures/foo-link', 'foo')
 
-  t.is(fs.realpathSync(link), path.resolve('test/fixtures/foo.txt'))
+  t.is(fs.realpathSync(link), path.resolve('test/fixtures/foo'))
 })
 
 test('readlink', async (t) => {
   t.plan(2)
 
-  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+  const target = await withDir(t, 'test/fixtures/foo')
+  const link = await withSymlink(t, 'test/fixtures/foo-link', 'foo')
 
   fs.readlink(link, (err, link) => {
     t.absent(err)
-    t.is(link, 'foo.txt')
+    t.is(link, isWindows ? path.resolve(target) : 'foo')
   })
 })
 
 test('readlink sync', async (t) => {
-  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', 'foo.txt')
+  const target = await withDir(t, 'test/fixtures/foo')
+  const link = await withSymlink(t, 'test/fixtures/foo-link', 'foo')
 
-  t.is(fs.readlinkSync(link), 'foo.txt')
+  t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
 test('symlink', async (t) => {
   t.plan(3)
 
-  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const link = await withSymlink(t, 'test/fixtures/foo-link.txt')
+  const target = await withDir(t, 'test/fixtures/foo')
+  const link = await withSymlink(t, 'test/fixtures/foo-link')
 
-  fs.symlink('foo.txt', link, (err) => {
+  fs.symlink('foo', link, (err) => {
     t.absent(err)
 
     fs.readlink(link, (err, link) => {
       t.absent(err)
-      t.is(link, 'foo.txt')
+      t.is(link, isWindows ? path.resolve(target) : 'foo')
     })
   })
 })
 
 test('symlink sync', async (t) => {
-  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
-  const link = await withSymlink(t, 'test/fixtures/foo-link.txt')
+  const target = await withDir(t, 'test/fixtures/foo')
+  const link = await withSymlink(t, 'test/fixtures/foo-link')
 
-  fs.symlinkSync('foo.txt', link)
+  fs.symlinkSync('foo', link)
 
-  t.is(fs.readlinkSync(link), 'foo.txt')
+  t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
 async function withFile (t, path, data = Buffer.alloc(0)) {
