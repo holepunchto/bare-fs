@@ -636,14 +636,14 @@ function mkdir (filepath, opts, cb) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirRecursive(filepath, mode, cb)
+  if (opts.recursive) return mkdirRecursive(filepath.replace(/\//g, path.sep), mode, cb)
 
   const req = getReq()
   req.callback = cb
   binding.mkdir(req.handle, filepath, mode)
 }
 
-function mkdirResursiveSync (filepath, mode) {
+function mkdirRecursiveSync (filepath, mode) {
   try {
     mkdirSync(filepath, { mode })
   } catch (err) {
@@ -655,7 +655,7 @@ function mkdirResursiveSync (filepath, mode) {
     const i = filepath.lastIndexOf(path.sep)
     if (i <= 0) throw err
 
-    mkdirResursiveSync(filepath.slice(0, i), { mode })
+    mkdirRecursiveSync(filepath.slice(0, i), { mode })
 
     try {
       mkdirSync(filepath, { mode })
@@ -679,7 +679,7 @@ function mkdirSync (filepath, opts) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirResursiveSync(filepath, mode)
+  if (opts.recursive) return mkdirRecursiveSync(filepath.replace(/\//g, path.sep), mode)
 
   binding.mkdirSync(filepath, mode)
 }
@@ -1016,7 +1016,7 @@ function symlink (target, filepath, type, cb) {
       stat(target, (err, st) => {
         type = err === null && st.isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
 
-        symlink(target, filepath, type, filepath, cb)
+        symlink(target, filepath, type, cb)
       })
 
       return

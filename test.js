@@ -639,7 +639,13 @@ async function withFile (t, path, data = Buffer.alloc(0)) {
 }
 
 async function withSymlink (t, path, target = false) {
-  if (target) await fs.promises.symlink(target, path)
+  if (target) {
+    try {
+      await fs.promises.rm(path)
+    } catch {}
+
+    await fs.promises.symlink(target, path)
+  }
 
   t.teardown(() =>
     fs.promises.rm(path, { force: true })
