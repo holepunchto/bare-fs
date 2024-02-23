@@ -1327,6 +1327,51 @@ function writeFileSync (filepath, data, opts) {
   }
 }
 
+function appendFile (filepath, data, opts, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+  }
+
+  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data) + ' (' + data + ')')
+  }
+
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  } else if (typeof cb !== 'function') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  opts = { ...opts }
+
+  if (!opts.flags) opts.flag = 'a'
+
+  return writeFile(filepath, data, opts, cb)
+}
+
+function appendFileSync (filepath, data, opts) {
+  if (typeof filepath !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+  }
+
+  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data) + ' (' + data + ')')
+  }
+
+  if (typeof opts === 'string') opts = { encoding: opts }
+  else if (!opts) opts = {}
+
+  opts = { ...opts }
+
+  if (!opts.flags) opts.flag = 'a'
+
+  return writeFileSync(filepath, data, opts)
+}
+
 function watch (filepath, opts, cb) {
   if (typeof filepath !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
@@ -1783,6 +1828,7 @@ function typeError (code, message) {
 function noop () {}
 
 exports.access = access
+exports.appendFile = appendFile
 exports.chmod = chmod
 exports.close = close
 exports.exists = exists
@@ -1811,6 +1857,7 @@ exports.writeFile = writeFile
 exports.writev = writev
 
 exports.accessSync = accessSync
+exports.appendFileSync = appendFileSync
 exports.chmodSync = chmodSync
 exports.closeSync = closeSync
 exports.existsSync = existsSync
@@ -1835,6 +1882,7 @@ exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
 
 exports.promises.access = promisify(access)
+exports.promises.appendFile = promisify(appendFile)
 exports.promises.chmod = promisify(chmod)
 exports.promises.lstat = promisify(lstat)
 exports.promises.mkdir = promisify(mkdir)

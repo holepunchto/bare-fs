@@ -536,6 +536,25 @@ test('writeFile + readFile', async (t) => {
   })
 })
 
+test('appendFile + readFile', async (t) => {
+  t.plan(4)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
+
+  fs.appendFile(file, Buffer.from('foo\n'), (err) => {
+    t.absent(err)
+
+    fs.appendFile(file, Buffer.from('bar\n'), (err) => {
+      t.absent(err)
+
+      fs.readFile(file, (err, data) => {
+        t.absent(err)
+        t.alike(data, Buffer.from('foo\nbar\n'))
+      })
+    })
+  })
+})
+
 test('mkdir', async (t) => {
   t.plan(3)
 

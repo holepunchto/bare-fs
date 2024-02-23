@@ -38,6 +38,7 @@ fs.watch
 fs.write
 fs.writev
 
+fs.appendFile
 fs.readFile
 fs.writeFile
 
@@ -46,7 +47,6 @@ fs.promises.chmod
 fs.promises.lstat
 fs.promises.mkdir
 fs.promises.opendir
-fs.promises.readFile
 fs.promises.readdir
 fs.promises.readlink
 fs.promises.realpath
@@ -56,6 +56,9 @@ fs.promises.stat
 fs.promises.symlink
 fs.promises.unlink
 fs.promises.watch
+
+fs.promises.appendFile
+fs.promises.readFile
 fs.promises.writeFile
 
 fs.createReadStream
@@ -82,6 +85,7 @@ fs.symlinkSync
 fs.unlinkSync
 fs.writeSync
 
+fs.appendFileSync
 fs.readFileSync
 fs.writeFileSync
 ```
