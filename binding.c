@@ -114,6 +114,10 @@ on_fs_stat_response (uv_fs_t *uv_req) {
   js_env_t *env = req->env;
 
   if (uv_req->result == 0) {
+    js_handle_scope_t *scope;
+    err = js_open_handle_scope(env, &scope);
+    assert(err == 0);
+
     js_value_t *data;
     err = js_get_reference_value(env, req->data, &data);
     assert(err == 0);
@@ -157,6 +161,9 @@ on_fs_stat_response (uv_fs_t *uv_req) {
     V(ctim)
     V(birthtim)
 #undef V
+
+    err = js_close_handle_scope(req->env, scope);
+    assert(err == 0);
   }
 
   on_fs_response(uv_req);
@@ -171,6 +178,10 @@ on_fs_realpath_response (uv_fs_t *uv_req) {
   js_env_t *env = req->env;
 
   if (uv_req->result == 0) {
+    js_handle_scope_t *scope;
+    err = js_open_handle_scope(env, &scope);
+    assert(err == 0);
+
     js_value_t *data;
     err = js_get_reference_value(env, req->data, &data);
     assert(err == 0);
@@ -180,6 +191,9 @@ on_fs_realpath_response (uv_fs_t *uv_req) {
     assert(err == 0);
 
     strncpy(path, uv_req->ptr, sizeof(bare_fs_path_t));
+
+    err = js_close_handle_scope(req->env, scope);
+    assert(err == 0);
   }
 
   on_fs_response(uv_req);
@@ -194,6 +208,10 @@ on_fs_readlink_response (uv_fs_t *uv_req) {
   js_env_t *env = req->env;
 
   if (uv_req->result == 0) {
+    js_handle_scope_t *scope;
+    err = js_open_handle_scope(env, &scope);
+    assert(err == 0);
+
     js_value_t *data;
     err = js_get_reference_value(env, req->data, &data);
     assert(err == 0);
@@ -203,6 +221,9 @@ on_fs_readlink_response (uv_fs_t *uv_req) {
     assert(err == 0);
 
     strncpy(path, uv_req->ptr, sizeof(bare_fs_path_t));
+
+    err = js_close_handle_scope(req->env, scope);
+    assert(err == 0);
   }
 
   on_fs_response(uv_req);
@@ -217,6 +238,10 @@ on_fs_opendir_response (uv_fs_t *uv_req) {
   js_env_t *env = req->env;
 
   if (uv_req->result == 0) {
+    js_handle_scope_t *scope;
+    err = js_open_handle_scope(env, &scope);
+    assert(err == 0);
+
     js_value_t *data;
     err = js_get_reference_value(env, req->data, &data);
     assert(err == 0);
@@ -226,6 +251,9 @@ on_fs_opendir_response (uv_fs_t *uv_req) {
     assert(err == 0);
 
     dir->dir = uv_req->ptr;
+
+    err = js_close_handle_scope(req->env, scope);
+    assert(err == 0);
   }
 
   on_fs_response(uv_req);
@@ -240,6 +268,10 @@ on_fs_readdir_response (uv_fs_t *uv_req) {
   js_env_t *env = req->env;
 
   if (uv_req->result > 0) {
+    js_handle_scope_t *scope;
+    err = js_open_handle_scope(env, &scope);
+    assert(err == 0);
+
     js_value_t *data;
     err = js_get_reference_value(env, req->data, &data);
     assert(err == 0);
@@ -275,6 +307,9 @@ on_fs_readdir_response (uv_fs_t *uv_req) {
       err = js_set_named_property(env, entry, "type", type);
       assert(err == 0);
     }
+
+    err = js_close_handle_scope(req->env, scope);
+    assert(err == 0);
   }
 
   on_fs_response(uv_req);
