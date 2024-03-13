@@ -10,23 +10,24 @@ jobs:
   test:
     strategy:
       matrix:
-        node: [lts/*]
-        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
         - os: ubuntu-latest
-          name: ubuntu
+          platform: linux
+          arch: x64
         - os: macos-latest
-          name: macos
+          platform: darwin
+          arch: x64
         - os: windows-latest
-          name: windows
+          platform: win32
+          arch: x64
     runs-on: ${{ matrix.os }}
-    name: ${{ matrix.name }}
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node }}
+        node-version: lts/*
     - run: npm install -g bare-runtime bare-dev
     - run: npm install
-    - run: bare-dev install
+    - run: bare-dev install --platform ${{ matrix.platform }} --arch ${{ matrix.arch }} --debug
     - run: npm test
