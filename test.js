@@ -47,6 +47,27 @@ test('access, file missing', async (t) => {
   })
 })
 
+test('access, is executable', async (t) => {
+  t.plan(1)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', Buffer.alloc(0), { mode: 0o755 })
+
+  fs.access(file, fs.constants.X_OK, (err) => {
+    t.absent(err)
+  })
+})
+
+test('access, is not executable', async (t) => {
+  t.plan(1)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+
+  fs.access(file, fs.constants.X_OK, (err) => {
+    t.comment(err)
+    t.ok(err)
+  })
+})
+
 test('access sync', async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt')
 
@@ -650,8 +671,8 @@ test('symlink sync', async (t) => {
   t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
-async function withFile (t, path, data = Buffer.alloc(0)) {
-  if (data) await fs.promises.writeFile(path, data)
+async function withFile (t, path, data = Buffer.alloc(0), opts = {}) {
+  if (data) await fs.promises.writeFile(path, data, opts)
 
   t.teardown(() =>
     fs.promises.rm(path, { force: true })
