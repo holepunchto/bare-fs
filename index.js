@@ -1,11 +1,10 @@
 /* global Bare */
 const EventEmitter = require('bare-events')
-const os = require('bare-os')
 const path = require('bare-path')
 const { Readable, Writable } = require('streamx')
 const binding = require('./binding')
 
-const isWindows = os.platform() === 'win32'
+const isWindows = Bare.platform === 'win32'
 
 const constants = exports.constants = {
   O_RDWR: binding.O_RDWR,

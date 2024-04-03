@@ -1,9 +1,9 @@
+/* global Bare */
 const test = require('brittle')
 const path = require('bare-path')
-const os = require('bare-os')
 const fs = require('.')
 
-const isWindows = os.platform() === 'win32'
+const isWindows = Bare.platform === 'win32'
 
 test('open + close', async (t) => {
   t.plan(2)
@@ -47,7 +47,7 @@ test('access, file missing', async (t) => {
   })
 })
 
-test('access, is executable', async (t) => {
+test('access, is executable', { skip: isWindows }, async (t) => {
   t.plan(1)
 
   const file = await withFile(t, 'test/fixtures/foo.txt', Buffer.alloc(0), { mode: 0o755 })
@@ -57,7 +57,7 @@ test('access, is executable', async (t) => {
   })
 })
 
-test('access, is not executable', async (t) => {
+test('access, is not executable', { skip: isWindows }, async (t) => {
   t.plan(1)
 
   const file = await withFile(t, 'test/fixtures/foo.txt')
