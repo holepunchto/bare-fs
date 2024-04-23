@@ -1,7 +1,7 @@
 /* global Bare */
 const EventEmitter = require('bare-events')
 const path = require('bare-path')
-const { Readable, Writable } = require('streamx')
+const { Readable, Writable } = require('bare-stream')
 const binding = require('./binding')
 
 const isWindows = Bare.platform === 'win32'

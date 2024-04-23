@@ -51,7 +51,7 @@ typedef struct {
 typedef uv_dirent_t bare_fs_dirent_t;
 
 static inline void
-on_fs_response (uv_fs_t *uv_req) {
+bare_fs__on_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
@@ -110,7 +110,7 @@ on_fs_response (uv_fs_t *uv_req) {
 }
 
 static void
-on_fs_stat_response (uv_fs_t *uv_req) {
+bare_fs__on_stat_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
@@ -170,11 +170,11 @@ on_fs_stat_response (uv_fs_t *uv_req) {
     assert(err == 0);
   }
 
-  on_fs_response(uv_req);
+  bare_fs__on_response(uv_req);
 }
 
 static void
-on_fs_realpath_response (uv_fs_t *uv_req) {
+bare_fs__on_realpath_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
@@ -200,11 +200,11 @@ on_fs_realpath_response (uv_fs_t *uv_req) {
     assert(err == 0);
   }
 
-  on_fs_response(uv_req);
+  bare_fs__on_response(uv_req);
 }
 
 static void
-on_fs_readlink_response (uv_fs_t *uv_req) {
+bare_fs__on_readlink_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
@@ -230,11 +230,11 @@ on_fs_readlink_response (uv_fs_t *uv_req) {
     assert(err == 0);
   }
 
-  on_fs_response(uv_req);
+  bare_fs__on_response(uv_req);
 }
 
 static void
-on_fs_opendir_response (uv_fs_t *uv_req) {
+bare_fs__on_opendir_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
@@ -260,11 +260,11 @@ on_fs_opendir_response (uv_fs_t *uv_req) {
     assert(err == 0);
   }
 
-  on_fs_response(uv_req);
+  bare_fs__on_response(uv_req);
 }
 
 static void
-on_fs_readdir_response (uv_fs_t *uv_req) {
+bare_fs__on_readdir_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
@@ -316,11 +316,11 @@ on_fs_readdir_response (uv_fs_t *uv_req) {
     assert(err == 0);
   }
 
-  on_fs_response(uv_req);
+  bare_fs__on_response(uv_req);
 }
 
 static void
-on_fs_watcher_event (uv_fs_event_t *handle, const char *filename, int events, int status) {
+bare_fs__on_watcher_event (uv_fs_event_t *handle, const char *filename, int events, int status) {
   int err;
 
   bare_fs_watcher_t *watcher = (bare_fs_watcher_t *) handle;
@@ -381,7 +381,7 @@ on_fs_watcher_event (uv_fs_event_t *handle, const char *filename, int events, in
 }
 
 static void
-on_fs_watcher_close (uv_handle_t *handle) {
+bare_fs__on_watcher_close (uv_handle_t *handle) {
   int err;
 
   bare_fs_watcher_t *watcher = (bare_fs_watcher_t *) handle;
@@ -526,7 +526,7 @@ bare_fs_open (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_open(loop, (uv_fs_t *) req, (char *) path, flags, mode, on_fs_response);
+  uv_fs_open(loop, (uv_fs_t *) req, (char *) path, flags, mode, bare_fs__on_response);
 
   return NULL;
 }
@@ -598,7 +598,7 @@ bare_fs_close (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_close(loop, (uv_fs_t *) req, fd, on_fs_response);
+  uv_fs_close(loop, (uv_fs_t *) req, fd, bare_fs__on_response);
 
   return NULL;
 }
@@ -661,7 +661,7 @@ bare_fs_access (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_access(loop, (uv_fs_t *) req, (char *) path, mode, on_fs_response);
+  uv_fs_access(loop, (uv_fs_t *) req, (char *) path, mode, bare_fs__on_response);
 
   return NULL;
 }
@@ -746,7 +746,7 @@ bare_fs_read (js_env_t *env, js_callback_info_t *info) {
 
   uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
-  uv_fs_read(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
+  uv_fs_read(loop, (uv_fs_t *) req, fd, &buf, 1, pos, bare_fs__on_response);
 
   return NULL;
 }
@@ -852,7 +852,7 @@ bare_fs_readv (js_env_t *env, js_callback_info_t *info) {
     assert(err == 0);
   }
 
-  uv_fs_read(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, on_fs_response);
+  uv_fs_read(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, bare_fs__on_response);
 
   free(bufs);
 
@@ -904,7 +904,7 @@ bare_fs_write (js_env_t *env, js_callback_info_t *info) {
 
   uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
-  uv_fs_write(loop, (uv_fs_t *) req, fd, &buf, 1, pos, on_fs_response);
+  uv_fs_write(loop, (uv_fs_t *) req, fd, &buf, 1, pos, bare_fs__on_response);
 
   return NULL;
 }
@@ -1010,7 +1010,7 @@ bare_fs_writev (js_env_t *env, js_callback_info_t *info) {
     assert(err == 0);
   }
 
-  uv_fs_write(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, on_fs_response);
+  uv_fs_write(loop, (uv_fs_t *) req, fd, bufs, bufs_len, pos, bare_fs__on_response);
 
   free(bufs);
 
@@ -1044,7 +1044,7 @@ bare_fs_ftruncate (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_ftruncate(loop, (uv_fs_t *) req, fd, len, on_fs_response);
+  uv_fs_ftruncate(loop, (uv_fs_t *) req, fd, len, bare_fs__on_response);
 
   return NULL;
 }
@@ -1076,7 +1076,7 @@ bare_fs_chmod (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_chmod(loop, (uv_fs_t *) req, (char *) path, mode, on_fs_response);
+  uv_fs_chmod(loop, (uv_fs_t *) req, (char *) path, mode, bare_fs__on_response);
 
   return NULL;
 }
@@ -1143,7 +1143,7 @@ bare_fs_fchmod (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_fchmod(loop, (uv_fs_t *) req, fd, mode, on_fs_response);
+  uv_fs_fchmod(loop, (uv_fs_t *) req, fd, mode, bare_fs__on_response);
 
   return NULL;
 }
@@ -1210,7 +1210,7 @@ bare_fs_rename (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_rename(loop, (uv_fs_t *) req, (char *) src, (char *) dest, on_fs_response);
+  uv_fs_rename(loop, (uv_fs_t *) req, (char *) src, (char *) dest, bare_fs__on_response);
 
   return NULL;
 }
@@ -1277,7 +1277,7 @@ bare_fs_mkdir (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_mkdir(loop, (uv_fs_t *) req, (char *) path, mode, on_fs_response);
+  uv_fs_mkdir(loop, (uv_fs_t *) req, (char *) path, mode, bare_fs__on_response);
 
   return NULL;
 }
@@ -1340,7 +1340,7 @@ bare_fs_rmdir (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_rmdir(loop, (uv_fs_t *) req, (char *) path, on_fs_response);
+  uv_fs_rmdir(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_response);
 
   return NULL;
 }
@@ -1402,7 +1402,7 @@ bare_fs_stat (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_stat(loop, (uv_fs_t *) req, (char *) path, on_fs_stat_response);
+  uv_fs_stat(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_stat_response);
 
   return NULL;
 }
@@ -1509,7 +1509,7 @@ bare_fs_lstat (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_lstat(loop, (uv_fs_t *) req, (char *) path, on_fs_stat_response);
+  uv_fs_lstat(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_stat_response);
 
   return NULL;
 }
@@ -1616,7 +1616,7 @@ bare_fs_fstat (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_fstat(loop, (uv_fs_t *) req, fd, on_fs_stat_response);
+  uv_fs_fstat(loop, (uv_fs_t *) req, fd, bare_fs__on_stat_response);
 
   return NULL;
 }
@@ -1720,7 +1720,7 @@ bare_fs_unlink (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_unlink(loop, (uv_fs_t *) req, (char *) path, on_fs_response);
+  uv_fs_unlink(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_response);
 
   return NULL;
 }
@@ -1782,7 +1782,7 @@ bare_fs_realpath (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_realpath(loop, (uv_fs_t *) req, (char *) path, on_fs_realpath_response);
+  uv_fs_realpath(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_realpath_response);
 
   return NULL;
 }
@@ -1852,7 +1852,7 @@ bare_fs_readlink (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_readlink(loop, (uv_fs_t *) req, (char *) path, on_fs_readlink_response);
+  uv_fs_readlink(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_readlink_response);
 
   return NULL;
 }
@@ -1925,7 +1925,7 @@ bare_fs_symlink (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_symlink(loop, (uv_fs_t *) req, (char *) target, (char *) path, flags, on_fs_response);
+  uv_fs_symlink(loop, (uv_fs_t *) req, (char *) target, (char *) path, flags, bare_fs__on_response);
 
   return NULL;
 }
@@ -1995,7 +1995,7 @@ bare_fs_opendir (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_opendir(loop, (uv_fs_t *) req, (char *) path, on_fs_opendir_response);
+  uv_fs_opendir(loop, (uv_fs_t *) req, (char *) path, bare_fs__on_opendir_response);
 
   return NULL;
 }
@@ -2073,7 +2073,7 @@ bare_fs_readdir (js_env_t *env, js_callback_info_t *info) {
   dir->dir->dirents = dirents;
   dir->dir->nentries = dirents_len / sizeof(bare_fs_dirent_t);
 
-  uv_fs_readdir(loop, (uv_fs_t *) req, dir->dir, on_fs_readdir_response);
+  uv_fs_readdir(loop, (uv_fs_t *) req, dir->dir, bare_fs__on_readdir_response);
 
   return NULL;
 }
@@ -2172,7 +2172,7 @@ bare_fs_closedir (js_env_t *env, js_callback_info_t *info) {
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_closedir(loop, (uv_fs_t *) req, dir->dir, on_fs_response);
+  uv_fs_closedir(loop, (uv_fs_t *) req, dir->dir, bare_fs__on_response);
 
   return NULL;
 }
@@ -2245,7 +2245,7 @@ bare_fs_watcher_init (js_env_t *env, js_callback_info_t *info) {
     return NULL;
   }
 
-  err = uv_fs_event_start(&watcher->handle, on_fs_watcher_event, (char *) path, recursive ? UV_FS_EVENT_RECURSIVE : 0);
+  err = uv_fs_event_start(&watcher->handle, bare_fs__on_watcher_event, (char *) path, recursive ? UV_FS_EVENT_RECURSIVE : 0);
 
   if (err < 0) {
     js_throw_error(env, uv_err_name(err), uv_strerror(err));
@@ -2286,7 +2286,7 @@ bare_fs_watcher_close (js_env_t *env, js_callback_info_t *info) {
   err = uv_fs_event_stop(&watcher->handle);
   assert(err == 0);
 
-  uv_close((uv_handle_t *) &watcher->handle, on_fs_watcher_close);
+  uv_close((uv_handle_t *) &watcher->handle, bare_fs__on_watcher_close);
 
   return NULL;
 }
@@ -2334,7 +2334,7 @@ bare_fs_watcher_unref (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
-init (js_env_t *env, js_value_t *exports) {
+bare_fs_exports (js_env_t *env, js_value_t *exports) {
   int err;
 
   {
@@ -2367,6 +2367,7 @@ init (js_env_t *env, js_value_t *exports) {
     js_create_uint32(env, sizeof(bare_fs_path_t), &val);
     js_set_named_property(env, exports, "sizeofFSPath", val);
   }
+
 #define V(name, fn) \
   { \
     js_value_t *val; \
@@ -2519,4 +2520,4 @@ init (js_env_t *env, js_value_t *exports) {
   return exports;
 }
 
-BARE_MODULE(bare_fs, init)
+BARE_MODULE(bare_fs, bare_fs_exports)
