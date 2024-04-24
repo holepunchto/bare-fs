@@ -340,7 +340,7 @@ function readv (fd, buffers, pos, cb) {
   binding.readv(req.handle, fd, buffers, pos)
 }
 
-function write (fd, buffer, offset, len, pos, cb) {
+function write (fd, data, offset, len, pos, cb) {
   if (typeof fd !== 'number') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
   }
@@ -349,19 +349,45 @@ function write (fd, buffer, offset, len, pos, cb) {
     throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
   }
 
-  if (!Buffer.isBuffer(buffer) && !ArrayBuffer.isView(buffer)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Buffer must be a buffer. Received type ' + (typeof buffer) + ' (' + buffer + ')')
+  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
-  if (typeof cb !== 'function') {
+  if (typeof data === 'string') {
+    let encoding = len
+    cb = pos
+    pos = offset
+
+    if (typeof cb !== 'function') {
+      if (typeof pos === 'function') {
+        cb = pos
+        pos = -1
+        encoding = 'utf8'
+      } else if (typeof encoding === 'function') {
+        cb = encoding
+        encoding = 'utf8'
+      } else {
+        throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+      }
+    }
+
+    if (typeof pos === 'string') {
+      encoding = pos
+      pos = -1
+    }
+
+    data = Buffer.from(data, encoding)
+    offset = 0
+    len = data.byteLength
+  } else if (typeof cb !== 'function') {
     if (typeof offset === 'function') {
       cb = offset
       offset = 0
-      len = buffer.byteLength
+      len = data.byteLength
       pos = -1
     } else if (typeof len === 'function') {
       cb = len
-      len = buffer.byteLength - offset
+      len = data.byteLength - offset
       pos = -1
     } else if (typeof pos === 'function') {
       cb = pos
@@ -375,10 +401,10 @@ function write (fd, buffer, offset, len, pos, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.write(req.handle, fd, buffer, offset, len, pos)
+  binding.write(req.handle, fd, data, offset, len, pos)
 }
 
-function writeSync (fd, buffer, offset = 0, len = buffer.byteLength - offset, pos = -1) {
+function writeSync (fd, data, offset = 0, len, pos) {
   if (typeof fd !== 'number') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
   }
@@ -387,11 +413,17 @@ function writeSync (fd, buffer, offset = 0, len = buffer.byteLength - offset, po
     throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
   }
 
-  if (!Buffer.isBuffer(buffer) && !ArrayBuffer.isView(buffer)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Buffer must be a buffer. Received type ' + (typeof buffer) + ' (' + buffer + ')')
+  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
-  return binding.writeSync(fd, buffer, offset, len, pos)
+  if (typeof data === 'string') data = Buffer.from(data)
+
+  if (typeof len !== 'number') len = data.byteLength - offset
+
+  if (typeof pos !== 'number') pos = -1
+
+  return binding.writeSync(fd, data, offset, len, pos)
 }
 
 function writev (fd, buffers, pos, cb) {
@@ -1255,7 +1287,7 @@ function writeFile (filepath, data, opts, cb) {
   }
 
   if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data) + ' (' + data + ')')
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
   if (typeof opts === 'function') {
@@ -1302,7 +1334,7 @@ function writeFileSync (filepath, data, opts) {
   }
 
   if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data) + ' (' + data + ')')
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1332,7 +1364,7 @@ function appendFile (filepath, data, opts, cb) {
   }
 
   if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data) + ' (' + data + ')')
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
   if (typeof opts === 'function') {
@@ -1358,7 +1390,7 @@ function appendFileSync (filepath, data, opts) {
   }
 
   if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data) + ' (' + data + ')')
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
