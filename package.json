@@ -1,6 +1,6 @@
 {
   "name": "bare-fs",
-  "version": "2.2.3",
+  "version": "2.3.0",
   "description": "Native file system for Javascript",
   "main": "index.js",
   "files": [
