@@ -351,6 +351,27 @@ test('write out of buffer bounds', async (t) => {
   })
 })
 
+test('write string', async (t) => {
+  t.plan(4)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
+
+  fs.open(file, 'w+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    const data = 'foo\n'
+
+    fs.write(fd, data, (err, len) => {
+      t.absent(err)
+      t.is(len, 4)
+
+      fs.close(fd, (err) => {
+        t.absent(err, 'closed')
+      })
+    })
+  })
+})
+
 test('stat', async (t) => {
   t.plan(2)
 

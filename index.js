@@ -353,9 +353,33 @@ function write (fd, data, offset, len, pos, cb) {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
   }
 
-  if (typeof data === 'string') data = Buffer.from(data)
+  if (typeof data === 'string') {
+    let encoding = len
+    cb = pos
+    pos = offset
 
-  if (typeof cb !== 'function') {
+    if (typeof cb !== 'function') {
+      if (typeof pos === 'function') {
+        cb = pos
+        pos = -1
+        encoding = 'utf8'
+      } else if (typeof encoding === 'function') {
+        cb = encoding
+        encoding = 'utf8'
+      } else {
+        throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+      }
+    }
+
+    if (typeof pos === 'string') {
+      encoding = pos
+      pos = -1
+    }
+
+    data = Buffer.from(data, encoding)
+    offset = 0
+    len = data.byteLength
+  } else if (typeof cb !== 'function') {
     if (typeof offset === 'function') {
       cb = offset
       offset = 0
