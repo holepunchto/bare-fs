@@ -1657,13 +1657,13 @@ class FileWriteStream extends Writable {
     })
   }
 
-  _writev (datas, cb) {
-    writev(this.fd, datas, cb)
+  _writev (batch, cb) {
+    writev(this.fd, batch.map(({ chunk }) => chunk), cb)
   }
 
-  _destroy (cb) {
-    if (!this.fd) return cb(null)
-    close(this.fd, () => cb(null))
+  _destroy (err, cb) {
+    if (!this.fd) return cb(err)
+    close(this.fd, () => cb(err))
   }
 }
 
@@ -1710,20 +1710,20 @@ class FileReadStream extends Readable {
     })
   }
 
-  _read (cb) {
+  _read (size) {
     if (!this._missing) {
       this.push(null)
-      return cb(null)
+      return
     }
 
-    const data = Buffer.allocUnsafe(Math.min(this._missing, 65536))
+    const data = Buffer.allocUnsafe(Math.min(this._missing, size))
 
     read(this.fd, data, 0, data.byteLength, this._offset, (err, read) => {
-      if (err) return cb(err)
+      if (err) return this.destroy(err)
 
       if (!read) {
         this.push(null)
-        return cb(null)
+        return
       }
 
       if (this._missing < read) read = this._missing
@@ -1731,14 +1731,12 @@ class FileReadStream extends Readable {
       this._missing -= read
       this._offset += read
       if (!this._missing) this.push(null)
-
-      cb(null)
     })
   }
 
-  _destroy (cb) {
-    if (!this.fd) return cb(null)
-    close(this.fd, () => cb(null))
+  _destroy (err, cb) {
+    if (!this.fd) return cb(err)
+    close(this.fd, () => cb(err))
   }
 }
 

@@ -692,6 +692,39 @@ test('symlink sync', async (t) => {
   t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
+test('createReadStream', async (t) => {
+  t.plan(1)
+
+  const expected = Buffer.alloc(1024 * 1024 * 4 /* 4 MiB */).fill('hello')
+
+  const file = await withFile(t, 'test/fixtures/foo', expected)
+
+  const stream = fs.createReadStream(file)
+  const read = []
+
+  stream
+    .on('data', (data) => read.push(data))
+    .on('end', () => t.alike(Buffer.concat(read), expected))
+})
+
+test('createWriteStream', async (t) => {
+  t.plan(2)
+
+  const file = await withFile(t, 'test/fixtures/foo')
+
+  const stream = fs.createWriteStream(file)
+
+  stream.on('close', () =>
+    fs.readFile(file, (err, data) => {
+      t.absent(err)
+      t.alike(data, Buffer.from('hello world'))
+    })
+  )
+
+  stream.write('hello')
+  stream.end(' world')
+})
+
 async function withFile (t, path, data = Buffer.alloc(0), opts = {}) {
   if (data) await fs.promises.writeFile(path, data, opts)
 
