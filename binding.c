@@ -2373,7 +2373,7 @@ bare_fs_exports (js_env_t *env, js_value_t *exports) {
     js_value_t *val; \
     err = js_create_function(env, name, -1, fn, NULL, &val); \
     assert(err == 0); \
-    js_set_named_property(env, exports, name, val); \
+    err = js_set_named_property(env, exports, name, val); \
     assert(err == 0); \
   }
 
