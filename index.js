@@ -60,7 +60,11 @@ const fs = {
 
 binding.init(fs.handle, fs, onresponse)
 
-Bare.on('exit', () => binding.destroy(fs.handle))
+Bare.on('exit', () => {
+  for (const req of reqs) binding.reqCancel(req.handle)
+
+  binding.destroy(fs.handle)
+})
 
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber (flags) {
@@ -105,7 +109,7 @@ function modeToNumber (mode) {
 function alloc () {
   const handle = Buffer.alloc(binding.sizeofFSReq)
 
-  binding.initReq(fs.handle, handle)
+  binding.reqInit(fs.handle, handle)
 
   const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetofFSReqID, 1)
 

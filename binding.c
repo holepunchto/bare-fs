@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <bare.h>
 #include <js.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,11 +51,18 @@ typedef struct {
 
 typedef uv_dirent_t bare_fs_dirent_t;
 
+static inline bool
+bare_fs__is_cancelled (bare_fs_req_t *req) {
+  return req->ctx == NULL || req->req.result == UV_ECANCELED;
+}
+
 static inline void
 bare_fs__on_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
+
+  if (bare_fs__is_cancelled(req)) return;
 
   js_env_t *env = req->env;
 
@@ -114,6 +122,8 @@ bare_fs__on_stat_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
+
+  if (bare_fs__is_cancelled(req)) return;
 
   js_env_t *env = req->env;
 
@@ -179,6 +189,8 @@ bare_fs__on_realpath_response (uv_fs_t *uv_req) {
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
 
+  if (bare_fs__is_cancelled(req)) return;
+
   js_env_t *env = req->env;
 
   if (uv_req->result == 0) {
@@ -209,6 +221,8 @@ bare_fs__on_readlink_response (uv_fs_t *uv_req) {
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
 
+  if (bare_fs__is_cancelled(req)) return;
+
   js_env_t *env = req->env;
 
   if (uv_req->result == 0) {
@@ -238,6 +252,8 @@ bare_fs__on_opendir_response (uv_fs_t *uv_req) {
   int err;
 
   bare_fs_req_t *req = (bare_fs_req_t *) uv_req;
+
+  if (bare_fs__is_cancelled(req)) return;
 
   js_env_t *env = req->env;
 
@@ -491,6 +507,31 @@ bare_fs_req_init (js_env_t *env, js_callback_info_t *info) {
   req->env = fs->env;
   req->ctx = fs->ctx;
   req->on_response = fs->on_response;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_req_cancel (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  bare_fs_req_t *req;
+  err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
+  assert(err == 0);
+
+  uv_cancel((uv_req_t *) req);
+
+  req->env = NULL;
+  req->ctx = NULL;
+  req->on_response = NULL;
 
   return NULL;
 }
@@ -2379,7 +2420,8 @@ bare_fs_exports (js_env_t *env, js_value_t *exports) {
 
   V("init", bare_fs_init)
   V("destroy", bare_fs_destroy)
-  V("initReq", bare_fs_req_init)
+  V("reqInit", bare_fs_req_init)
+  V("reqCancel", bare_fs_req_cancel)
   V("open", bare_fs_open)
   V("openSync", bare_fs_open_sync)
   V("close", bare_fs_close)
