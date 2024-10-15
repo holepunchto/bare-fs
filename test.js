@@ -629,6 +629,48 @@ test('mkdir recursive', async (t) => {
   })
 })
 
+test('copyFile', async (t) => {
+  t.plan(11)
+
+  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  fs.copyFile('test/fixtures/foo.txt', 'test/fixtures/bar.txt', (err) => {
+    t.absent(err, 'file copied')
+
+    fs.open('test/fixtures/foo.txt', (err, fd) => {
+      t.absent(err, 'original copy opened')
+
+      const data = Buffer.alloc(4)
+
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err, 'read original copy')
+        t.is(len, 4)
+        t.alike(data, Buffer.from('foo\n'), 'check original copy content')
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'original copy closed')
+        })
+      })
+    })
+
+    fs.open('test/fixtures/bar.txt', (err, fd) => {
+      t.absent(err, 'new copy opened')
+
+      const data = Buffer.alloc(4)
+
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err, 'read new copy')
+        t.is(len, 4)
+        t.alike(data, Buffer.from('foo\n'), 'check new copy content')
+
+        fs.close(fd, (err) => {
+          t.absent(err, 'new copy closed')
+        })
+      })
+    })
+  })
+})
+
 test('realpath', async (t) => {
   t.plan(2)
 

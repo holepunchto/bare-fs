@@ -894,6 +894,20 @@ function renameSync (src, dst) {
   binding.renameSync(src, dst)
 }
 
+function copyFile (src, dst, cb) {
+  if (typeof src !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+  }
+
+  if (typeof dst !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+  }
+
+  const req = getReq()
+  req.callback = cb
+  binding.copyfile(req.handle, src, dst)
+}
+
 function realpath (filepath, opts, cb) {
   if (typeof filepath !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
@@ -1864,6 +1878,7 @@ exports.access = access
 exports.appendFile = appendFile
 exports.chmod = chmod
 exports.close = close
+exports.copyFile = copyFile
 exports.exists = exists
 exports.fchmod = fchmod
 exports.fstat = fstat

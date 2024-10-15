@@ -16,7 +16,7 @@ const fs = require('bare-fs')
 fs.access
 fs.chmod
 fs.close
-fs.chmod
+fs.copyFile
 fs.exists
 fs.fstat
 fs.ftruncate
