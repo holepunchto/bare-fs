@@ -1295,13 +1295,13 @@ static js_value_t *
 bare_fs_copyfile (js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 3;
-  js_value_t *argv[3];
+  size_t argc = 4;
+  js_value_t *argv[4];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 3);
+  assert(argc == 4);
 
   bare_fs_req_t *req;
   err = js_get_typedarray_info(env, argv[0], NULL, (void **) &req, NULL, NULL, NULL);
@@ -1315,10 +1315,14 @@ bare_fs_copyfile (js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_string_utf8(env, argv[2], dest, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
 
+  int32_t mode;
+  err = js_get_value_int32(env, argv[3], &mode);
+  assert(err == 0);
+
   uv_loop_t *loop;
   js_get_env_loop(env, &loop);
 
-  uv_fs_copyfile(loop, (uv_fs_t *) req, (char *) src, (char *) dest, 0, bare_fs__on_response);
+  uv_fs_copyfile(loop, (uv_fs_t *) req, (char *) src, (char *) dest, mode, bare_fs__on_response);
 
   return NULL;
 }
@@ -2585,6 +2589,9 @@ bare_fs_exports (js_env_t *env, js_value_t *exports) {
   V(UV_DIRENT_CHAR)
   V(UV_DIRENT_BLOCK)
 
+  V(UV_FS_COPYFILE_EXCL)
+  V(UV_FS_COPYFILE_FICLONE)
+  V(UV_FS_COPYFILE_FICLONE_FORCE)
   V(UV_FS_SYMLINK_DIR)
   V(UV_FS_SYMLINK_JUNCTION)
 

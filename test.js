@@ -671,6 +671,18 @@ test('copyFile', async (t) => {
   })
 })
 
+test('copyFile with COPYFILE_EXCL', async (t) => {
+  t.plan(2)
+
+  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  await withFile(t, 'test/fixtures/bar.txt', 'bar\n')
+
+  fs.copyFile('test/fixtures/foo.txt', 'test/fixtures/bar.txt', fs.constants.COPYFILE_EXCL, (err) => {
+    t.ok(err)
+    t.is(err.message, 'file already exists')
+  })
+})
+
 test('realpath', async (t) => {
   t.plan(2)
 
