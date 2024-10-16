@@ -916,7 +916,7 @@ function copyFile (src, dst, mode, cb) {
   binding.copyfile(req.handle, src, dst, mode)
 }
 
-function copyFileSync (src, dst, mode) {
+function copyFileSync (src, dst, mode = 0) {
   if (typeof src !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
   }
