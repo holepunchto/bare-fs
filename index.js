@@ -916,6 +916,18 @@ function copyFile (src, dst, mode, cb) {
   binding.copyfile(req.handle, src, dst, mode)
 }
 
+function copyFileSync (src, dst, mode) {
+  if (typeof src !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+  }
+
+  if (typeof dst !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+  }
+
+  binding.copyfileSync(src, dst, mode)
+}
+
 function realpath (filepath, opts, cb) {
   if (typeof filepath !== 'string') {
     throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
@@ -1916,6 +1928,7 @@ exports.accessSync = accessSync
 exports.appendFileSync = appendFileSync
 exports.chmodSync = chmodSync
 exports.closeSync = closeSync
+exports.copyFileSync = copyFileSync
 exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
 exports.fstatSync = fstatSync
@@ -1940,6 +1953,7 @@ exports.writeSync = writeSync
 exports.promises.access = promisify(access)
 exports.promises.appendFile = promisify(appendFile)
 exports.promises.chmod = promisify(chmod)
+exports.promises.copyFile = promisify(copyFile)
 exports.promises.lstat = promisify(lstat)
 exports.promises.mkdir = promisify(mkdir)
 exports.promises.opendir = promisify(opendir)

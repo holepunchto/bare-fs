@@ -1328,6 +1328,45 @@ bare_fs_copyfile (js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_copyfile_sync (js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_path_t src;
+  err = js_get_value_string_utf8(env, argv[0], src, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  bare_fs_path_t dest;
+  err = js_get_value_string_utf8(env, argv[1], dest, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  int32_t mode;
+  err = js_get_value_int32(env, argv[2], &mode);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  js_get_env_loop(env, &loop);
+
+  uv_fs_t req;
+  uv_fs_copyfile(loop, &req, (char *) src, (char *) dest, mode, NULL);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_mkdir (js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -2478,6 +2517,7 @@ bare_fs_exports (js_env_t *env, js_value_t *exports) {
   V("rename", bare_fs_rename)
   V("renameSync", bare_fs_rename_sync)
   V("copyfile", bare_fs_copyfile)
+  V("copyfileSync", bare_fs_copyfile_sync)
   V("mkdir", bare_fs_mkdir)
   V("mkdirSync", bare_fs_mkdir_sync)
   V("rmdir", bare_fs_rmdir)
