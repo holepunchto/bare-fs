@@ -16,7 +16,7 @@ const fs = require('bare-fs')
 fs.access
 fs.chmod
 fs.close
-fs.chmod
+fs.copyFile
 fs.exists
 fs.fstat
 fs.ftruncate
@@ -44,6 +44,7 @@ fs.writeFile
 
 fs.promises.access
 fs.promises.chmod
+fs.promises.copyFile
 fs.promises.lstat
 fs.promises.mkdir
 fs.promises.opendir
@@ -67,6 +68,7 @@ fs.createWriteStream
 fs.accessSync
 fs.chmodSync
 fs.closeSync
+fs.copyFileSync
 fs.existsSync
 fs.fchmodSync
 fs.fstatSync

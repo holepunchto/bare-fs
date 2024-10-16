@@ -47,6 +47,9 @@ const constants = exports.constants = {
   UV_DIRENT_CHAR: binding.UV_DIRENT_CHAR,
   UV_DIRENT_BLOCK: binding.UV_DIRENT_BLOCK,
 
+  COPYFILE_EXCL: binding.UV_FS_COPYFILE_EXCL,
+  COPYFILE_FICLONE: binding.UV_FS_COPYFILE_FICLONE,
+  COPYFILE_FICLONE_FORCE: binding.UV_FS_COPYFILE_FICLONE_FORCE,
   UV_FS_SYMLINK_DIR: binding.UV_FS_SYMLINK_DIR,
   UV_FS_SYMLINK_JUNCTION: binding.UV_FS_SYMLINK_JUNCTION
 }
@@ -892,6 +895,37 @@ function renameSync (src, dst) {
   }
 
   binding.renameSync(src, dst)
+}
+
+function copyFile (src, dst, mode, cb) {
+  if (typeof mode === 'function') {
+    cb = mode
+    mode = 0
+  }
+
+  if (typeof src !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+  }
+
+  if (typeof dst !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+  }
+
+  const req = getReq()
+  req.callback = cb
+  binding.copyfile(req.handle, src, dst, mode)
+}
+
+function copyFileSync (src, dst, mode = 0) {
+  if (typeof src !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+  }
+
+  if (typeof dst !== 'string') {
+    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+  }
+
+  binding.copyfileSync(src, dst, mode)
 }
 
 function realpath (filepath, opts, cb) {
@@ -1864,6 +1898,7 @@ exports.access = access
 exports.appendFile = appendFile
 exports.chmod = chmod
 exports.close = close
+exports.copyFile = copyFile
 exports.exists = exists
 exports.fchmod = fchmod
 exports.fstat = fstat
@@ -1893,6 +1928,7 @@ exports.accessSync = accessSync
 exports.appendFileSync = appendFileSync
 exports.chmodSync = chmodSync
 exports.closeSync = closeSync
+exports.copyFileSync = copyFileSync
 exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
 exports.fstatSync = fstatSync
@@ -1917,6 +1953,7 @@ exports.writeSync = writeSync
 exports.promises.access = promisify(access)
 exports.promises.appendFile = promisify(appendFile)
 exports.promises.chmod = promisify(chmod)
+exports.promises.copyFile = promisify(copyFile)
 exports.promises.lstat = promisify(lstat)
 exports.promises.mkdir = promisify(mkdir)
 exports.promises.opendir = promisify(opendir)
