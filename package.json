@@ -1,6 +1,6 @@
 {
   "name": "bare-fs",
-  "version": "3.1.1",
+  "version": "4.0.0-0",
   "description": "Native file system for Javascript",
   "main": "index.js",
   "files": [
@@ -25,6 +25,9 @@
     "url": "https://github.com/holepunchto/bare-fs/issues"
   },
   "homepage": "https://github.com/holepunchto/bare-fs#readme",
+  "engines": {
+    "bare": ">=1.7.0"
+  },
   "dependencies": {
     "bare-events": "^2.0.0",
     "bare-path": "^3.0.0",

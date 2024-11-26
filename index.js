@@ -54,21 +54,6 @@ const constants = (exports.constants = {
   UV_FS_SYMLINK_JUNCTION: binding.UV_FS_SYMLINK_JUNCTION
 })
 
-const reqs = []
-let used = 0
-
-const fs = {
-  handle: Buffer.allocUnsafe(binding.sizeofFS)
-}
-
-binding.init(fs.handle, fs, onresponse)
-
-Bare.on('exit', () => {
-  for (const req of reqs) binding.reqCancel(req.handle)
-
-  binding.destroy(fs.handle)
-})
-
 // Lightly-modified from the Node FS internal utils.
 function flagsToNumber(flags) {
   switch (flags) {
@@ -157,50 +142,24 @@ function modeToNumber(mode) {
   return mode
 }
 
+const free = []
+
 function alloc() {
-  const handle = Buffer.alloc(binding.sizeofFSReq)
-
-  binding.reqInit(fs.handle, handle)
-
-  const view = new Uint32Array(
-    handle.buffer,
-    handle.byteOffset + binding.offsetofFSReqID,
-    1
-  )
-
-  view[0] = reqs.length
-
-  const req = {
-    handle,
-    view,
-    type: 0,
-    callback: null
-  }
-
-  used++
-  reqs.push(req)
+  const req = { handle: null, callback: null }
+  req.handle = binding.init(req, onresponse)
   return req
 }
 
 function getReq() {
-  return used === reqs.length ? alloc() : reqs[used++]
+  return free.length ? free.pop() : alloc()
 }
 
-function onresponse(id, err, result) {
-  const req = reqs[id]
-  used--
-
-  if (used !== id) {
-    const u = reqs[used]
-    reqs[(u.view[0] = id)] = u
-    reqs[(req.view[0] = used)] = req
-  }
-
-  const callback = req.callback
-
+function onresponse(err, result) {
+  const req = this
+  const cb = req.callback
   req.callback = null
-
-  callback(err, result)
+  free.push(req)
+  cb(err, result)
 }
 
 function open(filepath, flags, mode, cb) {
@@ -391,7 +350,7 @@ function exists(filepath, cb) {
     )
   }
 
-  return access(filepath, (err) => cb(!!err)) // eslint-disable-line n/no-callback-literal
+  return access(filepath, (err) => cb(!!err))
 }
 
 function existsSync(filepath) {
@@ -2479,10 +2438,13 @@ class FileReadStream extends Readable {
     this._offset = opts.start || 0
     this._missing = 0
 
-    if (opts.length) this._missing = opts.length
-    else if (typeof opts.end === 'number')
+    if (opts.length) {
+      this._missing = opts.length
+    } else if (typeof opts.end === 'number') {
       this._missing = opts.end - this._offset + 1
-    else this._missing = -1
+    } else {
+      this._missing = -1
+    }
   }
 
   _open(cb) {
