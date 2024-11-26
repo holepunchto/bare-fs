@@ -50,7 +50,9 @@ test('access, file missing', async (t) => {
 test('access, is executable', { skip: isWindows }, async (t) => {
   t.plan(1)
 
-  const file = await withFile(t, 'test/fixtures/foo.txt', Buffer.alloc(0), { mode: 0o755 })
+  const file = await withFile(t, 'test/fixtures/foo.txt', Buffer.alloc(0), {
+    mode: 0o755
+  })
 
   fs.access(file, fs.constants.X_OK, (err) => {
     t.absent(err)
@@ -717,10 +719,15 @@ test('copyFile with COPYFILE_EXCL', async (t) => {
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
   await withFile(t, 'test/fixtures/bar.txt', 'bar\n')
 
-  fs.copyFile('test/fixtures/foo.txt', 'test/fixtures/bar.txt', fs.constants.COPYFILE_EXCL, (err) => {
-    t.ok(err)
-    t.is(err.message, 'file already exists')
-  })
+  fs.copyFile(
+    'test/fixtures/foo.txt',
+    'test/fixtures/bar.txt',
+    fs.constants.COPYFILE_EXCL,
+    (err) => {
+      t.ok(err)
+      t.is(err.message, 'file already exists')
+    }
+  )
 })
 
 test('copyFileSync with COPYFILE_EXCL', async (t) => {
@@ -729,7 +736,15 @@ test('copyFileSync with COPYFILE_EXCL', async (t) => {
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
   await withFile(t, 'test/fixtures/bar.txt', 'bar\n')
 
-  t.exception(() => fs.copyFileSync('test/fixtures/foo.txt', 'test/fixtures/bar.txt', fs.constants.COPYFILE_EXCL), /file already exists/)
+  t.exception(
+    () =>
+      fs.copyFileSync(
+        'test/fixtures/foo.txt',
+        'test/fixtures/bar.txt',
+        fs.constants.COPYFILE_EXCL
+      ),
+    /file already exists/
+  )
 })
 
 test('realpath', async (t) => {
@@ -828,17 +843,15 @@ test('createWriteStream', async (t) => {
   stream.end(' world')
 })
 
-async function withFile (t, path, data = Buffer.alloc(0), opts = {}) {
+async function withFile(t, path, data = Buffer.alloc(0), opts = {}) {
   if (data) await fs.promises.writeFile(path, data, opts)
 
-  t.teardown(() =>
-    fs.promises.rm(path, { force: true })
-  )
+  t.teardown(() => fs.promises.rm(path, { force: true }))
 
   return path
 }
 
-async function withSymlink (t, path, target = false) {
+async function withSymlink(t, path, target = false) {
   if (target) {
     try {
       await fs.promises.rm(path)
@@ -847,19 +860,15 @@ async function withSymlink (t, path, target = false) {
     await fs.promises.symlink(target, path)
   }
 
-  t.teardown(() =>
-    fs.promises.rm(path, { force: true })
-  )
+  t.teardown(() => fs.promises.rm(path, { force: true }))
 
   return path
 }
 
-async function withDir (t, path, create = true) {
+async function withDir(t, path, create = true) {
   if (create) await fs.promises.mkdir(path, { recursive: true })
 
-  t.teardown(() =>
-    fs.promises.rm(path, { force: true, recursive: true })
-  )
+  t.teardown(() => fs.promises.rm(path, { force: true, recursive: true }))
 
   return path
 }

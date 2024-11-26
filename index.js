@@ -6,7 +6,7 @@ const binding = require('./binding')
 
 const isWindows = Bare.platform === 'win32'
 
-const constants = exports.constants = {
+const constants = (exports.constants = {
   O_RDWR: binding.O_RDWR,
   O_RDONLY: binding.O_RDONLY,
   O_WRONLY: binding.O_WRONLY,
@@ -52,7 +52,7 @@ const constants = exports.constants = {
   COPYFILE_FICLONE_FORCE: binding.UV_FS_COPYFILE_FICLONE_FORCE,
   UV_FS_SYMLINK_DIR: binding.UV_FS_SYMLINK_DIR,
   UV_FS_SYMLINK_JUNCTION: binding.UV_FS_SYMLINK_JUNCTION
-}
+})
 
 const reqs = []
 let used = 0
@@ -70,51 +70,103 @@ Bare.on('exit', () => {
 })
 
 // Lightly-modified from the Node FS internal utils.
-function flagsToNumber (flags) {
+function flagsToNumber(flags) {
   switch (flags) {
-    case 'r' : return constants.O_RDONLY
-    case 'rs' : // Fall through.
-    case 'sr' : return constants.O_RDONLY | constants.O_SYNC
-    case 'r+' : return constants.O_RDWR
-    case 'rs+' : // Fall through.
-    case 'sr+' : return constants.O_RDWR | constants.O_SYNC
+    case 'r':
+      return constants.O_RDONLY
+    case 'rs': // Fall through.
+    case 'sr':
+      return constants.O_RDONLY | constants.O_SYNC
+    case 'r+':
+      return constants.O_RDWR
+    case 'rs+': // Fall through.
+    case 'sr+':
+      return constants.O_RDWR | constants.O_SYNC
 
-    case 'w' : return constants.O_TRUNC | constants.O_CREAT | constants.O_WRONLY
-    case 'wx' : // Fall through.
-    case 'xw' : return constants.O_TRUNC | constants.O_CREAT | constants.O_WRONLY | constants.O_EXCL
+    case 'w':
+      return constants.O_TRUNC | constants.O_CREAT | constants.O_WRONLY
+    case 'wx': // Fall through.
+    case 'xw':
+      return (
+        constants.O_TRUNC |
+        constants.O_CREAT |
+        constants.O_WRONLY |
+        constants.O_EXCL
+      )
 
-    case 'w+' : return constants.O_TRUNC | constants.O_CREAT | constants.O_RDWR
+    case 'w+':
+      return constants.O_TRUNC | constants.O_CREAT | constants.O_RDWR
     case 'wx+': // Fall through.
-    case 'xw+': return constants.O_TRUNC | constants.O_CREAT | constants.O_RDWR | constants.O_EXCL
+    case 'xw+':
+      return (
+        constants.O_TRUNC |
+        constants.O_CREAT |
+        constants.O_RDWR |
+        constants.O_EXCL
+      )
 
-    case 'a' : return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY
-    case 'ax' : // Fall through.
-    case 'xa' : return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY | constants.O_EXCL
-    case 'as' : // Fall through.
-    case 'sa' : return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY | constants.O_SYNC
+    case 'a':
+      return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY
+    case 'ax': // Fall through.
+    case 'xa':
+      return (
+        constants.O_APPEND |
+        constants.O_CREAT |
+        constants.O_WRONLY |
+        constants.O_EXCL
+      )
+    case 'as': // Fall through.
+    case 'sa':
+      return (
+        constants.O_APPEND |
+        constants.O_CREAT |
+        constants.O_WRONLY |
+        constants.O_SYNC
+      )
 
-    case 'a+' : return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR
+    case 'a+':
+      return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR
     case 'ax+': // Fall through.
-    case 'xa+': return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR | constants.O_EXCL
+    case 'xa+':
+      return (
+        constants.O_APPEND |
+        constants.O_CREAT |
+        constants.O_RDWR |
+        constants.O_EXCL
+      )
     case 'as+': // Fall through.
-    case 'sa+': return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR | constants.O_SYNC
+    case 'sa+':
+      return (
+        constants.O_APPEND |
+        constants.O_CREAT |
+        constants.O_RDWR |
+        constants.O_SYNC
+      )
   }
 
   throw typeError('ERR_INVALID_ARG_VALUE', `Invalid value in flags: ${flags}`)
 }
 
-function modeToNumber (mode) {
+function modeToNumber(mode) {
   mode = parseInt(mode, 8)
-  if (isNaN(mode)) throw typeError('ERR_INVALID_ARG_VALUE', 'Mode must be a number or octal string')
+  if (isNaN(mode))
+    throw typeError(
+      'ERR_INVALID_ARG_VALUE',
+      'Mode must be a number or octal string'
+    )
   return mode
 }
 
-function alloc () {
+function alloc() {
   const handle = Buffer.alloc(binding.sizeofFSReq)
 
   binding.reqInit(fs.handle, handle)
 
-  const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetofFSReqID, 1)
+  const view = new Uint32Array(
+    handle.buffer,
+    handle.byteOffset + binding.offsetofFSReqID,
+    1
+  )
 
   view[0] = reqs.length
 
@@ -130,18 +182,18 @@ function alloc () {
   return req
 }
 
-function getReq () {
+function getReq() {
   return used === reqs.length ? alloc() : reqs[used++]
 }
 
-function onresponse (id, err, result) {
+function onresponse(id, err, result) {
   const req = reqs[id]
   used--
 
   if (used !== id) {
     const u = reqs[used]
-    reqs[u.view[0] = id] = u
-    reqs[req.view[0] = used] = req
+    reqs[(u.view[0] = id)] = u
+    reqs[(req.view[0] = used)] = req
   }
 
   const callback = req.callback
@@ -151,9 +203,16 @@ function onresponse (id, err, result) {
   callback(err, result)
 }
 
-function open (filepath, flags, mode, cb) {
+function open(filepath, flags, mode, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
@@ -165,7 +224,14 @@ function open (filepath, flags, mode, cb) {
       cb = mode
       mode = 0o666
     } else {
-      throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+      throw typeError(
+        'ERR_INVALID_ARG_TYPE',
+        'Callback must be a function. Received type ' +
+          typeof cb +
+          ' (' +
+          cb +
+          ')'
+      )
     }
   }
 
@@ -177,9 +243,16 @@ function open (filepath, flags, mode, cb) {
   binding.open(req.handle, filepath, flags, mode)
 }
 
-function openSync (filepath, flags = 'r', mode = 0o666) {
+function openSync(filepath, flags = 'r', mode = 0o666) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof flags === 'string') flags = flagsToNumber(flags)
@@ -188,17 +261,35 @@ function openSync (filepath, flags = 'r', mode = 0o666) {
   return binding.openSync(filepath, flags, mode)
 }
 
-function close (fd, cb = noop) {
+function close(fd, cb = noop) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const req = getReq()
@@ -206,21 +297,39 @@ function close (fd, cb = noop) {
   binding.close(req.handle, fd)
 }
 
-function closeSync (fd) {
+function closeSync(fd) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   return binding.closeSync(fd)
 }
 
-function access (filepath, mode, cb) {
+function access(filepath, mode, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
@@ -228,7 +337,14 @@ function access (filepath, mode, cb) {
       cb = mode
       mode = constants.F_OK
     } else {
-      throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+      throw typeError(
+        'ERR_INVALID_ARG_TYPE',
+        'Callback must be a function. Received type ' +
+          typeof cb +
+          ' (' +
+          cb +
+          ')'
+      )
     }
   }
 
@@ -237,29 +353,57 @@ function access (filepath, mode, cb) {
   binding.access(req.handle, filepath, mode)
 }
 
-function accessSync (filepath, mode = constants.F_OK) {
+function accessSync(filepath, mode = constants.F_OK) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   binding.accessSync(filepath, mode)
 }
 
-function exists (filepath, cb) {
+function exists(filepath, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   return access(filepath, (err) => cb(!!err)) // eslint-disable-line n/no-callback-literal
 }
 
-function existsSync (filepath) {
+function existsSync(filepath) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   try {
@@ -270,17 +414,35 @@ function existsSync (filepath) {
   }
 }
 
-function read (fd, buffer, offset, len, pos, cb) {
+function read(fd, buffer, offset, len, pos, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (!Buffer.isBuffer(buffer) && !ArrayBuffer.isView(buffer)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Buffer must be a buffer. Received type ' + (typeof buffer) + ' (' + buffer + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Buffer must be a buffer. Received type ' +
+        typeof buffer +
+        ' (' +
+        buffer +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
@@ -297,7 +459,14 @@ function read (fd, buffer, offset, len, pos, cb) {
       cb = pos
       pos = -1
     } else {
-      throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+      throw typeError(
+        'ERR_INVALID_ARG_TYPE',
+        'Callback must be a function. Received type ' +
+          typeof cb +
+          ' (' +
+          cb +
+          ')'
+      )
     }
   }
 
@@ -308,36 +477,78 @@ function read (fd, buffer, offset, len, pos, cb) {
   binding.read(req.handle, fd, buffer, offset, len, pos)
 }
 
-function readSync (fd, buffer, offset = 0, len = buffer.byteLength - offset, pos = -1) {
+function readSync(
+  fd,
+  buffer,
+  offset = 0,
+  len = buffer.byteLength - offset,
+  pos = -1
+) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (!Buffer.isBuffer(buffer) && !ArrayBuffer.isView(buffer)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Buffer must be a buffer. Received type ' + (typeof buffer) + ' (' + buffer + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Buffer must be a buffer. Received type ' +
+        typeof buffer +
+        ' (' +
+        buffer +
+        ')'
+    )
   }
 
   return binding.readSync(fd, buffer, offset, len, pos)
 }
 
-function readv (fd, buffers, pos, cb) {
+function readv(fd, buffers, pos, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof pos === 'function') {
     cb = pos
     pos = -1
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof pos !== 'number') pos = -1
@@ -347,17 +558,35 @@ function readv (fd, buffers, pos, cb) {
   binding.readv(req.handle, fd, buffers, pos)
 }
 
-function write (fd, data, offset, len, pos, cb) {
+function write(fd, data, offset, len, pos, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
-  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
+  if (
+    typeof data !== 'string' &&
+    !Buffer.isBuffer(data) &&
+    !ArrayBuffer.isView(data)
+  ) {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Data must be a string or buffer. Received type ' + typeof data
+    )
   }
 
   if (typeof data === 'string') {
@@ -374,7 +603,14 @@ function write (fd, data, offset, len, pos, cb) {
         cb = encoding
         encoding = 'utf8'
       } else {
-        throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+        throw typeError(
+          'ERR_INVALID_ARG_TYPE',
+          'Callback must be a function. Received type ' +
+            typeof cb +
+            ' (' +
+            cb +
+            ')'
+        )
       }
     }
 
@@ -400,7 +636,14 @@ function write (fd, data, offset, len, pos, cb) {
       cb = pos
       pos = -1
     } else {
-      throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+      throw typeError(
+        'ERR_INVALID_ARG_TYPE',
+        'Callback must be a function. Received type ' +
+          typeof cb +
+          ' (' +
+          cb +
+          ')'
+      )
     }
   }
 
@@ -411,17 +654,35 @@ function write (fd, data, offset, len, pos, cb) {
   binding.write(req.handle, fd, data, offset, len, pos)
 }
 
-function writeSync (fd, data, offset = 0, len, pos) {
+function writeSync(fd, data, offset = 0, len, pos) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
-  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
+  if (
+    typeof data !== 'string' &&
+    !Buffer.isBuffer(data) &&
+    !ArrayBuffer.isView(data)
+  ) {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Data must be a string or buffer. Received type ' + typeof data
+    )
   }
 
   if (typeof data === 'string') data = Buffer.from(data)
@@ -433,20 +694,38 @@ function writeSync (fd, data, offset = 0, len, pos) {
   return binding.writeSync(fd, data, offset, len, pos)
 }
 
-function writev (fd, buffers, pos, cb) {
+function writev(fd, buffers, pos, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof pos === 'function') {
     cb = pos
     pos = -1
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof pos !== 'number') pos = -1
@@ -456,13 +735,27 @@ function writev (fd, buffers, pos, cb) {
   binding.writev(req.handle, fd, buffers, pos)
 }
 
-function stat (filepath, cb) {
+function stat(filepath, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const data = new Array(Stats.length)
@@ -477,21 +770,42 @@ function stat (filepath, cb) {
   binding.stat(req.handle, filepath, data)
 }
 
-function statSync (filepath) {
+function statSync(filepath) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   return new Stats(...binding.statSync(filepath))
 }
 
-function lstat (filepath, cb) {
+function lstat(filepath, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const data = new Array(Stats.length)
@@ -506,25 +820,50 @@ function lstat (filepath, cb) {
   binding.lstat(req.handle, filepath, data)
 }
 
-function lstatSync (filepath) {
+function lstatSync(filepath) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   return new Stats(...binding.lstatSync(filepath))
 }
 
-function fstat (fd, cb) {
+function fstat(fd, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const data = new Array(Stats.length)
@@ -539,32 +878,61 @@ function fstat (fd, cb) {
   binding.fstat(req.handle, fd, data)
 }
 
-function fstatSync (fd) {
+function fstatSync(fd) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   return new Stats(...binding.fstatSync(fd))
 }
 
-function ftruncate (fd, len, cb) {
+function ftruncate(fd, len, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof len === 'function') {
     cb = len
     len = 0
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const req = getReq()
@@ -572,9 +940,16 @@ function ftruncate (fd, len, cb) {
   binding.ftruncate(req.handle, fd, len)
 }
 
-function chmod (filepath, mode, cb) {
+function chmod(filepath, mode, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
@@ -584,9 +959,16 @@ function chmod (filepath, mode, cb) {
   binding.chmod(req.handle, filepath, mode)
 }
 
-function chmodSync (filepath, mode) {
+function chmodSync(filepath, mode) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
@@ -594,13 +976,24 @@ function chmodSync (filepath, mode) {
   binding.chmodSync(filepath, mode)
 }
 
-function fchmod (fd, mode, cb) {
+function fchmod(fd, mode, cb) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
@@ -610,13 +1003,24 @@ function fchmod (fd, mode, cb) {
   binding.fchmod(req.handle, fd, mode)
 }
 
-function fchmodSync (fd, mode) {
+function fchmodSync(fd, mode) {
   if (typeof fd !== 'number') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'File descriptor must be a number. Received type ' + (typeof fd) + ' (' + fd + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
   }
 
   if (fd < 0 || fd > 0x7fffffff) {
-    throw typeError('ERR_OUT_OF_RANGE', 'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' + fd)
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
   }
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
@@ -624,7 +1028,7 @@ function fchmodSync (fd, mode) {
   binding.fchmodSync(fd, mode)
 }
 
-function mkdirRecursive (filepath, mode, cb) {
+function mkdirRecursive(filepath, mode, cb) {
   mkdir(filepath, { mode }, function (err) {
     if (err === null) return cb(null, 0, null)
 
@@ -657,16 +1061,30 @@ function mkdirRecursive (filepath, mode, cb) {
   })
 }
 
-function mkdir (filepath, opts, cb) {
+function mkdir(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = { mode: 0o777 }
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'number') opts = { mode: opts }
@@ -674,14 +1092,15 @@ function mkdir (filepath, opts, cb) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirRecursive(filepath.replace(/\//g, path.sep), mode, cb)
+  if (opts.recursive)
+    return mkdirRecursive(filepath.replace(/\//g, path.sep), mode, cb)
 
   const req = getReq()
   req.callback = cb
   binding.mkdir(req.handle, filepath, mode)
 }
 
-function mkdirRecursiveSync (filepath, mode) {
+function mkdirRecursiveSync(filepath, mode) {
   try {
     mkdirSync(filepath, { mode })
   } catch (err) {
@@ -707,9 +1126,16 @@ function mkdirRecursiveSync (filepath, mode) {
   }
 }
 
-function mkdirSync (filepath, opts) {
+function mkdirSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'number') opts = { mode: opts }
@@ -717,18 +1143,33 @@ function mkdirSync (filepath, opts) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive) return mkdirRecursiveSync(filepath.replace(/\//g, path.sep), mode)
+  if (opts.recursive)
+    return mkdirRecursiveSync(filepath.replace(/\//g, path.sep), mode)
 
   binding.mkdirSync(filepath, mode)
 }
 
-function rmdir (filepath, cb) {
+function rmdir(filepath, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const req = getReq()
@@ -736,15 +1177,22 @@ function rmdir (filepath, cb) {
   binding.rmdir(req.handle, filepath)
 }
 
-function rmdirSync (filepath) {
+function rmdirSync(filepath) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   binding.rmdirSync(filepath)
 }
 
-function rmRecursive (filepath, opts, cb) {
+function rmRecursive(filepath, opts, cb) {
   rmdir(filepath, function (err) {
     if (err === null) return cb(null)
 
@@ -774,16 +1222,30 @@ function rmRecursive (filepath, opts, cb) {
   })
 }
 
-function rm (filepath, opts, cb) {
+function rm(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (!opts) opts = {}
@@ -805,7 +1267,7 @@ function rm (filepath, opts, cb) {
   })
 }
 
-function rmRecursiveSync (filepath, opts) {
+function rmRecursiveSync(filepath, opts) {
   try {
     rmdirSync(filepath)
   } catch (err) {
@@ -821,9 +1283,16 @@ function rmRecursiveSync (filepath, opts) {
   }
 }
 
-function rmSync (filepath, opts) {
+function rmSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (!opts) opts = {}
@@ -845,13 +1314,27 @@ function rmSync (filepath, opts) {
   }
 }
 
-function unlink (filepath, cb) {
+function unlink(filepath, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const req = getReq()
@@ -859,25 +1342,45 @@ function unlink (filepath, cb) {
   binding.unlink(req.handle, filepath)
 }
 
-function unlinkSync (filepath) {
+function unlinkSync(filepath) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   binding.unlinkSync(filepath)
 }
 
-function rename (src, dst, cb) {
+function rename(src, dst, cb) {
   if (typeof src !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof src + ' (' + src + ')'
+    )
   }
 
   if (typeof dst !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof dst + ' (' + dst + ')'
+    )
   }
 
   if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   const req = getReq()
@@ -885,30 +1388,42 @@ function rename (src, dst, cb) {
   binding.rename(req.handle, src, dst)
 }
 
-function renameSync (src, dst) {
+function renameSync(src, dst) {
   if (typeof src !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof src + ' (' + src + ')'
+    )
   }
 
   if (typeof dst !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof dst + ' (' + dst + ')'
+    )
   }
 
   binding.renameSync(src, dst)
 }
 
-function copyFile (src, dst, mode, cb) {
+function copyFile(src, dst, mode, cb) {
   if (typeof mode === 'function') {
     cb = mode
     mode = 0
   }
 
   if (typeof src !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof src + ' (' + src + ')'
+    )
   }
 
   if (typeof dst !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof dst + ' (' + dst + ')'
+    )
   }
 
   const req = getReq()
@@ -916,36 +1431,54 @@ function copyFile (src, dst, mode, cb) {
   binding.copyfile(req.handle, src, dst, mode)
 }
 
-function copyFileSync (src, dst, mode = 0) {
+function copyFileSync(src, dst, mode = 0) {
   if (typeof src !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof src) + ' (' + src + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof src + ' (' + src + ')'
+    )
   }
 
   if (typeof dst !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof dst) + ' (' + dst + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' + typeof dst + ' (' + dst + ')'
+    )
   }
 
   binding.copyfileSync(src, dst, mode)
 }
 
-function realpath (filepath, opts, cb) {
+function realpath(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    encoding = 'utf8'
-  } = opts
+  const { encoding = 'utf8' } = opts
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
@@ -961,17 +1494,22 @@ function realpath (filepath, opts, cb) {
   binding.realpath(req.handle, filepath, data)
 }
 
-function realpathSync (filepath, opts) {
+function realpathSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    encoding = 'utf8'
-  } = opts
+  const { encoding = 'utf8' } = opts
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
@@ -982,24 +1520,36 @@ function realpathSync (filepath, opts) {
   return filepath
 }
 
-function readlink (filepath, opts, cb) {
+function readlink(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    encoding = 'utf8'
-  } = opts
+  const { encoding = 'utf8' } = opts
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
@@ -1015,17 +1565,22 @@ function readlink (filepath, opts, cb) {
   binding.readlink(req.handle, filepath, data)
 }
 
-function readlinkSync (filepath, opts) {
+function readlinkSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    encoding = 'utf8'
-  } = opts
+  const { encoding = 'utf8' } = opts
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
@@ -1036,7 +1591,7 @@ function readlinkSync (filepath, opts) {
   return filepath
 }
 
-function normalizeSymlinkTarget (target, type, filepath) {
+function normalizeSymlinkTarget(target, type, filepath) {
   if (isWindows) {
     if (type === 'junction') target = path.resolve(filepath, '..', target)
 
@@ -1048,20 +1603,41 @@ function normalizeSymlinkTarget (target, type, filepath) {
   return target
 }
 
-function symlink (target, filepath, type, cb) {
+function symlink(target, filepath, type, cb) {
   if (typeof target !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Target must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof type === 'function') {
     cb = type
     type = null
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof type === 'string') {
@@ -1076,14 +1652,22 @@ function symlink (target, filepath, type, cb) {
         type = constants.UV_FS_SYMLINK_JUNCTION
         break
       default:
-        throw typeError('ERR_FS_INVALID_SYMLINK_TYPE', 'Symlink type must be one of "dir", "file", or "junction". Received "' + type + '"')
+        throw typeError(
+          'ERR_FS_INVALID_SYMLINK_TYPE',
+          'Symlink type must be one of "dir", "file", or "junction". Received "' +
+            type +
+            '"'
+        )
     }
   } else if (typeof type !== 'number') {
     if (isWindows) {
       target = path.resolve(filepath, '..', target)
 
       stat(target, (err, st) => {
-        type = err === null && st.isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
+        type =
+          err === null && st.isDirectory()
+            ? constants.UV_FS_SYMLINK_DIR
+            : constants.UV_FS_SYMLINK_JUNCTION
 
         symlink(target, filepath, type, cb)
       })
@@ -1096,16 +1680,35 @@ function symlink (target, filepath, type, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.symlink(req.handle, normalizeSymlinkTarget(target), path.toNamespacedPath(filepath), type)
+  binding.symlink(
+    req.handle,
+    normalizeSymlinkTarget(target),
+    path.toNamespacedPath(filepath),
+    type
+  )
 }
 
-function symlinkSync (target, filepath, type) {
+function symlinkSync(target, filepath, type) {
   if (typeof target !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Target must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Target must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof type === 'string') {
@@ -1120,31 +1723,56 @@ function symlinkSync (target, filepath, type) {
         type = constants.UV_FS_SYMLINK_JUNCTION
         break
       default:
-        throw typeError('ERR_FS_INVALID_SYMLINK_TYPE', 'Symlink type must be one of "dir", "file", or "junction". Received "' + type + '"')
+        throw typeError(
+          'ERR_FS_INVALID_SYMLINK_TYPE',
+          'Symlink type must be one of "dir", "file", or "junction". Received "' +
+            type +
+            '"'
+        )
     }
   } else if (typeof type !== 'number') {
     if (isWindows) {
       target = path.resolve(filepath, '..', target)
 
-      type = statSync(target).isDirectory() ? constants.UV_FS_SYMLINK_DIR : constants.UV_FS_SYMLINK_JUNCTION
+      type = statSync(target).isDirectory()
+        ? constants.UV_FS_SYMLINK_DIR
+        : constants.UV_FS_SYMLINK_JUNCTION
     } else {
       type = 0
     }
   }
 
-  binding.symlinkSync(normalizeSymlinkTarget(target), path.toNamespacedPath(filepath), type)
+  binding.symlinkSync(
+    normalizeSymlinkTarget(target),
+    path.toNamespacedPath(filepath),
+    type
+  )
 }
 
-function opendir (filepath, opts, cb) {
+function opendir(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1162,9 +1790,16 @@ function opendir (filepath, opts, cb) {
   binding.opendir(req.handle, filepath, data)
 }
 
-function opendirSync (filepath, opts) {
+function opendirSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1175,24 +1810,36 @@ function opendirSync (filepath, opts) {
   return new Dir(filepath, data, opts)
 }
 
-function readdir (filepath, opts, cb) {
+function readdir(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    withFileTypes = false
-  } = opts
+  const { withFileTypes = false } = opts
 
   opendir(filepath, opts, async (err, dir) => {
     if (err) return cb(err, null)
@@ -1204,17 +1851,22 @@ function readdir (filepath, opts, cb) {
   })
 }
 
-function readdirSync (filepath, opts) {
+function readdirSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    withFileTypes = false
-  } = opts
+  const { withFileTypes = false } = opts
 
   const dir = opendirSync(filepath, opts)
   const result = []
@@ -1228,24 +1880,36 @@ function readdirSync (filepath, opts) {
   return result
 }
 
-function readFile (filepath, opts, cb) {
+function readFile(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    encoding = 'buffer'
-  } = opts
+  const { encoding = 'buffer' } = opts
 
   open(filepath, opts.flag || 'r', function (err, fd) {
     if (err) return cb(err)
@@ -1258,14 +1922,14 @@ function readFile (filepath, opts, cb) {
 
       read(fd, buffer, loop)
 
-      function loop (err, r) {
+      function loop(err, r) {
         if (err) return closeAndError(err)
         len += r
         if (r === 0 || len === buffer.byteLength) return done()
         read(fd, buffer.subarray(len), loop)
       }
 
-      function done () {
+      function done() {
         if (len !== buffer.byteLength) buffer = buffer.subarray(0, len)
         close(fd, function (err) {
           if (err) return cb(err)
@@ -1275,7 +1939,7 @@ function readFile (filepath, opts, cb) {
       }
     })
 
-    function closeAndError (err) {
+    function closeAndError(err) {
       close(fd, function () {
         cb(err)
       })
@@ -1283,17 +1947,22 @@ function readFile (filepath, opts, cb) {
   })
 }
 
-function readFileSync (filepath, opts) {
+function readFileSync(filepath, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const {
-    encoding = 'buffer'
-  } = opts
+  const { encoding = 'buffer' } = opts
 
   const fd = openSync(filepath, opts.flag || 'r')
 
@@ -1319,20 +1988,41 @@ function readFileSync (filepath, opts) {
   }
 }
 
-function writeFile (filepath, data, opts, cb) {
+function writeFile(filepath, data, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
-  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
+  if (
+    typeof data !== 'string' &&
+    !Buffer.isBuffer(data) &&
+    !ArrayBuffer.isView(data)
+  ) {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Data must be a string or buffer. Received type ' + typeof data
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1345,20 +2035,20 @@ function writeFile (filepath, data, opts, cb) {
 
     write(fd, data, loop)
 
-    function loop (err, w) {
+    function loop(err, w) {
       if (err) return closeAndError(err)
       if (w === data.byteLength) return done()
       write(fd, data.subarray(w), loop)
     }
 
-    function done () {
+    function done() {
       close(fd, function (err) {
         if (err) return cb(err)
         return cb(null)
       })
     }
 
-    function closeAndError (err) {
+    function closeAndError(err) {
       close(fd, function () {
         cb(err)
       })
@@ -1366,13 +2056,27 @@ function writeFile (filepath, data, opts, cb) {
   })
 }
 
-function writeFileSync (filepath, data, opts) {
+function writeFileSync(filepath, data, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
-  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
+  if (
+    typeof data !== 'string' &&
+    !Buffer.isBuffer(data) &&
+    !ArrayBuffer.isView(data)
+  ) {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Data must be a string or buffer. Received type ' + typeof data
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1396,20 +2100,41 @@ function writeFileSync (filepath, data, opts) {
   }
 }
 
-function appendFile (filepath, data, opts, cb) {
+function appendFile(filepath, data, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
-  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
+  if (
+    typeof data !== 'string' &&
+    !Buffer.isBuffer(data) &&
+    !ArrayBuffer.isView(data)
+  ) {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Data must be a string or buffer. Received type ' + typeof data
+    )
   }
 
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   } else if (typeof cb !== 'function') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Callback must be a function. Received type ' + (typeof cb) + ' (' + cb + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1422,13 +2147,27 @@ function appendFile (filepath, data, opts, cb) {
   return writeFile(filepath, data, opts, cb)
 }
 
-function appendFileSync (filepath, data, opts) {
+function appendFileSync(filepath, data, opts) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
-  if (typeof data !== 'string' && !Buffer.isBuffer(data) && !ArrayBuffer.isView(data)) {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Data must be a string or buffer. Received type ' + (typeof data))
+  if (
+    typeof data !== 'string' &&
+    !Buffer.isBuffer(data) &&
+    !ArrayBuffer.isView(data)
+  ) {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Data must be a string or buffer. Received type ' + typeof data
+    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1441,9 +2180,16 @@ function appendFileSync (filepath, data, opts) {
   return writeFileSync(filepath, data, opts)
 }
 
-function watch (filepath, opts, cb) {
+function watch(filepath, opts, cb) {
   if (typeof filepath !== 'string') {
-    throw typeError('ERR_INVALID_ARG_TYPE', 'Path must be a string. Received type ' + (typeof filepath) + ' (' + filepath + ')')
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
   }
 
   if (typeof opts === 'function') {
@@ -1460,7 +2206,22 @@ function watch (filepath, opts, cb) {
 }
 
 class Stats {
-  constructor (dev, mode, nlink, uid, gid, rdev, blksize, ino, size, blocks, atimeMs, mtimeMs, ctimeMs, birthtimeMs) {
+  constructor(
+    dev,
+    mode,
+    nlink,
+    uid,
+    gid,
+    rdev,
+    blksize,
+    ino,
+    size,
+    blocks,
+    atimeMs,
+    mtimeMs,
+    ctimeMs,
+    birthtimeMs
+  ) {
     this.dev = dev
     this.mode = mode
     this.nlink = nlink
@@ -1481,41 +2242,38 @@ class Stats {
     this.birthtime = new Date(birthtimeMs)
   }
 
-  isDirectory () {
+  isDirectory() {
     return (this.mode & constants.S_IFMT) === constants.S_IFDIR
   }
 
-  isFile () {
+  isFile() {
     return (this.mode & constants.S_IFMT) === constants.S_IFREG
   }
 
-  isBlockDevice () {
+  isBlockDevice() {
     return (this.mode & constants.S_IFMT) === constants.S_IFBLK
   }
 
-  isCharacterDevice () {
+  isCharacterDevice() {
     return (this.mode & constants.S_IFCHR) === constants.S_IFCHR
   }
 
-  isFIFO () {
+  isFIFO() {
     return (this.mode & constants.S_IFMT) === constants.S_IFIFO
   }
 
-  isSymbolicLink () {
+  isSymbolicLink() {
     return (this.mode & constants.S_IFMT) === constants.S_IFLNK
   }
 
-  isSocket () {
+  isSocket() {
     return (this.mode & constants.S_IFMT) === constants.S_IFSOCK
   }
 }
 
 class Dir {
-  constructor (path, handle, opts = {}) {
-    const {
-      encoding = 'utf8',
-      bufferSize = 32
-    } = opts
+  constructor(path, handle, opts = {}) {
+    const { encoding = 'utf8', bufferSize = 32 } = opts
 
     this._handle = handle
     this._dirents = Buffer.allocUnsafe(binding.sizeofFSDirent * bufferSize)
@@ -1526,10 +2284,11 @@ class Dir {
     this.path = path
   }
 
-  read (cb) {
+  read(cb) {
     if (!cb) return promisify(this.read.bind(this))
 
-    if (this._buffer.length) return queueMicrotask(() => cb(null, this._buffer.shift()))
+    if (this._buffer.length)
+      return queueMicrotask(() => cb(null, this._buffer.shift()))
     if (this._ended) return queueMicrotask(() => cb(null, null))
 
     const data = []
@@ -1553,7 +2312,7 @@ class Dir {
     binding.readdir(req.handle, this._handle, this._dirents, data)
   }
 
-  readSync () {
+  readSync() {
     if (this._buffer.length) return this._buffer.shift()
     if (this._ended) return null
 
@@ -1574,7 +2333,7 @@ class Dir {
     return this._buffer.shift()
   }
 
-  close (cb) {
+  close(cb) {
     if (!cb) return promisify(this.close.bind(this))
 
     const req = getReq()
@@ -1587,12 +2346,12 @@ class Dir {
     binding.closedir(req.handle, this._handle)
   }
 
-  closeSync () {
+  closeSync() {
     binding.closedirSync(this._handle)
     this._handle = null
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     return {
       next: () => {
         if (this._buffer.length) {
@@ -1616,69 +2375,70 @@ class Dir {
     }
   }
 
-  [Symbol.asyncIterator] () {
+  [Symbol.asyncIterator]() {
     return {
-      next: () => new Promise((resolve, reject) => {
-        if (this._buffer.length) {
-          return resolve({ done: false, value: this._buffer.shift() })
-        }
-
-        if (this._ended) {
-          return resolve({ done: true })
-        }
-
-        this.read((err, entry) => {
-          if (err) return reject(err)
-
-          if (entry) {
-            return resolve({ done: false, value: entry })
+      next: () =>
+        new Promise((resolve, reject) => {
+          if (this._buffer.length) {
+            return resolve({ done: false, value: this._buffer.shift() })
           }
 
-          this.close((err) => err ? reject(err) : resolve({ done: true }))
+          if (this._ended) {
+            return resolve({ done: true })
+          }
+
+          this.read((err, entry) => {
+            if (err) return reject(err)
+
+            if (entry) {
+              return resolve({ done: false, value: entry })
+            }
+
+            this.close((err) => (err ? reject(err) : resolve({ done: true })))
+          })
         })
-      })
     }
   }
 }
 
 class Dirent {
-  constructor (path, name, type) {
+  constructor(path, name, type) {
     this.type = type
     this.path = path
     this.name = name
   }
 
-  isFile () {
+  isFile() {
     return this.type === constants.UV_DIRENT_FILE
   }
 
-  isDirectory () {
+  isDirectory() {
     return this.type === constants.UV_DIRENT_DIR
   }
 
-  isSymbolicLink () {
+  isSymbolicLink() {
     return this.type === constants.UV_DIRENT_LINK
   }
 
-  isFIFO () {
+  isFIFO() {
     return this.type === constants.UV_DIRENT_FIFO
   }
 
-  isSocket () {
+  isSocket() {
     return this.type === constants.UV_DIRENT_SOCKET
   }
 
-  isCharacterDevice () {
+  isCharacterDevice() {
     return this.type === constants.UV_DIRENT_CHAR
   }
 
-  isBlockDevice () {
+  isBlockDevice() {
     return this.type === constants.UV_DIRENT_BLOCK
   }
 }
 
 class FileWriteStream extends Writable {
-  constructor (path, opts = {}) {
+  constructor(path, opts = {}) {
     super({ map })
 
     this.path = path
@@ -1687,7 +2447,7 @@ class FileWriteStream extends Writable {
     this.mode = opts.mode || 0o666
   }
 
-  _open (cb) {
+  _open(cb) {
     open(this.path, this.flags, this.mode, (err, fd) => {
       if (err) return cb(err)
       this.fd = fd
@@ -1695,18 +2455,22 @@ class FileWriteStream extends Writable {
     })
   }
 
-  _writev (batch, cb) {
-    writev(this.fd, batch.map(({ chunk }) => chunk), cb)
+  _writev(batch, cb) {
+    writev(
+      this.fd,
+      batch.map(({ chunk }) => chunk),
+      cb
+    )
   }
 
-  _destroy (err, cb) {
+  _destroy(err, cb) {
     if (!this.fd) return cb(err)
     close(this.fd, () => cb(err))
   }
 }
 
 class FileReadStream extends Readable {
-  constructor (path, opts = {}) {
+  constructor(path, opts = {}) {
     super()
 
     this.path = path
@@ -1716,11 +2480,12 @@ class FileReadStream extends Readable {
     this._missing = 0
 
     if (opts.length) this._missing = opts.length
-    else if (typeof opts.end === 'number') this._missing = opts.end - this._offset + 1
+    else if (typeof opts.end === 'number')
+      this._missing = opts.end - this._offset + 1
     else this._missing = -1
   }
 
-  _open (cb) {
+  _open(cb) {
     open(this.path, constants.O_RDONLY, (err, fd) => {
       if (err) return cb(err)
 
@@ -1728,7 +2493,8 @@ class FileReadStream extends Readable {
 
       fstat(fd, (err, st) => {
         if (err) return onerror(err)
-        if (!st.isFile()) return onerror(new Error(this.path + ' is not a file'))
+        if (!st.isFile())
+          return onerror(new Error(this.path + ' is not a file'))
 
         this.fd = fd
         if (this._missing === -1) this._missing = st.size
@@ -1748,7 +2514,7 @@ class FileReadStream extends Readable {
     })
   }
 
-  _read (size) {
+  _read(size) {
     if (!this._missing) {
       this.push(null)
       return
@@ -1772,37 +2538,40 @@ class FileReadStream extends Readable {
     })
   }
 
-  _destroy (err, cb) {
+  _destroy(err, cb) {
     if (!this.fd) return cb(err)
     close(this.fd, () => cb(err))
   }
 }
 
 class Watcher extends EventEmitter {
-  constructor (path, opts) {
-    const {
-      persistent = true,
-      recursive = false,
-      encoding = 'utf8'
-    } = opts
+  constructor(path, opts) {
+    const { persistent = true, recursive = false, encoding = 'utf8' } = opts
 
     super()
 
     this._closed = false
     this._encoding = encoding
-    this._handle = binding.watcherInit(path, recursive, this, this._onevent, this._onclose)
+    this._handle = binding.watcherInit(
+      path,
+      recursive,
+      this,
+      this._onevent,
+      this._onclose
+    )
 
     if (!persistent) this.unref()
   }
 
-  _onevent (err, events, filename) {
+  _onevent(err, events, filename) {
     if (err) {
       this.close()
       this.emit('error', err)
     } else {
-      const path = this._encoding === 'buffer'
-        ? Buffer.from(filename)
-        : Buffer.from(filename).toString(this._encoding)
+      const path =
+        this._encoding === 'buffer'
+          ? Buffer.from(filename)
+          : Buffer.from(filename).toString(this._encoding)
 
       if (events & binding.UV_RENAME) {
         this.emit('change', 'rename', path)
@@ -1814,44 +2583,43 @@ class Watcher extends EventEmitter {
     }
   }
 
-  _onclose () {
+  _onclose() {
     this._handle = null
 
     this.emit('close')
   }
 
-  close () {
+  close() {
     if (this._closed) return
     this._closed = true
 
     binding.watcherClose(this._handle)
   }
 
-  ref () {
+  ref() {
     if (this._handle) binding.watcherRef(this._handle)
     return this
   }
 
-  unref () {
+  unref() {
     if (this._handle) binding.watcherUnref(this._handle)
     return this
   }
 
-  [Symbol.asyncIterator] () {
+  [Symbol.asyncIterator]() {
     const buffer = []
     let done = false
     let error = null
     let next = null
 
-    this
-      .on('change', (eventType, filename) => {
-        if (next) {
-          next.resolve({ done: false, value: { eventType, filename } })
-          next = null
-        } else {
-          buffer.push({ eventType, filename })
-        }
-      })
+    this.on('change', (eventType, filename) => {
+      if (next) {
+        next.resolve({ done: false, value: { eventType, filename } })
+        next = null
+      } else {
+        buffer.push({ eventType, filename })
+      }
+    })
       .on('error', (err) => {
         done = true
         error = err
@@ -1871,28 +2639,30 @@ class Watcher extends EventEmitter {
       })
 
     return {
-      next: () => new Promise((resolve, reject) => {
-        if (error) return reject(error)
+      next: () =>
+        new Promise((resolve, reject) => {
+          if (error) return reject(error)
 
-        if (buffer.length) return resolve({ done: false, value: buffer.shift() })
+          if (buffer.length)
+            return resolve({ done: false, value: buffer.shift() })
 
-        if (done) return resolve({ done })
+          if (done) return resolve({ done })
 
-        next = { resolve, reject }
-      })
+          next = { resolve, reject }
+        })
     }
   }
 }
 
 exports.promises = {}
 
-function typeError (code, message) {
+function typeError(code, message) {
   const error = new TypeError(message)
   error.code = code
   return error
 }
 
-function noop () {}
+function noop() {}
 
 exports.access = access
 exports.appendFile = appendFile
@@ -1977,16 +2747,16 @@ exports.Dirent = Dirent
 exports.Watcher = Watcher
 
 exports.ReadStream = FileReadStream
-exports.createReadStream = function createReadStream (path, opts) {
+exports.createReadStream = function createReadStream(path, opts) {
   return new FileReadStream(path, opts)
 }
 
 exports.WriteStream = FileWriteStream
-exports.createWriteStream = function createWriteStream (path, opts) {
+exports.createWriteStream = function createWriteStream(path, opts) {
   return new FileWriteStream(path, opts)
 }
 
-function promisify (fn) {
+function promisify(fn) {
   return function (...args) {
     return new Promise((resolve, reject) => {
       fn(...args, function (err, res) {
@@ -1997,6 +2767,6 @@ function promisify (fn) {
   }
 }
 
-function map (data) {
+function map(data) {
   return typeof data === 'string' ? Buffer.from(data) : data
 }
