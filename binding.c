@@ -21,9 +21,10 @@ typedef struct {
 
   js_ref_t *data;
 
-  js_deferred_teardown_t *teardown;
   bool active;
-  bool cancelled;
+  bool exiting;
+
+  js_deferred_teardown_t *teardown;
 } bare_fs_t;
 
 typedef utf8_t bare_fs_path_t[4096 + 1 /* NULL */];
@@ -52,15 +53,24 @@ bare_fs__on_finalize(bare_fs_t *req) {
 
   js_env_t *env = req->env;
 
+  js_deferred_teardown_t *teardown = req->teardown;
+
   uv_fs_req_cleanup(&req->handle);
 
-  err = js_finish_deferred_teardown_callback(req->teardown);
-  assert(err == 0);
+  if (req->data) {
+    err = js_delete_reference(env, req->data);
+    assert(err == 0);
+
+    req->data = NULL;
+  }
 
   err = js_delete_reference(env, req->on_response);
   assert(err == 0);
 
   err = js_delete_reference(env, req->ctx);
+  assert(err == 0);
+
+  err = js_finish_deferred_teardown_callback(teardown);
   assert(err == 0);
 }
 
@@ -68,9 +78,9 @@ static void
 bare_fs__on_teardown(js_deferred_teardown_t *handle, void *data) {
   bare_fs_t *req = (bare_fs_t *) data;
 
-  if (req->active) {
-    req->cancelled = true;
+  req->exiting = true;
 
+  if (req->active) {
     uv_cancel((uv_req_t *) &req->handle);
   } else {
     bare_fs__on_finalize(req);
@@ -85,9 +95,9 @@ bare_fs__on_response(uv_fs_t *handle) {
 
   req->active = false;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_finalize(req);
 
-  if (req->cancelled) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   js_handle_scope_t *scope;
   err = js_open_handle_scope(env, &scope);
@@ -145,7 +155,7 @@ bare_fs__on_stat_response(uv_fs_t *handle) {
 
   js_env_t *env = req->env;
 
-  if (req->cancelled) return bare_fs__on_finalize(req);
+  if (req->exiting) return bare_fs__on_finalize(req);
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -210,7 +220,7 @@ bare_fs__on_realpath_response(uv_fs_t *handle) {
 
   js_env_t *env = req->env;
 
-  if (req->cancelled) return bare_fs__on_finalize(req);
+  if (req->exiting) return bare_fs__on_finalize(req);
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -242,7 +252,7 @@ bare_fs__on_readlink_response(uv_fs_t *handle) {
 
   js_env_t *env = req->env;
 
-  if (req->cancelled) return bare_fs__on_finalize(req);
+  if (req->exiting) return bare_fs__on_finalize(req);
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -274,7 +284,7 @@ bare_fs__on_opendir_response(uv_fs_t *handle) {
 
   js_env_t *env = req->env;
 
-  if (req->cancelled) return bare_fs__on_finalize(req);
+  if (req->exiting) return bare_fs__on_finalize(req);
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -306,7 +316,7 @@ bare_fs__on_readdir_response(uv_fs_t *handle) {
 
   js_env_t *env = req->env;
 
-  if (req->cancelled) return bare_fs__on_finalize(req);
+  if (req->exiting) return bare_fs__on_finalize(req);
 
   if (handle->result > 0) {
     js_handle_scope_t *scope;
@@ -376,7 +386,7 @@ bare_fs_init(js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
   req->active = false;
-  req->cancelled = false;
+  req->exiting = false;
 
   err = js_create_reference(env, argv[0], 1, &req->ctx);
   assert(err == 0);
