@@ -1,56 +1,12 @@
 import EventEmitter, { EventMap } from 'bare-events'
 import Buffer, { BufferEncoding } from 'bare-buffer'
 import { Readable, Writable } from 'bare-stream'
+import promises from './promises'
+import constants from './lib/constants'
 
-export const constants: {
-  O_RDWR: number
-  O_RDONLY: number
-  O_WRONLY: number
-  O_CREAT: number
-  O_TRUNC: number
-  O_APPEND: number
+export { promises, constants }
 
-  F_OK: number
-  R_OK: number
-  W_OK: number
-  X_OK: number
-
-  S_IFMT: number
-  S_IFREG: number
-  S_IFDIR: number
-  S_IFCHR: number
-  S_IFLNK: number
-  S_IFBLK: number
-  S_IFIFO: number
-  S_IFSOCK: number
-
-  S_IRUSR: number
-  S_IWUSR: number
-  S_IXUSR: number
-  S_IRGRP: number
-  S_IWGRP: number
-  S_IXGRP: number
-  S_IROTH: number
-  S_IWOTH: number
-  S_IXOTH: number
-
-  UV_DIRENT_UNKNOWN: number
-  UV_DIRENT_FILE: number
-  UV_DIRENT_DIR: number
-  UV_DIRENT_LINK: number
-  UV_DIRENT_FIFO: number
-  UV_DIRENT_SOCKET: number
-  UV_DIRENT_CHAR: number
-  UV_DIRENT_BLOCK: number
-
-  COPYFILE_EXCL: number
-  COPYFILE_FICLONE: number
-  COPYFILE_FICLONE_FORCE: number
-  UV_FS_SYMLINK_DIR: number
-  UV_FS_SYMLINK_JUNCTION: number
-}
-
-type FsFlag =
+type Flag =
   | 'a'
   | 'a+'
   | 'as'
@@ -74,34 +30,30 @@ type FsFlag =
   | 'xw'
   | 'xw+'
 
-interface FsCallback {
-  (err: Error | null): void
+interface Callback<A extends unknown[] = []> {
+  (err: Error | null, ...args: A): void
 }
 
-interface FsCallbackResponse {
-  (err: Error | null, len: number): void
-}
-
-interface Dir extends Iterable<Dirent>, AsyncIterable<Dirent> {
+export interface Dir<T extends string | Buffer = string | Buffer>
+  extends Iterable<Dirent>,
+    AsyncIterable<Dirent> {
   readonly path: string
 
-  read(cb: (dirent: Dirent | null) => void): void
-  readSync(): Dirent | null
+  read(cb: Callback<[dirent: Dirent<T> | null]>): void
+  readSync(): Dirent<T> | null
 
-  close(cb: FsCallback): void
+  close(cb: Callback): void
   closeSync(): void
 }
 
 export class Dir {
-  constructor(path: string, handle: Buffer, opts?: DirOptions)
+  constructor(path: string, handle: Buffer, opts?: OpendirOptions)
 }
 
-export class Dirent {
-  constructor(path: string, type: number, name: string)
-
+export interface Dirent<T extends string | Buffer = string | Buffer> {
   readonly path: string
+  readonly name: T
   readonly type: number
-  readonly name: string
 
   isFile(): boolean
   isDirectory(): boolean
@@ -112,24 +64,11 @@ export class Dirent {
   isBlockDevice(): boolean
 }
 
-export class Stats {
-  constructor(
-    dev: number,
-    mode: number,
-    nlink: number,
-    uid: number,
-    gid: number,
-    rdev: number,
-    blksize: number,
-    ino: number,
-    size: number,
-    blocks: number,
-    atimeMs: number,
-    mtimeMs: number,
-    ctimeMs: number,
-    birthtimeMs: number
-  )
+export class Dirent<T extends string | Buffer = string | Buffer> {
+  constructor(path: string, name: T, type: number)
+}
 
+export interface Stats {
   readonly dev: number
   readonly mode: number
   readonly nlink: number
@@ -154,16 +93,37 @@ export class Stats {
   isSocket(): boolean
 }
 
-interface FileReadStreamOptions {
-  flags?: FsFlag
+export class Stats {
+  constructor(
+    dev: number,
+    mode: number,
+    nlink: number,
+    uid: number,
+    gid: number,
+    rdev: number,
+    blksize: number,
+    ino: number,
+    size: number,
+    blocks: number,
+    atimeMs: number,
+    mtimeMs: number,
+    ctimeMs: number,
+    birthtimeMs: number
+  )
+}
+
+export interface FileReadStreamOptions {
+  flags?: Flag
   mode?: number
 }
 
-export class FileReadStream extends Readable {
-  constructor(path: string, opts?: FileWriteStreamOptions)
-
+export interface FileStreamStream extends Readable {
   readonly path: string
   readonly fd: number
+}
+
+export class FileReadStream {
+  constructor(path: string, opts?: FileWriteStreamOptions)
 }
 
 export function createReadStream(
@@ -171,18 +131,20 @@ export function createReadStream(
   opts?: FileReadStreamOptions
 ): FileReadStream
 
-interface FileWriteStreamOptions {
-  flags?: FsFlag
+export interface FileWriteStreamOptions {
+  flags?: Flag
   mode?: number
 }
 
-export class FileWriteStream extends Writable {
-  constructor(path: string, opts?: FileWriteStreamOptions)
-
+export interface FileWriteStream extends Writable {
   readonly path: string
   readonly fd: number
-  readonly flags: FsFlag
+  readonly flags: Flag
   readonly mode: number
+}
+
+export class FileWriteStream {
+  constructor(path: string, opts?: FileWriteStreamOptions)
 }
 
 export function createWriteStream(
@@ -190,26 +152,25 @@ export function createWriteStream(
   opts?: FileWriteStreamOptions
 ): FileWriteStream
 
-interface WatcherOptions {
+export interface WatcherOptions {
   persistent?: boolean
   recursive?: boolean
-  encoding?: BufferEncoding
+  encoding?: BufferEncoding | 'buffer'
 }
 
-interface WatcherEvents extends EventMap {
+export type WatcherEventType = 'rename' | 'change'
+
+export interface WatcherEvents<T extends string | Buffer = string | Buffer>
+  extends EventMap {
   error: [err: Error]
-  change: [type: 'rename' | 'change', filename: string | Buffer]
+  change: [eventType: WatcherEventType, filename: T]
   close: []
 }
 
-interface Watcher
-  extends EventEmitter<WatcherEvents>,
-    AsyncIterable<{
-      eventType: 'rename' | 'change'
-      filename: string | Buffer
-    }> {
+export interface Watcher<T extends string | Buffer = string | Buffer>
+  extends EventEmitter<WatcherEvents<T>>,
+    AsyncIterable<{ eventType: WatcherEventType; filename: T }> {
   close(): void
-
   ref(): void
   unref(): void
 }
@@ -218,11 +179,13 @@ export class Watcher {
   constructor(path: string | Buffer, opts: WatcherOptions)
 }
 
-export function access(filepath: string, mode: number, cb: FsCallback): void
-export function access(filepath: string, cb: FsCallback): void
+export function access(filepath: string, mode: number, cb: Callback): void
+
+export function access(filepath: string, cb: Callback): void
+
 export function accessSync(filepath: string, mode?: number): void
 
-interface AppendFileOptions {
+export interface AppendFileOptions {
   encoding?: BufferEncoding
   flag?: string
   mode?: number
@@ -232,26 +195,20 @@ export function appendFile(
   filepath: string,
   data: string | Buffer | ArrayBufferView,
   opts: AppendFileOptions,
-  cb: FsCallback
+  cb: Callback
 ): void
 
 export function appendFile(
   filepath: string,
   data: string | Buffer | ArrayBufferView,
   encoding: BufferEncoding,
-  cb: FsCallback
+  cb: Callback
 ): void
 
 export function appendFile(
   filepath: string,
   data: string | Buffer | ArrayBufferView,
-  cb: FsCallback
-): void
-
-export function appendFileSync(
-  filepath: string,
-  data: string | Buffer | ArrayBufferView,
-  encoding: BufferEncoding
+  cb: Callback
 ): void
 
 export function appendFileSync(
@@ -260,111 +217,165 @@ export function appendFileSync(
   opts?: AppendFileOptions
 ): void
 
+export function appendFileSync(
+  filepath: string,
+  data: string | Buffer | ArrayBufferView,
+  encoding: BufferEncoding
+): void
+
 export function chmod(
   filepath: string,
   mode: string | number,
-  cb: FsCallback
+  cb: Callback
 ): void
 
 export function chmodSync(filepath: string, mode: string | number): void
 
-export function close(fd: number, cb?: FsCallback): void
+export function close(fd: number, cb?: Callback): void
+
 export function closeSync(fd: number): void
 
 export function copyFile(
   src: string,
   dst: string,
   mode: number,
-  cb: FsCallback
+  cb: Callback
 ): void
 
-export function copyFile(src: string, dst: string, cb: FsCallback): void
+export function copyFile(src: string, dst: string, cb: Callback): void
+
 export function copyFileSync(src: string, dst: string, mode?: number): void
 
 export function exists(filepath: string, cb: (exists: boolean) => void): void
+
 export function existsSync(filepath: string): boolean
 
-export function fchmod(fd: number, mode: string | number, cb: FsCallback): void
+export function fchmod(fd: number, mode: string | number, cb: Callback): void
+
 export function fchmodSync(fd: number, mode: string | number): void
 
-export function fstat(
-  fd: number,
-  cb: (err: Error | null, stats: Stats | null) => void
-): void
+export function fstat(fd: number, cb: Callback<[stats: Stats | null]>): void
 
 export function fstatSync(fd: number): Stats
 
-export function ftruncate(fd: number, len: number, cb: FsCallback): void
-export function ftruncate(fd: number, cb: FsCallback): void
+export function ftruncate(fd: number, len: number, cb: Callback): void
+
+export function ftruncate(fd: number, cb: Callback): void
 
 export function lstat(
   filepath: string,
-  cb: (err: Error | null, stats: Stats | null) => void
+  cb: Callback<[stats: Stats | null]>
 ): void
 
 export function lstatSync(filepath: string): Stats
 
-interface MkdirOptions {
+export interface MkdirOptions {
   mode?: number
   recursive?: boolean
 }
 
-export function mkdir(
-  filepath: string,
-  opts: MkdirOptions,
-  cb: FsCallback
-): void
+export function mkdir(filepath: string, opts: MkdirOptions, cb: Callback): void
 
-export function mkdir(filepath: string, mode: number, cb: FsCallback): void
-export function mkdir(filepath: string, cb: FsCallback): void
+export function mkdir(filepath: string, mode: number, cb: Callback): void
+
+export function mkdir(filepath: string, cb: Callback): void
+
+export function mkdirSync(filepath: string, opts?: MkdirOptions): void
+
 export function mkdirSync(filepath: string, mode: number): void
-export function mkdirSync(filepath: string, opts: MkdirOptions): void
 
 export function open(
   filepath: string,
-  flags: FsFlag | number,
+  flags: Flag | number,
   mode: string | number,
-  cb: FsCallbackResponse
+  cb: Callback<[fd: number]>
 ): void
 
 export function open(
   filepath: string,
-  flags: FsFlag | number,
-  cb: FsCallbackResponse
+  flags: Flag | number,
+  cb: Callback<[fd: number]>
 ): void
 
-export function open(filepath: string, cb: FsCallbackResponse): void
+export function open(filepath: string, cb: Callback<[fd: number]>): void
 
 export function openSync(
   filepath: string,
-  flags?: FsFlag | number,
+  flags?: Flag | number,
   mode?: string | number
 ): number
 
-interface DirOptions {
-  encoding?: BufferEncoding
+export interface OpendirOptions {
+  encoding?: BufferEncoding | 'buffer'
   bufferSize?: number
 }
 
 export function opendir(
   filepath: string,
-  opts: DirOptions,
-  cb: (err: Error | null, dir: Dir | null) => void
+  opts: OpendirOptions & { encoding?: BufferEncoding },
+  cb: Callback<[dir: Dir<string> | null]>
+): void
+
+export function opendir(
+  filepath: string,
+  opts: OpendirOptions & { encoding: 'buffer' },
+  cb: Callback<[dir: Dir<Buffer> | null]>
+): void
+
+export function opendir(
+  filepath: string,
+  opts: OpendirOptions,
+  cb: Callback<[dir: Dir | null]>
 ): void
 
 export function opendir(
   filepath: string,
   encoding: BufferEncoding,
-  cb: (err: Error | null, dir: Dir | null) => void
+  cb: Callback<[dir: Dir<string> | null]>
 ): void
 
 export function opendir(
   filepath: string,
-  cb: (err: Error | null, dir: Dir | null) => void
+  encoding: 'buffer',
+  cb: Callback<[dir: Dir<Buffer> | null]>
 ): void
 
-export function opendirSync(filepath: string, encoding: BufferEncoding): Dir
-export function opendirSync(filepath: string, opts?: DirOptions): Dir
+export function opendir(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer',
+  cb: Callback<[dir: Dir | null]>
+): void
+
+export function opendir(
+  filepath: string,
+  cb: Callback<[dir: Dir<string> | null]>
+): void
+
+export function opendirSync(
+  filepath: string,
+  opts: OpendirOptions & { encoding?: BufferEncoding }
+): Dir<string>
+
+export function opendirSync(
+  filepath: string,
+  opts: OpendirOptions & { encoding: 'buffer' }
+): Dir<Buffer>
+
+export function opendirSync(filepath: string, opts: OpendirOptions): Dir
+
+export function opendirSync(
+  filepath: string,
+  encoding: BufferEncoding
+): Dir<string>
+
+export function opendirSync(filepath: string, encoding: 'buffer'): Dir<Buffer>
+
+export function opendirSync(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer'
+): Dir
+
+export function opendirSync(filepath: string): Dir<string>
 
 export function read(
   fd: number,
@@ -372,7 +383,7 @@ export function read(
   offset: number,
   len: number,
   pos: number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function read(
@@ -380,20 +391,20 @@ export function read(
   buffer: Buffer | ArrayBufferView,
   offset: number,
   len: number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function read(
   fd: number,
   buffer: Buffer | ArrayBufferView,
   offset: number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function read(
   fd: number,
   buffer: Buffer | ArrayBufferView,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function readSync(
@@ -404,171 +415,395 @@ export function readSync(
   pos?: number
 ): number
 
-interface ReadFileOptions {
-  encoding?: BufferEncoding
-  flag?: FsFlag
+export interface ReadFileOptions {
+  encoding?: BufferEncoding | 'buffer'
+  flag?: Flag
 }
 
-interface ReaddirOptions extends DirOptions {
+export function readFile(
+  filepath: string,
+  opts: ReadFileOptions & { encoding: BufferEncoding },
+  cb: Callback<[buffer?: string]>
+): void
+
+export function readFile(
+  filepath: string,
+  opts: ReadFileOptions & { encoding?: 'buffer' },
+  cb: Callback<[buffer?: Buffer]>
+): void
+
+export function readFile(
+  filepath: string,
+  opts: ReadFileOptions,
+  cb: Callback<[buffer?: string | Buffer]>
+): void
+
+export function readFile(
+  filepath: string,
+  encoding: BufferEncoding,
+  cb: Callback<[buffer?: string]>
+): void
+
+export function readFile(
+  filepath: string,
+  encoding: 'buffer',
+  cb: Callback<[buffer?: Buffer]>
+): void
+
+export function readFile(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer',
+  cb: Callback<[buffer?: string | Buffer]>
+): void
+
+export function readFile(
+  filepath: string,
+  cb: Callback<[buffer?: Buffer]>
+): void
+
+export function readFileSync(
+  filepath: string,
+  opts: ReadFileOptions & { encoding: BufferEncoding }
+): string
+
+export function readFileSync(
+  filepath: string,
+  opts: ReadFileOptions & { encoding?: 'buffer' }
+): Buffer
+
+export function readFileSync(
+  filepath: string,
+  opts: ReadFileOptions
+): string | Buffer
+
+export function readFileSync(filepath: string, encoding: BufferEncoding): string
+
+export function readFileSync(filepath: string, encoding: 'buffer'): Buffer
+
+export function readFileSync(
+  filepath: string,
+  encoding?: BufferEncoding | 'buffer'
+): string | Buffer
+
+export function readFileSync(filepath: string): Buffer
+
+export interface ReaddirOptions extends OpendirOptions {
   withFileTypes?: boolean
 }
 
 export function readdir(
   filepath: string,
+  opts: ReaddirOptions & { encoding?: BufferEncoding },
+  cb: Callback<[entries: Dir<string>[] | string[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes: true },
+  cb: Callback<[entries: Dir<string>[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes?: false },
+  cb: Callback<[entries: string[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { encoding: 'buffer' },
+  cb: Callback<[entries: Dir<Buffer>[] | Buffer[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes: true },
+  cb: Callback<[entries: Dir<Buffer>[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes?: false },
+  cb: Callback<[entries: Buffer[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { withFileTypes: true },
+  cb: Callback<[entries: Dir<string | Buffer>[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  opts: ReaddirOptions & { withFileTypes?: false },
+  cb: Callback<[entries: string[] | Buffer[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
   opts: ReaddirOptions,
-  cb: (err: Error | null, entries: Dir[] | string[] | null) => void
+  cb: Callback<[entries: Dir[] | string[] | Buffer[] | null]>
 ): void
 
 export function readdir(
   filepath: string,
   encoding: BufferEncoding,
-  cb: (err: Error | null, entries: Dir[] | string[] | null) => void
+  cb: Callback<[entries: string[] | null]>
 ): void
 
 export function readdir(
   filepath: string,
-  cb: (err: Error | null, entries: Dir[] | string[] | null) => void
+  encoding: 'buffer',
+  cb: Callback<[entries: Buffer[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer',
+  cb: Callback<[entries: string[] | Buffer[] | null]>
+): void
+
+export function readdir(
+  filepath: string,
+  cb: Callback<[entries: string[] | null]>
 ): void
 
 export function readdirSync(
   filepath: string,
-  opts?: ReaddirOptions
-): Dir[] | string[]
+  opts: ReaddirOptions & { encoding?: BufferEncoding }
+): Dir<string>[] | string[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes: true }
+): Dir<string>[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes?: false }
+): string[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { encoding: 'buffer' }
+): Dir<Buffer>[] | Buffer[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes: true }
+): Dir<Buffer>[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes?: false }
+): Buffer[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { withFileTypes: true }
+): Dir<string | Buffer>[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions & { withFileTypes?: false }
+): string[] | Buffer[]
+
+export function readdirSync(
+  filepath: string,
+  opts: ReaddirOptions
+): Dir[] | string[] | Buffer[]
 
 export function readdirSync(
   filepath: string,
   encoding: BufferEncoding
-): Dir[] | string[]
+): string[]
 
-export function readFile(
+export function readdirSync(filepath: string, encoding: 'buffer'): Buffer[]
+
+export function readdirSync(
   filepath: string,
-  opts: ReadFileOptions,
-  cb: (err: Error | null, buffer?: string | Buffer) => void
-): void
+  encoding: BufferEncoding | 'buffer'
+): string[] | Buffer[]
 
-export function readFile(
-  filepath: string,
-  encoding: BufferEncoding,
-  cb: (err: Error | null, buffer?: string | Buffer) => void
-): void
+export function readdirSync(filepath: string): string[]
 
-export function readFile(
-  filepath: string,
-  cb: (err: Error | null, buffer?: string | Buffer) => void
-): void
-
-export function readFileSync(
-  filepath: string,
-  opts?: ReadFileOptions
-): string | Buffer
-
-export function readFileSync(
-  filepath: string,
-  encoding: BufferEncoding
-): string | Buffer
-
-interface ReadlineOptions {
-  encoding?: BufferEncoding
+export interface ReadlinkOptions {
+  encoding?: BufferEncoding | 'buffer'
 }
 
-export function readline(
+export function readlink(
   filepath: string,
-  opts: ReadlineOptions,
-  cb: (err: Error | null, path: string | Buffer | null) => void
+  opts: ReadlinkOptions & { encoding?: BufferEncoding },
+  cb: Callback<[link: string | null]>
 ): void
 
-export function readline(
+export function readlink(
   filepath: string,
-  cb: (err: Error | null, path: string | Buffer | null) => void
+  opts: ReadlinkOptions & { encoding: 'buffer' },
+  cb: Callback<[link: Buffer | null]>
 ): void
-
-interface ReadlinkOptions {
-  encoding?: BufferEncoding
-}
 
 export function readlink(
   filepath: string,
   opts: ReadlinkOptions,
-  cb: (err: Error | null, link: string | Buffer | null) => void
+  cb: Callback<[link: string | Buffer | null]>
 ): void
 
 export function readlink(
   filepath: string,
   encoding: BufferEncoding,
-  cb: (err: Error | null, link: string | Buffer | null) => void
+  cb: Callback<[link: string | null]>
 ): void
 
 export function readlink(
   filepath: string,
-  cb: (err: Error | null, link: string | Buffer | null) => void
+  encoding: 'buffer',
+  cb: Callback<[link: Buffer | null]>
+): void
+
+export function readlink(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer',
+  cb: Callback<[link: string | Buffer | null]>
+): void
+
+export function readlink(
+  filepath: string,
+  cb: Callback<[link: string | null]>
 ): void
 
 export function readlinkSync(
   filepath: string,
-  opts?: ReadlinkOptions
-): string | Buffer
+  opts: ReadlinkOptions & { encoding?: BufferEncoding }
+): string
 
 export function readlinkSync(
   filepath: string,
-  encoding: BufferEncoding
+  opts: ReadlinkOptions & { encoding: 'buffer' }
+): Buffer
+
+export function readlinkSync(
+  filepath: string,
+  opts: ReadlinkOptions
 ): string | Buffer
 
+export function readlinkSync(filepath: string, encoding: BufferEncoding): string
+
+export function readlinkSync(filepath: string, encoding: 'buffer'): Buffer
+
+export function readlinkSync(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer'
+): string | Buffer
+
+export function readlinkSync(filepath: string): string
+
 export function readv(
   fd: number,
   buffers: ArrayBufferView[],
-  position: number | null,
-  cb: FsCallbackResponse
+  position: number,
+  cb: Callback<[len: number]>
 ): void
 
 export function readv(
   fd: number,
   buffers: ArrayBufferView[],
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
-interface RealpathOptions {
-  encoding?: BufferEncoding
+export interface RealpathOptions {
+  encoding?: BufferEncoding | 'buffer'
 }
+
+export function realpath(
+  filepath: string,
+  opts: RealpathOptions & { encoding?: BufferEncoding },
+  cb: Callback<[path: string | null]>
+): void
+
+export function realpath(
+  filepath: string,
+  opts: RealpathOptions & { encoding: 'buffer' },
+  cb: Callback<[path: Buffer | null]>
+): void
 
 export function realpath(
   filepath: string,
   opts: RealpathOptions,
-  cb: (err: Error | null, path: string | Buffer | null) => void
+  cb: Callback<[path: string | Buffer | null]>
 ): void
 
 export function realpath(
   filepath: string,
-  cb: (err: Error | null, path: string | Buffer | null) => void
+  encoding: BufferEncoding,
+  cb: Callback<[path: string | null]>
+): void
+
+export function realpath(
+  filepath: string,
+  encoding: 'buffer',
+  cb: Callback<[path: Buffer | null]>
+): void
+
+export function realpath(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer',
+  cb: Callback<[path: string | Buffer | null]>
+): void
+
+export function realpath(
+  filepath: string,
+  cb: Callback<[path: string | null]>
 ): void
 
 export function realpathSync(
   filepath: string,
-  encoding: BufferEncoding
-): string | Buffer
+  opts: RealpathOptions & { encoding?: BufferEncoding }
+): string
 
 export function realpathSync(
   filepath: string,
-  opts?: RealpathOptions
+  opts: RealpathOptions & { encoding: 'buffer' }
+): Buffer
+
+export function realpathSync(
+  filepath: string,
+  opts: RealpathOptions
 ): string | Buffer
 
-export function rename(src: string, dst: string, cb: FsCallback): void
+export function realpathSync(filepath: string, encoding: BufferEncoding): string
+
+export function realpathSync(filepath: string, encoding: 'buffer'): Buffer
+
+export function realpathSync(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer'
+): string | Buffer
+
+export function realpathSync(filepath: string): string
+
+export function rename(src: string, dst: string, cb: Callback): void
+
 export function renameSync(src: string, dst: string): void
 
-interface RmOptions {
+export interface RmOptions {
   force?: boolean
   recursive?: boolean
 }
 
-export function rm(filepath: string, opts: RmOptions, cb: FsCallback): void
-export function rm(filepath: string, cb: FsCallback): void
+export function rm(filepath: string, opts: RmOptions, cb: Callback): void
+
+export function rm(filepath: string, cb: Callback): void
+
 export function rmSync(filepath: string, opts?: RmOptions): void
 
-export function rmdir(filepath: string, cb: FsCallback): void
+export function rmdir(filepath: string, cb: Callback): void
+
 export function rmdirSync(filepath: string): void
 
 export function stat(
   filepath: string,
-  cb: (err: Error | null, stats: Stats | null) => void
+  cb: Callback<[stats: Stats | null]>
 ): void
 
 export function statSync(filepath: string): Stats
@@ -577,10 +812,10 @@ export function symlink(
   target: string,
   filepath: string,
   type: string | number,
-  cb: FsCallback
+  cb: Callback
 ): void
 
-export function symlink(target: string, filepath: string, cb: FsCallback): void
+export function symlink(target: string, filepath: string, cb: Callback): void
 
 export function symlinkSync(
   target: string,
@@ -588,25 +823,50 @@ export function symlinkSync(
   type?: string | number
 ): void
 
-export function unlink(filepath: string, cb: FsCallback): void
+export function unlink(filepath: string, cb: Callback): void
+
 export function unlinkSync(filepath: string): void
 
 export function watch(
   filepath: string,
+  opts: WatcherOptions & { encoding?: BufferEncoding },
+  cb: (eventType: WatcherEventType, filename: string) => void
+): Watcher<string>
+
+export function watch(
+  filepath: string,
+  opts: WatcherOptions & { encoding: 'buffer' },
+  cb: (eventType: WatcherEventType, filename: Buffer) => void
+): Watcher<Buffer>
+
+export function watch(
+  filepath: string,
   opts: WatcherOptions,
-  cb: (type: 'rename' | 'change', filename: string | Buffer) => void
+  cb: (eventType: WatcherEventType, filename: string | Buffer) => void
 ): Watcher
 
 export function watch(
   filepath: string,
   encoding: BufferEncoding,
-  cb: (type: 'rename' | 'change', filename: string | Buffer) => void
+  cb: (evenType: WatcherEventType, filename: string) => void
+): Watcher<string>
+
+export function watch(
+  filepath: string,
+  encoding: 'buffer',
+  cb: (evenType: WatcherEventType, filename: Buffer) => void
+): Watcher<Buffer>
+
+export function watch(
+  filepath: string,
+  encoding: BufferEncoding | 'buffer',
+  cb: (evenType: WatcherEventType, filename: string | Buffer) => void
 ): Watcher
 
 export function watch(
   filepath: string,
-  cb: (type: 'rename' | 'change', filename: string | Buffer) => void
-): Watcher
+  cb: (eventType: WatcherEventType, filename: string) => void
+): Watcher<string>
 
 export function write(
   fd: number,
@@ -614,7 +874,7 @@ export function write(
   offset: number,
   len: number,
   pos: number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function write(
@@ -622,7 +882,7 @@ export function write(
   data: Buffer | ArrayBufferView,
   offset: number,
   len: number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function write(
@@ -630,30 +890,34 @@ export function write(
   data: string,
   pos: string | number,
   encoding: BufferEncoding,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function write(
   fd: number,
   data: Buffer | ArrayBufferView,
   offset: number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function write(
   fd: number,
   data: string,
   pos: string | number,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
 export function write(
   fd: number,
   data: Buffer | ArrayBufferView,
-  cb: FsCallbackResponse
+  cb: Callback<[len: number]>
 ): void
 
-export function write(fd: number, data: string, cb: FsCallbackResponse): void
+export function write(
+  fd: number,
+  data: string,
+  cb: Callback<[len: number]>
+): void
 
 export function writeSync(
   fd: number,
@@ -663,9 +927,9 @@ export function writeSync(
   pos?: number
 ): void
 
-interface WriteFileOptions {
+export interface WriteFileOptions {
   encoding?: BufferEncoding
-  flag?: FsFlag
+  flag?: Flag
   mode?: number
 }
 
@@ -673,26 +937,20 @@ export function writeFile(
   filepath: string,
   data: string | Buffer | ArrayBufferView,
   opts: WriteFileOptions,
-  cb: FsCallback
+  cb: Callback
 ): void
 
 export function writeFile(
   filepath: string,
   data: string | Buffer | ArrayBufferView,
   encoding: BufferEncoding,
-  cb: FsCallback
+  cb: Callback
 ): void
 
 export function writeFile(
   filepath: string,
   data: string | Buffer | ArrayBufferView,
-  cb: FsCallback
-): void
-
-export function writeFileSync(
-  filepath: string,
-  data: string | Buffer | ArrayBufferView,
-  encoding: BufferEncoding
+  cb: Callback
 ): void
 
 export function writeFileSync(
@@ -701,43 +959,21 @@ export function writeFileSync(
   opts?: WriteFileOptions
 ): void
 
-export function writev(
-  fd: number,
-  buffers: ArrayBufferView[],
-  pos: number | null,
-  cb: FsCallbackResponse
+export function writeFileSync(
+  filepath: string,
+  data: string | Buffer | ArrayBufferView,
+  encoding: BufferEncoding
 ): void
 
 export function writev(
   fd: number,
   buffers: ArrayBufferView[],
-  cb: FsCallbackResponse
+  pos: number,
+  cb: Callback<[len: number]>
 ): void
 
-export namespace promises {
-  type Promisify<F> = F extends (...args: infer Args) => infer R
-    ? (...args: Args) => Promise<R>
-    : void
-
-  export const access: Promisify<typeof accessSync>
-  export const appendFile: Promisify<typeof appendFileSync>
-  export const chmod: Promisify<typeof chmodSync>
-  export const copyFile: Promisify<typeof copyFileSync>
-  export const lstat: Promisify<typeof lstatSync>
-  export const mkdir: Promisify<typeof mkdirSync>
-  export const opendir: Promisify<typeof opendirSync>
-  export const readFile: Promisify<typeof readFileSync>
-  export const readdir: Promisify<typeof readdirSync>
-  export const readlink: Promisify<typeof readlinkSync>
-  export const realpath: Promisify<typeof realpathSync>
-  export const rename: Promisify<typeof renameSync>
-  export const rm: Promisify<typeof rmSync>
-  export const rmdir: Promisify<typeof rmdirSync>
-  export const stat: Promisify<typeof statSync>
-  export const symlink: Promisify<typeof symlinkSync>
-  export const unlink: Promisify<typeof unlinkSync>
-  export const writeFile: Promisify<typeof writeFileSync>
-
-  export function watch(filepath: string, opts: WatcherOptions): Watcher
-  export function watch(filepath: string, encoding: BufferEncoding): Watcher
-}
+export function writev(
+  fd: number,
+  buffers: ArrayBufferView[],
+  cb: Callback<[len: number]>
+): void

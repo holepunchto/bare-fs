@@ -3,19 +3,29 @@
   "version": "4.0.1",
   "description": "Native file system for Javascript",
   "exports": {
+    "./package": "./package.json",
     ".": {
       "types": "./index.d.ts",
       "default": "./index.js"
     },
-    "./package": "./package.json"
+    "./promises": {
+      "types": "./promises.d.ts",
+      "default": "./promises.js"
+    },
+    "./constants": {
+      "types": "./lib/constants.d.ts",
+      "default": "./lib/constants.js"
+    }
   },
   "files": [
     "index.js",
     "index.d.ts",
     "promises.js",
+    "promises.d.ts",
     "binding.c",
     "binding.js",
     "CMakeLists.txt",
+    "lib",
     "prebuilds"
   ],
   "addon": true,
