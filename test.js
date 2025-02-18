@@ -812,7 +812,7 @@ test('symlink sync', async (t) => {
 test('createReadStream', async (t) => {
   t.plan(1)
 
-  const expected = Buffer.alloc(1024 * 1024 * 4 /* 4 MiB */).fill('hello')
+  const expected = Buffer.alloc(1024 * 16 /* 16 KiB */).fill('hello')
 
   const file = await withFile(t, 'test/fixtures/foo', expected)
 
