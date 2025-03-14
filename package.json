@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/holepunchto/bare-fs#readme",
   "engines": {
-    "bare": ">=1.7.0"
+    "bare": ">=1.16.0"
   },
   "dependencies": {
     "bare-events": "^2.5.4",
