@@ -848,6 +848,8 @@ function ftruncate(fd, len, cb) {
     )
   }
 
+  if (typeof len !== 'number') len = 0
+
   const req = getReq()
   req.callback = cb
   binding.ftruncate(req.handle, fd, len)
@@ -872,6 +874,8 @@ function ftruncateSync(fd, len) {
         fd
     )
   }
+
+  if (typeof len !== 'number') len = 0
 
   binding.ftruncateSync(fd, len)
 }
