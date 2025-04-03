@@ -853,7 +853,7 @@ function ftruncate(fd, len, cb) {
   binding.ftruncate(req.handle, fd, len)
 }
 
-function ftruncate(fd, len) {
+function ftruncateSync(fd, len) {
   if (typeof fd !== 'number') {
     throw typeError(
       'ERR_INVALID_ARG_TYPE',
@@ -2641,6 +2641,7 @@ exports.copyFileSync = copyFileSync
 exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
 exports.fstatSync = fstatSync
+exports.ftruncateSync = ftruncateSync
 exports.lstatSync = lstatSync
 exports.mkdirSync = mkdirSync
 exports.openSync = openSync
