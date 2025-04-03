@@ -873,20 +873,6 @@ function ftruncate(fd, len) {
     )
   }
 
-  if (typeof len === 'function') {
-    cb = len
-    len = 0
-  } else if (typeof cb !== 'function') {
-    throw typeError(
-      'ERR_INVALID_ARG_TYPE',
-      'Callback must be a function. Received type ' +
-        typeof cb +
-        ' (' +
-        cb +
-        ')'
-    )
-  }
-
   binding.ftruncateSync(fd, len)
 }
 
