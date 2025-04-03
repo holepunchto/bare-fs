@@ -853,6 +853,43 @@ function ftruncate(fd, len, cb) {
   binding.ftruncate(req.handle, fd, len)
 }
 
+function ftruncate(fd, len) {
+  if (typeof fd !== 'number') {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'File descriptor must be a number. Received type ' +
+        typeof fd +
+        ' (' +
+        fd +
+        ')'
+    )
+  }
+
+  if (fd < 0 || fd > 0x7fffffff) {
+    throw typeError(
+      'ERR_OUT_OF_RANGE',
+      'File descriptor is out of range. It must be >= 0 && <= 2147483647. Received ' +
+        fd
+    )
+  }
+
+  if (typeof len === 'function') {
+    cb = len
+    len = 0
+  } else if (typeof cb !== 'function') {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Callback must be a function. Received type ' +
+        typeof cb +
+        ' (' +
+        cb +
+        ')'
+    )
+  }
+
+  binding.ftruncateSync(fd, len)
+}
+
 function chmod(filepath, mode, cb) {
   if (typeof filepath !== 'string') {
     throw typeError(

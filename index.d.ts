@@ -262,6 +262,8 @@ export function ftruncate(fd: number, len: number, cb: Callback): void
 
 export function ftruncate(fd: number, cb: Callback): void
 
+export function ftruncateSync(fd: number, len: number): void
+
 export function lstat(
   filepath: string,
   cb: Callback<[stats: Stats | null]>

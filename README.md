@@ -72,6 +72,7 @@ fs.copyFileSync
 fs.existsSync
 fs.fchmodSync
 fs.fstatSync
+fs.ftruncateSync
 fs.lstatSync
 fs.mkdirSync
 fs.openSync

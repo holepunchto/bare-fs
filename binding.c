@@ -996,6 +996,42 @@ bare_fs_ftruncate(js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_ftruncate_sync(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[0], &fd);
+  assert(err == 0);
+
+  int64_t len;
+  err = js_get_value_int64(env, argv[1], &len);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  uv_fs_t req;
+  uv_fs_ftruncate(loop, &req, fd, len, NULL);
+
+  if (req.result < 0) {
+    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_chmod(js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -2575,6 +2611,7 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("writeSync", bare_fs_write_sync)
   V("writev", bare_fs_writev)
   V("ftruncate", bare_fs_ftruncate)
+  V("ftruncateSync", bare_fs_ftruncate_sync)
   V("chmod", bare_fs_chmod)
   V("chmodSync", bare_fs_chmod_sync)
   V("fchmod", bare_fs_fchmod)
