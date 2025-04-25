@@ -42,6 +42,7 @@ typedef struct {
   js_ref_t *on_close;
 
   js_deferred_teardown_t *teardown;
+  bool closing;
   bool exiting;
 } bare_fs_watcher_t;
 
@@ -141,9 +142,9 @@ bare_fs__on_response(uv_fs_t *handle) {
     req->data = NULL;
   }
 
-  js_call_function(req->env, ctx, on_response, 2, args, NULL);
+  js_call_function(env, ctx, on_response, 2, args, NULL);
 
-  err = js_close_handle_scope(req->env, scope);
+  err = js_close_handle_scope(env, scope);
   assert(err == 0);
 }
 
@@ -205,7 +206,7 @@ bare_fs__on_stat_response(uv_fs_t *handle) {
     V(birthtim)
 #undef V
 
-    err = js_close_handle_scope(req->env, scope);
+    err = js_close_handle_scope(env, scope);
     assert(err == 0);
   }
 
@@ -237,7 +238,7 @@ bare_fs__on_realpath_response(uv_fs_t *handle) {
 
     strncpy(path, handle->ptr, sizeof(bare_fs_path_t));
 
-    err = js_close_handle_scope(req->env, scope);
+    err = js_close_handle_scope(env, scope);
     assert(err == 0);
   }
 
@@ -269,7 +270,7 @@ bare_fs__on_readlink_response(uv_fs_t *handle) {
 
     strncpy(path, handle->ptr, sizeof(bare_fs_path_t));
 
-    err = js_close_handle_scope(req->env, scope);
+    err = js_close_handle_scope(env, scope);
     assert(err == 0);
   }
 
@@ -301,7 +302,7 @@ bare_fs__on_opendir_response(uv_fs_t *handle) {
 
     dir->dir = handle->ptr;
 
-    err = js_close_handle_scope(req->env, scope);
+    err = js_close_handle_scope(env, scope);
     assert(err == 0);
   }
 
@@ -359,7 +360,7 @@ bare_fs__on_readdir_response(uv_fs_t *handle) {
       assert(err == 0);
     }
 
-    err = js_close_handle_scope(req->env, scope);
+    err = js_close_handle_scope(env, scope);
     assert(err == 0);
   }
 
@@ -385,6 +386,7 @@ bare_fs_init(js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   req->env = env;
+  req->data = NULL;
   req->active = false;
   req->exiting = false;
 
@@ -473,7 +475,8 @@ bare_fs_open_sync(js_env_t *env, js_callback_info_t *info) {
   js_value_t *res = NULL;
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     err = js_create_int32(env, req.result, &res);
     assert(err == 0);
@@ -539,7 +542,8 @@ bare_fs_close_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_close(loop, &req, fd, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -610,7 +614,8 @@ bare_fs_access_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_access(loop, &req, (char *) path, mode, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1023,7 +1028,8 @@ bare_fs_ftruncate_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_ftruncate(loop, &req, fd, len, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1094,7 +1100,8 @@ bare_fs_chmod_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_chmod(loop, &req, (char *) path, mode, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1165,7 +1172,8 @@ bare_fs_fchmod_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_fchmod(loop, &req, fd, mode, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1236,7 +1244,8 @@ bare_fs_rename_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_rename(loop, &req, (char *) src, (char *) dest, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1315,7 +1324,8 @@ bare_fs_copyfile_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_copyfile(loop, &req, (char *) src, (char *) dest, mode, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1386,7 +1396,8 @@ bare_fs_mkdir_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_mkdir(loop, &req, (char *) path, mode, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1449,7 +1460,8 @@ bare_fs_rmdir_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_rmdir(loop, &req, (char *) path, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1517,7 +1529,8 @@ bare_fs_stat_sync(js_env_t *env, js_callback_info_t *info) {
   js_value_t *res = NULL;
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     err = js_create_array_with_length(env, 14, &res);
     assert(err == 0);
@@ -1628,7 +1641,8 @@ bare_fs_lstat_sync(js_env_t *env, js_callback_info_t *info) {
   js_value_t *res = NULL;
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     err = js_create_array_with_length(env, 14, &res);
     assert(err == 0);
@@ -1739,7 +1753,8 @@ bare_fs_fstat_sync(js_env_t *env, js_callback_info_t *info) {
   js_value_t *res = NULL;
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     err = js_create_array_with_length(env, 14, &res);
     assert(err == 0);
@@ -1845,7 +1860,8 @@ bare_fs_unlink_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_unlink(loop, &req, (char *) path, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -1913,7 +1929,8 @@ bare_fs_realpath_sync(js_env_t *env, js_callback_info_t *info) {
   js_value_t *res = NULL;
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     char *path;
     err = js_get_typedarray_info(env, argv[1], NULL, (void **) &path, NULL, NULL, NULL);
@@ -1985,7 +2002,8 @@ bare_fs_readlink_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_readlink(loop, &req, (char *) path, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     char *path;
     err = js_get_typedarray_info(env, argv[1], NULL, (void **) &path, NULL, NULL, NULL);
@@ -2070,7 +2088,8 @@ bare_fs_symlink_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_symlink(loop, &req, (char *) target, (char *) path, flags, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -2138,7 +2157,8 @@ bare_fs_opendir_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_opendir(loop, &req, (char *) path, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     bare_fs_dir_t *dir;
     err = js_get_typedarray_info(env, argv[1], NULL, (void **) &dir, NULL, NULL, NULL);
@@ -2226,7 +2246,8 @@ bare_fs_readdir_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_readdir(loop, &req, dir->dir, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   } else {
     uv_dir_t *dir = req.ptr;
 
@@ -2321,7 +2342,8 @@ bare_fs_closedir_sync(js_env_t *env, js_callback_info_t *info) {
   uv_fs_closedir(loop, &req, dir->dir, NULL);
 
   if (req.result < 0) {
-    js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
   }
 
   uv_fs_req_cleanup(&req);
@@ -2334,6 +2356,8 @@ bare_fs__on_watcher_event(uv_fs_event_t *handle, const char *filename, int event
   int err;
 
   bare_fs_watcher_t *watcher = (bare_fs_watcher_t *) handle;
+
+  if (watcher->exiting) return;
 
   js_env_t *env = watcher->env;
 
@@ -2398,36 +2422,46 @@ bare_fs__on_watcher_close(uv_handle_t *handle) {
 
   js_env_t *env = watcher->env;
 
-  if (watcher->exiting) goto finalize;
+  js_deferred_teardown_t *teardown = watcher->teardown;
 
-  js_handle_scope_t *scope;
-  err = js_open_handle_scope(env, &scope);
-  assert(err == 0);
+  if (watcher->exiting) {
+    err = js_delete_reference(env, watcher->on_event);
+    assert(err == 0);
 
-  js_value_t *ctx;
-  err = js_get_reference_value(env, watcher->ctx, &ctx);
-  assert(err == 0);
+    err = js_delete_reference(env, watcher->on_close);
+    assert(err == 0);
 
-  js_value_t *on_close;
-  err = js_get_reference_value(env, watcher->on_close, &on_close);
-  assert(err == 0);
+    err = js_delete_reference(env, watcher->ctx);
+    assert(err == 0);
+  } else {
+    js_handle_scope_t *scope;
+    err = js_open_handle_scope(env, &scope);
+    assert(err == 0);
 
-  js_call_function(env, ctx, on_close, 0, NULL, NULL);
+    js_value_t *ctx;
+    err = js_get_reference_value(env, watcher->ctx, &ctx);
+    assert(err == 0);
 
-  err = js_close_handle_scope(env, scope);
-  assert(err == 0);
+    js_value_t *on_close;
+    err = js_get_reference_value(env, watcher->on_close, &on_close);
+    assert(err == 0);
 
-finalize:
-  err = js_finish_deferred_teardown_callback(watcher->teardown);
-  assert(err == 0);
+    err = js_delete_reference(env, watcher->on_event);
+    assert(err == 0);
 
-  err = js_delete_reference(env, watcher->on_event);
-  assert(err == 0);
+    err = js_delete_reference(env, watcher->on_close);
+    assert(err == 0);
 
-  err = js_delete_reference(env, watcher->on_close);
-  assert(err == 0);
+    err = js_delete_reference(env, watcher->ctx);
+    assert(err == 0);
 
-  err = js_delete_reference(env, watcher->ctx);
+    js_call_function(env, ctx, on_close, 0, NULL, NULL);
+
+    err = js_close_handle_scope(env, scope);
+    assert(err == 0);
+  }
+
+  err = js_finish_deferred_teardown_callback(teardown);
   assert(err == 0);
 }
 
@@ -2436,6 +2470,8 @@ bare_fs__on_watcher_teardown(js_deferred_teardown_t *handle, void *data) {
   bare_fs_watcher_t *watcher = (bare_fs_watcher_t *) data;
 
   watcher->exiting = true;
+
+  if (watcher->closing) return;
 
   uv_close((uv_handle_t *) &watcher->handle, bare_fs__on_watcher_close);
 }
@@ -2473,7 +2509,8 @@ bare_fs_watcher_init(js_env_t *env, js_callback_info_t *info) {
   err = uv_fs_event_init(loop, &watcher->handle);
 
   if (err < 0) {
-    js_throw_error(env, uv_err_name(err), uv_strerror(err));
+    err = js_throw_error(env, uv_err_name(err), uv_strerror(err));
+    assert(err == 0);
 
     return NULL;
   }
@@ -2481,16 +2518,15 @@ bare_fs_watcher_init(js_env_t *env, js_callback_info_t *info) {
   err = uv_fs_event_start(&watcher->handle, bare_fs__on_watcher_event, (char *) path, recursive ? UV_FS_EVENT_RECURSIVE : 0);
 
   if (err < 0) {
-    js_throw_error(env, uv_err_name(err), uv_strerror(err));
+    err = js_throw_error(env, uv_err_name(err), uv_strerror(err));
+    assert(err == 0);
 
     return NULL;
   }
 
   watcher->env = env;
+  watcher->closing = false;
   watcher->exiting = false;
-
-  err = js_add_deferred_teardown_callback(env, bare_fs__on_watcher_teardown, (void *) watcher, &watcher->teardown);
-  assert(err == 0);
 
   err = js_create_reference(env, argv[2], 1, &watcher->ctx);
   assert(err == 0);
@@ -2499,6 +2535,9 @@ bare_fs_watcher_init(js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   err = js_create_reference(env, argv[4], 1, &watcher->on_close);
+  assert(err == 0);
+
+  err = js_add_deferred_teardown_callback(env, bare_fs__on_watcher_teardown, (void *) watcher, &watcher->teardown);
   assert(err == 0);
 
   return result;
@@ -2522,6 +2561,8 @@ bare_fs_watcher_close(js_env_t *env, js_callback_info_t *info) {
 
   err = uv_fs_event_stop(&watcher->handle);
   assert(err == 0);
+
+  watcher->closing = true;
 
   uv_close((uv_handle_t *) &watcher->handle, bare_fs__on_watcher_close);
 
