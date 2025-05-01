@@ -153,7 +153,7 @@ function open(filepath, flags, mode, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.open(req.handle, filepath, flags, mode)
+  binding.open(req.handle, toNamespacedPath(filepath), flags, mode)
 }
 
 function openSync(filepath, flags = 'r', mode = 0o666) {
@@ -171,7 +171,7 @@ function openSync(filepath, flags = 'r', mode = 0o666) {
   if (typeof flags === 'string') flags = flagsToNumber(flags)
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  return binding.openSync(filepath, flags, mode)
+  return binding.openSync(toNamespacedPath(filepath), flags, mode)
 }
 
 function close(fd, cb = noop) {
@@ -263,7 +263,7 @@ function access(filepath, mode, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.access(req.handle, filepath, mode)
+  binding.access(req.handle, toNamespacedPath(filepath), mode)
 }
 
 function accessSync(filepath, mode = constants.F_OK) {
@@ -278,7 +278,7 @@ function accessSync(filepath, mode = constants.F_OK) {
     )
   }
 
-  binding.accessSync(filepath, mode)
+  binding.accessSync(toNamespacedPath(filepath), mode)
 }
 
 function exists(filepath, cb) {
@@ -304,7 +304,7 @@ function exists(filepath, cb) {
     )
   }
 
-  return access(filepath, (err) => cb(!!err))
+  return access(toNamespacedPath(filepath), (err) => cb(!!err))
 }
 
 function existsSync(filepath) {
@@ -320,7 +320,7 @@ function existsSync(filepath) {
   }
 
   try {
-    accessSync(filepath)
+    accessSync(toNamespacedPath(filepath))
     return true
   } catch {
     return false
@@ -680,7 +680,7 @@ function stat(filepath, cb) {
     else cb(null, new Stats(...data))
   }
 
-  binding.stat(req.handle, filepath, data)
+  binding.stat(req.handle, toNamespacedPath(filepath), data)
 }
 
 function statSync(filepath) {
@@ -695,7 +695,7 @@ function statSync(filepath) {
     )
   }
 
-  return new Stats(...binding.statSync(filepath))
+  return new Stats(...binding.statSync(toNamespacedPath(filepath)))
 }
 
 function lstat(filepath, cb) {
@@ -730,7 +730,7 @@ function lstat(filepath, cb) {
     else cb(null, new Stats(...data))
   }
 
-  binding.lstat(req.handle, filepath, data)
+  binding.lstat(req.handle, toNamespacedPath(filepath), data)
 }
 
 function lstatSync(filepath) {
@@ -745,7 +745,7 @@ function lstatSync(filepath) {
     )
   }
 
-  return new Stats(...binding.lstatSync(filepath))
+  return new Stats(...binding.lstatSync(toNamespacedPath(filepath)))
 }
 
 function fstat(fd, cb) {
@@ -896,7 +896,7 @@ function chmod(filepath, mode, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.chmod(req.handle, filepath, mode)
+  binding.chmod(req.handle, toNamespacedPath(filepath), mode)
 }
 
 function chmodSync(filepath, mode) {
@@ -913,7 +913,7 @@ function chmodSync(filepath, mode) {
 
   if (typeof mode === 'string') mode = modeToNumber(mode)
 
-  binding.chmodSync(filepath, mode)
+  binding.chmodSync(toNamespacedPath(filepath), mode)
 }
 
 function fchmod(fd, mode, cb) {
@@ -969,6 +969,8 @@ function fchmodSync(fd, mode) {
 }
 
 function mkdirRecursive(filepath, mode, cb) {
+  filepath = toNamespacedPath(filepath)
+
   mkdir(filepath, { mode }, function (err) {
     if (err === null) return cb(null, 0, null)
 
@@ -1032,8 +1034,9 @@ function mkdir(filepath, opts, cb) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive)
-    return mkdirRecursive(filepath.replace(/\//g, path.sep), mode, cb)
+  filepath = toNamespacedPath(filepath)
+
+  if (opts.recursive) return mkdirRecursive(filepath, mode, cb)
 
   const req = getReq()
   req.callback = cb
@@ -1041,6 +1044,8 @@ function mkdir(filepath, opts, cb) {
 }
 
 function mkdirRecursiveSync(filepath, mode) {
+  filepath = toNamespacedPath(filepath)
+
   try {
     mkdirSync(filepath, { mode })
   } catch (err) {
@@ -1083,8 +1088,9 @@ function mkdirSync(filepath, opts) {
 
   const mode = typeof opts.mode === 'number' ? opts.mode : 0o777
 
-  if (opts.recursive)
-    return mkdirRecursiveSync(filepath.replace(/\//g, path.sep), mode)
+  filepath = toNamespacedPath(filepath)
+
+  if (opts.recursive) return mkdirRecursiveSync(filepath, mode)
 
   binding.mkdirSync(filepath, mode)
 }
@@ -1114,7 +1120,7 @@ function rmdir(filepath, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.rmdir(req.handle, filepath)
+  binding.rmdir(req.handle, toNamespacedPath(filepath))
 }
 
 function rmdirSync(filepath) {
@@ -1129,10 +1135,12 @@ function rmdirSync(filepath) {
     )
   }
 
-  binding.rmdirSync(filepath)
+  binding.rmdirSync(toNamespacedPath(filepath))
 }
 
 function rmRecursive(filepath, opts, cb) {
+  filepath = toNamespacedPath(filepath)
+
   rmdir(filepath, function (err) {
     if (err === null) return cb(null)
 
@@ -1190,6 +1198,8 @@ function rm(filepath, opts, cb) {
 
   if (!opts) opts = {}
 
+  filepath = toNamespacedPath(filepath)
+
   lstat(filepath, function (err, st) {
     if (err) {
       return cb(err.code === 'ENOENT' && opts.force ? null : err)
@@ -1208,6 +1218,8 @@ function rm(filepath, opts, cb) {
 }
 
 function rmRecursiveSync(filepath, opts) {
+  filepath = toNamespacedPath(filepath)
+
   try {
     rmdirSync(filepath)
   } catch (err) {
@@ -1236,6 +1248,8 @@ function rmSync(filepath, opts) {
   }
 
   if (!opts) opts = {}
+
+  filepath = toNamespacedPath(filepath)
 
   try {
     const st = lstatSync(filepath)
@@ -1279,7 +1293,7 @@ function unlink(filepath, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.unlink(req.handle, filepath)
+  binding.unlink(req.handle, toNamespacedPath(filepath))
 }
 
 function unlinkSync(filepath) {
@@ -1294,7 +1308,7 @@ function unlinkSync(filepath) {
     )
   }
 
-  binding.unlinkSync(filepath)
+  binding.unlinkSync(toNamespacedPath(filepath))
 }
 
 function rename(src, dst, cb) {
@@ -1431,7 +1445,7 @@ function realpath(filepath, opts, cb) {
     cb(null, path)
   }
 
-  binding.realpath(req.handle, filepath, data)
+  binding.realpath(req.handle, toNamespacedPath(filepath), data)
 }
 
 function realpathSync(filepath, opts) {
@@ -1453,7 +1467,7 @@ function realpathSync(filepath, opts) {
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
-  binding.realpathSync(filepath, data)
+  binding.realpathSync(toNamespacedPath(filepath), data)
 
   filepath = data.subarray(0, data.indexOf(0))
   if (encoding !== 'buffer') filepath = filepath.toString(encoding)
@@ -1502,7 +1516,7 @@ function readlink(filepath, opts, cb) {
     cb(null, path)
   }
 
-  binding.readlink(req.handle, filepath, data)
+  binding.readlink(req.handle, toNamespacedPath(filepath), data)
 }
 
 function readlinkSync(filepath, opts) {
@@ -1524,7 +1538,7 @@ function readlinkSync(filepath, opts) {
 
   const data = Buffer.allocUnsafe(binding.sizeofFSPath)
 
-  binding.readlinkSync(filepath, data)
+  binding.readlinkSync(toNamespacedPath(filepath), data)
 
   filepath = data.subarray(0, data.indexOf(0))
   if (encoding !== 'buffer') filepath = filepath.toString(encoding)
@@ -1580,6 +1594,8 @@ function symlink(target, filepath, type, cb) {
     )
   }
 
+  filepath = toNamespacedPath(filepath)
+
   if (typeof type === 'string') {
     switch (type) {
       case 'file':
@@ -1620,12 +1636,7 @@ function symlink(target, filepath, type, cb) {
 
   const req = getReq()
   req.callback = cb
-  binding.symlink(
-    req.handle,
-    normalizeSymlinkTarget(target),
-    path.toNamespacedPath(filepath),
-    type
-  )
+  binding.symlink(req.handle, normalizeSymlinkTarget(target), filepath, type)
 }
 
 function symlinkSync(target, filepath, type) {
@@ -1650,6 +1661,8 @@ function symlinkSync(target, filepath, type) {
         ')'
     )
   }
+
+  filepath = toNamespacedPath(filepath)
 
   if (typeof type === 'string') {
     switch (type) {
@@ -1682,11 +1695,7 @@ function symlinkSync(target, filepath, type) {
     }
   }
 
-  binding.symlinkSync(
-    normalizeSymlinkTarget(target),
-    path.toNamespacedPath(filepath),
-    type
-  )
+  binding.symlinkSync(normalizeSymlinkTarget(target), filepath, type)
 }
 
 function opendir(filepath, opts, cb) {
@@ -1718,6 +1727,8 @@ function opendir(filepath, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
+  filepath = toNamespacedPath(filepath)
+
   const data = Buffer.allocUnsafe(binding.sizeofFSDir)
 
   const req = getReq()
@@ -1744,6 +1755,8 @@ function opendirSync(filepath, opts) {
 
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
+
+  filepath = toNamespacedPath(filepath)
 
   const data = Buffer.allocUnsafe(binding.sizeofFSDir)
   binding.opendirSync(filepath, data)
@@ -1781,7 +1794,7 @@ function readdir(filepath, opts, cb) {
 
   const { withFileTypes = false } = opts
 
-  opendir(filepath, opts, async (err, dir) => {
+  opendir(toNamespacedPath(filepath), opts, async (err, dir) => {
     if (err) return cb(err, null)
     const result = []
     for await (const entry of dir) {
@@ -1808,7 +1821,7 @@ function readdirSync(filepath, opts) {
 
   const { withFileTypes = false } = opts
 
-  const dir = opendirSync(filepath, opts)
+  const dir = opendirSync(toNamespacedPath(filepath), opts)
   const result = []
 
   while (true) {
@@ -2140,7 +2153,7 @@ function watch(filepath, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const watcher = new Watcher(filepath, opts)
+  const watcher = new Watcher(toNamespacedPath(filepath), opts)
   if (cb) watcher.on('change', cb)
   return watcher
 }
@@ -2713,4 +2726,8 @@ function promisify(fn) {
 
 function map(data) {
   return typeof data === 'string' ? Buffer.from(data) : data
+}
+
+function toNamespacedPath(filepath) {
+  return path.toNamespacedPath(filepath)
 }
