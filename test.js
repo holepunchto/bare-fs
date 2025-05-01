@@ -18,6 +18,25 @@ test('open + close', async (t) => {
   })
 })
 
+test('open + close, long path', async (t) => {
+  t.plan(2)
+
+  const dir = await withDir(
+    t,
+    `test/fixtures/${'a'.repeat(128)}/${'b'.repeat(128)}/${'c'.repeat(128)}`
+  )
+
+  const file = await withFile(t, `${dir}/${'d'.repeat(128)}.txt`)
+
+  fs.open(file, (err, fd) => {
+    t.absent(err, 'opened')
+
+    fs.close(fd, (err) => {
+      t.absent(err, 'closed')
+    })
+  })
+})
+
 test('open + close sync', async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt')
 
