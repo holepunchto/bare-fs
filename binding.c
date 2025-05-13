@@ -21,6 +21,7 @@ typedef struct {
 
   js_ref_t *data;
 
+  bool active;
   bool exiting;
 
   js_deferred_teardown_t *teardown;
@@ -84,7 +85,7 @@ bare_fs__on_teardown(js_deferred_teardown_t *handle, void *data) {
 
   err = uv_cancel((uv_req_t *) &req->handle);
 
-  if (err == 0) bare_fs__on_finalize(req);
+  if (err == 0 || req->active == false) bare_fs__on_finalize(req);
 }
 
 static inline void
@@ -92,6 +93,8 @@ bare_fs__on_response(uv_fs_t *handle) {
   int err;
 
   bare_fs_t *req = (bare_fs_t *) handle;
+
+  req->active = false;
 
   if (req->exiting) return bare_fs__on_finalize(req);
 
@@ -151,9 +154,9 @@ bare_fs__on_stat_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -216,9 +219,9 @@ bare_fs__on_realpath_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -248,9 +251,9 @@ bare_fs__on_readlink_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -280,9 +283,9 @@ bare_fs__on_opendir_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -312,9 +315,9 @@ bare_fs__on_readdir_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result > 0) {
     js_handle_scope_t *scope;
@@ -384,6 +387,7 @@ bare_fs_init(js_env_t *env, js_callback_info_t *info) {
 
   req->env = env;
   req->data = NULL;
+  req->active = false;
   req->exiting = false;
 
   err = js_create_reference(env, argv[0], 1, &req->ctx);
@@ -413,6 +417,8 @@ bare_fs_open(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
@@ -497,6 +503,8 @@ bare_fs_close(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
@@ -558,6 +566,8 @@ bare_fs_access(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
@@ -628,6 +638,8 @@ bare_fs_read(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
@@ -734,6 +746,8 @@ bare_fs_readv(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
@@ -793,6 +807,8 @@ bare_fs_write(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
@@ -899,6 +915,8 @@ bare_fs_writev(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
@@ -958,6 +976,8 @@ bare_fs_ftruncate(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
@@ -1029,6 +1049,8 @@ bare_fs_chmod(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1098,6 +1120,8 @@ bare_fs_fchmod(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
@@ -1169,6 +1193,8 @@ bare_fs_rename(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t src;
   err = js_get_value_string_utf8(env, argv[1], src, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1238,6 +1264,8 @@ bare_fs_copyfile(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_path_t src;
   err = js_get_value_string_utf8(env, argv[1], src, sizeof(bare_fs_path_t), NULL);
@@ -1317,6 +1345,8 @@ bare_fs_mkdir(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1387,6 +1417,8 @@ bare_fs_rmdir(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1448,6 +1480,8 @@ bare_fs_stat(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
@@ -1559,6 +1593,8 @@ bare_fs_lstat(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1668,6 +1704,8 @@ bare_fs_fstat(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   uint32_t fd;
   err = js_get_value_uint32(env, argv[1], &fd);
@@ -1779,6 +1817,8 @@ bare_fs_unlink(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1840,6 +1880,8 @@ bare_fs_realpath(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
@@ -1914,6 +1956,8 @@ bare_fs_readlink(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -1984,6 +2028,8 @@ bare_fs_symlink(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_path_t target;
   err = js_get_value_string_utf8(env, argv[1], target, sizeof(bare_fs_path_t), NULL);
@@ -2063,6 +2109,8 @@ bare_fs_opendir(js_env_t *env, js_callback_info_t *info) {
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
 
+  req->active = true;
+
   bare_fs_path_t path;
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
@@ -2135,6 +2183,8 @@ bare_fs_readdir(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_dir_t *dir;
   err = js_get_typedarray_info(env, argv[1], NULL, (void **) &dir, NULL, NULL, NULL);
@@ -2248,6 +2298,8 @@ bare_fs_closedir(js_env_t *env, js_callback_info_t *info) {
   bare_fs_t *req;
   err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
   assert(err == 0);
+
+  req->active = true;
 
   bare_fs_dir_t *dir;
   err = js_get_typedarray_info(env, argv[1], NULL, (void **) &dir, NULL, NULL, NULL);
