@@ -77,15 +77,15 @@ bare_fs__on_finalize(bare_fs_t *req) {
 
 static void
 bare_fs__on_teardown(js_deferred_teardown_t *handle, void *data) {
+  int err;
+
   bare_fs_t *req = (bare_fs_t *) data;
 
   req->exiting = true;
 
-  if (req->active) {
-    uv_cancel((uv_req_t *) &req->handle);
-  } else {
-    bare_fs__on_finalize(req);
-  }
+  err = uv_cancel((uv_req_t *) &req->handle);
+
+  if (err == 0 || req->active == false) bare_fs__on_finalize(req);
 }
 
 static inline void
@@ -154,9 +154,9 @@ bare_fs__on_stat_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -219,9 +219,9 @@ bare_fs__on_realpath_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -251,9 +251,9 @@ bare_fs__on_readlink_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -283,9 +283,9 @@ bare_fs__on_opendir_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result == 0) {
     js_handle_scope_t *scope;
@@ -315,9 +315,9 @@ bare_fs__on_readdir_response(uv_fs_t *handle) {
 
   bare_fs_t *req = (bare_fs_t *) handle;
 
-  js_env_t *env = req->env;
+  if (req->exiting) return bare_fs__on_response(handle);
 
-  if (req->exiting) return bare_fs__on_finalize(req);
+  js_env_t *env = req->env;
 
   if (handle->result > 0) {
     js_handle_scope_t *scope;
