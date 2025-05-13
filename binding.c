@@ -773,10 +773,8 @@ bare_fs_readv(js_env_t *env, js_callback_info_t *info) {
 
   js_value_t **elements = malloc(bufs_len * sizeof(js_value_t *));
 
-  uint32_t fetched;
-  err = js_get_array_elements(env, arr, elements, bufs_len, 0, &fetched);
+  err = js_get_array_elements(env, arr, elements, bufs_len, 0, NULL);
   assert(err == 0);
-  assert(fetched == bufs_len);
 
   for (uint32_t i = 0; i < bufs_len; i++) {
     js_value_t *item = elements[i];
@@ -944,10 +942,8 @@ bare_fs_writev(js_env_t *env, js_callback_info_t *info) {
 
   js_value_t **elements = malloc(bufs_len * sizeof(js_value_t *));
 
-  uint32_t fetched;
-  err = js_get_array_elements(env, arr, elements, bufs_len, 0, &fetched);
+  err = js_get_array_elements(env, arr, elements, bufs_len, 0, NULL);
   assert(err == 0);
-  assert(fetched == bufs_len);
 
   for (uint32_t i = 0; i < bufs_len; i++) {
     js_value_t *item = elements[i];
