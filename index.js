@@ -2676,6 +2676,10 @@ exports.symlinkSync = symlinkSync
 exports.unlinkSync = unlinkSync
 exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
+exports.utimes = (name, atime, mtime, cb) => {
+  // dummy method, does not do anything
+  cb()
+}
 
 exports.promises.access = promisify(access)
 exports.promises.appendFile = promisify(appendFile)
