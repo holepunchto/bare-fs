@@ -665,6 +665,9 @@ bare_fs_read(js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_int64(env, argv[5], &pos);
   assert(err == 0);
 
+  err = js_create_reference(env, argv[2], 1, &req->data);
+  assert(err == 0);
+
   uv_loop_t *loop;
   err = js_get_env_loop(env, &loop);
   assert(err == 0);
@@ -752,18 +755,18 @@ bare_fs_readv(js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
 
-  js_value_t *arr = argv[2];
-
   int64_t pos;
   err = js_get_value_int64(env, argv[3], &pos);
   assert(err == 0);
 
-  err = js_create_reference(env, arr, 1, &req->data);
+  err = js_create_reference(env, argv[2], 1, &req->data);
   assert(err == 0);
 
   uv_loop_t *loop;
   err = js_get_env_loop(env, &loop);
   assert(err == 0);
+
+  js_value_t *arr = argv[2];
 
   uint32_t bufs_len;
   err = js_get_array_length(env, arr, &bufs_len);
@@ -832,6 +835,9 @@ bare_fs_write(js_env_t *env, js_callback_info_t *info) {
 
   int64_t pos;
   err = js_get_value_int64(env, argv[5], &pos);
+  assert(err == 0);
+
+  err = js_create_reference(env, argv[2], 1, &req->data);
   assert(err == 0);
 
   uv_loop_t *loop;
@@ -921,18 +927,18 @@ bare_fs_writev(js_env_t *env, js_callback_info_t *info) {
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
 
-  js_value_t *arr = argv[2];
-
   int64_t pos;
   err = js_get_value_int64(env, argv[3], &pos);
   assert(err == 0);
 
-  err = js_create_reference(env, arr, 1, &req->data);
+  err = js_create_reference(env, argv[2], 1, &req->data);
   assert(err == 0);
 
   uv_loop_t *loop;
   err = js_get_env_loop(env, &loop);
   assert(err == 0);
+
+  js_value_t *arr = argv[2];
 
   uint32_t bufs_len;
   err = js_get_array_length(env, arr, &bufs_len);
