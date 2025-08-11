@@ -968,6 +968,44 @@ function fchmodSync(fd, mode) {
   binding.fchmodSync(fd, mode)
 }
 
+function utimes(filepath, atime, mtime, cb) {
+  if (typeof filepath !== 'string') {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
+  }
+
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
+
+  const req = getReq()
+  req.callback = cb
+  binding.utimes(req.handle, toNamespacedPath(filepath), atime, mtime)
+}
+
+function utimesSync(filepath, atime, mtime) {
+  if (typeof filepath !== 'string') {
+    throw typeError(
+      'ERR_INVALID_ARG_TYPE',
+      'Path must be a string. Received type ' +
+        typeof filepath +
+        ' (' +
+        filepath +
+        ')'
+    )
+  }
+
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
+
+  binding.utimesSync(toNamespacedPath(filepath), atime, mtime)
+}
+
 function mkdirRecursive(filepath, mode, cb) {
   filepath = toNamespacedPath(filepath)
 
@@ -2645,6 +2683,7 @@ exports.rmdir = rmdir
 exports.stat = stat
 exports.symlink = symlink
 exports.unlink = unlink
+exports.utimes = utimes
 exports.watch = watch
 exports.write = write
 exports.writeFile = writeFile
@@ -2674,6 +2713,7 @@ exports.rmdirSync = rmdirSync
 exports.statSync = statSync
 exports.symlinkSync = symlinkSync
 exports.unlinkSync = unlinkSync
+exports.utimesSync = utimesSync
 exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
 
@@ -2694,6 +2734,7 @@ exports.promises.rmdir = promisify(rmdir)
 exports.promises.stat = promisify(stat)
 exports.promises.symlink = promisify(symlink)
 exports.promises.unlink = promisify(unlink)
+exports.promises.utimes = promisify(utimes)
 exports.promises.writeFile = promisify(writeFile)
 
 exports.promises.watch = watch // Already async iterable
