@@ -1184,6 +1184,86 @@ bare_fs_fchmod_sync(js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_utimes(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  req->active = true;
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  double atime;
+  err = js_get_value_double(env, argv[2], &atime);
+  assert(err == 0);
+
+  double mtime;
+  err = js_get_value_double(env, argv[3], &mtime);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  uv_fs_utime(loop, &req->handle, (char *) path, atime, mtime, bare_fs__on_response);
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_utimes_sync(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  double atime;
+  err = js_get_value_double(env, argv[1], &atime);
+  assert(err == 0);
+
+  double mtime;
+  err = js_get_value_double(env, argv[2], &mtime);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  uv_fs_t req;
+  uv_fs_utime(loop, &req, (char *) path, atime, mtime, NULL);
+
+  if (req.result < 0) {
+    err = js_throw_error(env, uv_err_name(req.result), uv_strerror(req.result));
+    assert(err == 0);
+  }
+
+  uv_fs_req_cleanup(&req);
+
+  return NULL;
+}
+
+static js_value_t *
 bare_fs_rename(js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -2659,6 +2739,8 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("chmodSync", bare_fs_chmod_sync)
   V("fchmod", bare_fs_fchmod)
   V("fchmodSync", bare_fs_fchmod_sync)
+  V("utimes", bare_fs_utimes)
+  V("utimesSync", bare_fs_utimes_sync)
   V("rename", bare_fs_rename)
   V("renameSync", bare_fs_rename_sync)
   V("copyfile", bare_fs_copyfile)

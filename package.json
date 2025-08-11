@@ -48,7 +48,8 @@
   "dependencies": {
     "bare-events": "^2.5.4",
     "bare-path": "^3.0.0",
-    "bare-stream": "^2.6.4"
+    "bare-stream": "^2.6.4",
+    "bare-type": "^1.0.6"
   },
   "devDependencies": {
     "bare-buffer": "^3.0.2",

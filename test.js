@@ -471,6 +471,38 @@ test('lstat sync', async (t) => {
   t.ok(st)
 })
 
+test('utimes', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+
+  const oldStat = fs.statSync(file)
+
+  const future = new Date(Date.now() + 1000)
+  fs.utimes(file, future, future, (err) => {
+    t.absent(err)
+
+    const newStat = fs.statSync(file)
+
+    t.ok(oldStat.atimeMs < newStat.atimeMs)
+    t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+  })
+})
+
+test('utimes sync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+
+  const oldStat = fs.statSync(file)
+
+  const future = Date.now() / 1000 + 1000
+  fs.utimesSync(file, future, future)
+
+  const newStat = fs.statSync(file)
+
+  t.ok(oldStat.atimeMs < newStat.atimeMs)
+  t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+})
+
 test('opendir + close', async (t) => {
   t.plan(2)
 
