@@ -1,7 +1,6 @@
 const EventEmitter = require('bare-events')
 const path = require('bare-path')
 const { Readable, Writable } = require('bare-stream')
-const type = require('bare-type')
 const binding = require('./binding')
 const constants = require('./lib/constants')
 
@@ -981,8 +980,8 @@ function utimes(filepath, atime, mtime, cb) {
     )
   }
 
-  if (type(atime).isDate()) atime = atime.getTime() / 1000
-  if (type(mtime).isDate()) mtime = mtime.getTime() / 1000
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
 
   const req = getReq()
   req.callback = cb
@@ -1001,8 +1000,8 @@ function utimesSync(filepath, atime, mtime) {
     )
   }
 
-  if (type(atime).isDate()) atime = atime.getTime() / 1000
-  if (type(mtime).isDate()) mtime = mtime.getTime() / 1000
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
 
   binding.utimesSync(toNamespacedPath(filepath), atime, mtime)
 }
