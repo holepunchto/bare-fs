@@ -48,7 +48,7 @@ typedef struct {
 
 typedef uv_dirent_t bare_fs_dirent_t;
 
-static inline void
+static void
 bare_fs__on_finalize(bare_fs_t *req) {
   int err;
 
@@ -88,7 +88,7 @@ bare_fs__on_teardown(js_deferred_teardown_t *handle, void *data) {
   if (err == 0 || req->active == false) bare_fs__on_finalize(req);
 }
 
-static inline void
+static void
 bare_fs__on_response(uv_fs_t *handle) {
   int err;
 
