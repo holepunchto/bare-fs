@@ -425,7 +425,7 @@ bare_fs__open(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_open(loop, &req->handle, (char *) path, flags, mode, async ? bare_fs__on_open : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -485,7 +485,7 @@ bare_fs__close(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_close(loop, &req->handle, fd, async ? bare_fs__on_close : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -543,7 +543,7 @@ bare_fs__access(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_access(loop, &req->handle, (char *) path, mode, async ? bare_fs__on_access : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -619,7 +619,7 @@ bare_fs__read(js_env_t *env, js_callback_info_t *info, bool async) {
   uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
   err = uv_fs_read(loop, &req->handle, fd, &buf, 1, pos, async ? bare_fs__on_read : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -703,7 +703,7 @@ bare_fs__readv(js_env_t *env, js_callback_info_t *info, bool async) {
   }
 
   err = uv_fs_read(loop, &req->handle, fd, bufs, bufs_len, pos, async ? bare_fs__on_readv : NULL);
-  assert(err == 0);
+  (void) err;
 
   free(elements);
   free(bufs);
@@ -788,7 +788,7 @@ bare_fs__write(js_env_t *env, js_callback_info_t *info, bool async) {
   uv_buf_t buf = uv_buf_init((void *) (data + offset), len);
 
   err = uv_fs_write(loop, &req->handle, fd, &buf, 1, pos, async ? bare_fs__on_write : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -873,7 +873,7 @@ bare_fs__writev(js_env_t *env, js_callback_info_t *info, bool async) {
   }
 
   err = uv_fs_write(loop, &req->handle, fd, bufs, bufs_len, pos, async ? bare_fs__on_writev : NULL);
-  assert(err == 0);
+  (void) err;
 
   free(elements);
   free(bufs);
@@ -940,7 +940,7 @@ bare_fs__ftruncate(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_ftruncate(loop, &req->handle, fd, len, async ? bare_fs__on_ftruncate : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -998,7 +998,7 @@ bare_fs__chmod(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_chmod(loop, &req->handle, (char *) path, mode, async ? bare_fs__on_chmod : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1056,7 +1056,7 @@ bare_fs__fchmod(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_fchmod(loop, &req->handle, fd, mode, async ? bare_fs__on_fchmod : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1118,7 +1118,7 @@ bare_fs__utimes(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_utime(loop, &req->handle, (char *) path, atime, mtime, async ? bare_fs__on_utimes : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1176,7 +1176,7 @@ bare_fs__rename(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_rename(loop, &req->handle, (char *) src, (char *) dst, async ? bare_fs__on_rename : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1238,7 +1238,7 @@ bare_fs__copyfile(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_copyfile(loop, &req->handle, (char *) src, (char *) dst, mode, async ? bare_fs__on_copyfile : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1296,7 +1296,7 @@ bare_fs__mkdir(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_mkdir(loop, &req->handle, (char *) path, mode, async ? bare_fs__on_mkdir : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1350,7 +1350,7 @@ bare_fs__rmdir(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_rmdir(loop, &req->handle, (char *) path, async ? bare_fs__on_rmdir : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1404,7 +1404,7 @@ bare_fs__stat(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_stat(loop, &req->handle, (char *) path, async ? bare_fs__on_stat : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1458,7 +1458,7 @@ bare_fs__lstat(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_lstat(loop, &req->handle, (char *) path, async ? bare_fs__on_lstat : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1512,7 +1512,7 @@ bare_fs__fstat(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_fstat(loop, &req->handle, fd, async ? bare_fs__on_fstat : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1566,7 +1566,7 @@ bare_fs__unlink(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_unlink(loop, &req->handle, (char *) path, async ? bare_fs__on_unlink : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1620,7 +1620,7 @@ bare_fs__realpath(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_realpath(loop, &req->handle, (char *) path, async ? bare_fs__on_realpath : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1674,7 +1674,7 @@ bare_fs__readlink(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_readlink(loop, &req->handle, (char *) path, async ? bare_fs__on_readlink : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1736,7 +1736,7 @@ bare_fs__symlink(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_symlink(loop, &req->handle, (char *) target, (char *) path, flags, async ? bare_fs__on_symlink : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1790,7 +1790,7 @@ bare_fs__opendir(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_opendir(loop, &req->handle, (char *) path, async ? bare_fs__on_opendir : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1836,7 +1836,7 @@ bare_fs__readdir(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   bare_fs_dir_t *dir;
-  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &dir, NULL, NULL, NULL);
+  err = js_get_arraybuffer_info(env, argv[1], (void **) &dir, NULL);
   assert(err == 0);
 
   uint32_t capacity;
@@ -1857,7 +1857,7 @@ bare_fs__readdir(js_env_t *env, js_callback_info_t *info, bool async) {
   dir->handle->nentries = capacity;
 
   err = uv_fs_readdir(loop, &req->handle, dir->handle, async ? bare_fs__on_readdir : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return result;
 
@@ -1905,7 +1905,7 @@ bare_fs__closedir(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   bare_fs_dir_t *dir;
-  err = js_get_typedarray_info(env, argv[1], NULL, (void **) &dir, NULL, NULL, NULL);
+  err = js_get_arraybuffer_info(env, argv[1], (void **) &dir, NULL);
   assert(err == 0);
 
   uv_loop_t *loop;
@@ -1913,7 +1913,7 @@ bare_fs__closedir(js_env_t *env, js_callback_info_t *info, bool async) {
   assert(err == 0);
 
   err = uv_fs_closedir(loop, &req->handle, dir->handle, async ? bare_fs__on_closedir : NULL);
-  assert(err == 0);
+  (void) err;
 
   if (async) return NULL;
 
@@ -1934,7 +1934,7 @@ bare_fs_closedir(js_env_t *env, js_callback_info_t *info) {
 
 static js_value_t *
 bare_fs_closedir_sync(js_env_t *env, js_callback_info_t *info) {
-  return bare_fs__closedir(env, info, bare_fs_async);
+  return bare_fs__closedir(env, info, bare_fs_sync);
 }
 
 static void

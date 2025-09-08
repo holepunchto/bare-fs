@@ -775,7 +775,7 @@ test('copyFile with COPYFILE_EXCL', async (t) => {
     fs.constants.COPYFILE_EXCL,
     (err) => {
       t.ok(err)
-      t.is(err.message, 'file already exists')
+      t.is(err.code, 'EEXIST')
     }
   )
 })

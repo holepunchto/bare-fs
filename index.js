@@ -21,6 +21,10 @@ class FileRequest {
     this._handle = binding.requestInit(this, this._onresult)
   }
 
+  get data() {
+    return this._data
+  }
+
   set data(value) {
     this._data = value
   }
@@ -61,8 +65,12 @@ class FileRequest {
 }
 
 function ok(result, cb) {
-  if (typeof result === 'function') result(null)
-  else if (cb) cb(null, result)
+  if (typeof result === 'function') {
+    cb = result
+    result = undefined
+  }
+
+  if (cb) cb(null, result)
   else return result
 }
 
@@ -72,6 +80,11 @@ function fail(err, cb) {
 }
 
 function done(err, result, cb) {
+  if (typeof result === 'function') {
+    cb = result
+    result = undefined
+  }
+
   if (err) fail(err, cb)
   else return ok(result, cb)
 }
@@ -164,6 +177,7 @@ async function access(filepath, mode = constants.F_OK, cb) {
 
   const req = new FileRequest()
 
+  let err = null
   try {
     binding.access(req.handle, filepath, mode)
 
@@ -174,7 +188,7 @@ async function access(filepath, mode = constants.F_OK, cb) {
     req.destroy()
   }
 
-  return done(err, fd, cb)
+  return done(err, cb)
 }
 
 function accessSync(filepath, mode = constants.F_OK) {
@@ -450,7 +464,7 @@ function statSync(filepath) {
   const req = new FileRequest()
 
   try {
-    binding.statSync(filepath)
+    binding.statSync(req.handle, filepath)
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
@@ -488,7 +502,7 @@ function lstatSync(filepath) {
   const req = new FileRequest()
 
   try {
-    binding.lstatSync(filepath)
+    binding.lstatSync(req.handle, filepath)
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
@@ -522,7 +536,7 @@ function fstatSync(fd) {
   const req = new FileRequest()
 
   try {
-    binding.fstatSync(fd)
+    binding.fstatSync(req.handle, fd)
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
@@ -677,41 +691,6 @@ function utimesSync(filepath, atime, mtime) {
   } finally {
     req.destroy()
   }
-}
-
-function mkdirRecursive(filepath, mode, cb) {
-  filepath = toNamespacedPath(filepath)
-
-  mkdir(filepath, { mode }, function (err) {
-    if (err === null) return cb(null, 0, null)
-
-    if (err.code !== 'ENOENT') {
-      stat(filepath, function (e, st) {
-        if (e) return cb(e, e.errno, null)
-        if (st.isDirectory()) return cb(null, 0, null)
-        cb(err, err.errno, null)
-      })
-      return
-    }
-
-    while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
-    const i = filepath.lastIndexOf(path.sep)
-    if (i <= 0) return cb(err, err.errno, null)
-
-    mkdirRecursive(filepath.slice(0, i), mode, function (err) {
-      if (err) return cb(err, err.errno, null)
-
-      mkdir(filepath, { mode }, function (err) {
-        if (err === null) return cb(null, 0, null)
-
-        stat(filepath, function (e, st) {
-          if (e) return cb(e, e.errno, null)
-          if (st.isDirectory()) return cb(null, 0, null)
-          cb(err, err.errno, null)
-        })
-      })
-    })
-  })
 }
 
 async function mkdir(filepath, opts, cb) {
@@ -1085,7 +1064,7 @@ function realpathSync(filepath, opts) {
   try {
     binding.realpathSync(req.handle, filepath)
 
-    const res = Buffer.from(binding.requestResultString(req.handle))
+    let res = Buffer.from(binding.requestResultString(req.handle))
 
     if (encoding !== 'buffer') res = res.toString(encoding)
 
@@ -1142,7 +1121,7 @@ function readlinkSync(filepath, opts) {
   try {
     binding.readlinkSync(req.handle, filepath)
 
-    const res = Buffer.from(binding.requestResultString(req.handle))
+    let res = Buffer.from(binding.requestResultString(req.handle))
 
     if (encoding !== 'buffer') res = res.toString(encoding)
 
@@ -1382,30 +1361,10 @@ function readdirSync(filepath, opts) {
   return result
 }
 
-function readFile(filepath, opts, cb) {
-  if (typeof filepath !== 'string') {
-    throw typeError(
-      'ERR_INVALID_ARG_TYPE',
-      'Path must be a string. Received type ' +
-        typeof filepath +
-        ' (' +
-        filepath +
-        ')'
-    )
-  }
-
+async function readFile(filepath, opts, cb) {
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
-  } else if (typeof cb !== 'function') {
-    throw typeError(
-      'ERR_INVALID_ARG_TYPE',
-      'Callback must be a function. Received type ' +
-        typeof cb +
-        ' (' +
-        cb +
-        ')'
-    )
   }
 
   if (typeof opts === 'string') opts = { encoding: opts }
@@ -1413,62 +1372,62 @@ function readFile(filepath, opts, cb) {
 
   const { encoding = 'buffer' } = opts
 
-  open(filepath, opts.flag || 'r', function (err, fd) {
-    if (err) return cb(err)
+  let fd = -1
+  try {
+    fd = await open(filepath, opts.flag || 'r')
 
-    fstat(fd, function (err, st) {
-      if (err) return closeAndError(err)
+    const st = await fstat(fd)
 
-      let buffer = Buffer.allocUnsafe(st.size)
-      let len = 0
+    let buffer
+    let len = 0
 
-      read(fd, buffer, loop)
+    if (st.size === 0) {
+      const buffers = []
 
-      function loop(err, r) {
-        if (err) return closeAndError(err)
+      while (true) {
+        buffer = Buffer.allocUnsafe(8192)
+        const r = await read(fd, buffer, 0, 8192)
         len += r
-        if (r === 0 || len === buffer.byteLength) return done()
-        read(fd, buffer.subarray(len), loop)
+        if (r === 0) break
+        buffers.push(buffer.subarray(0, r))
       }
 
-      function done() {
-        if (len !== buffer.byteLength) buffer = buffer.subarray(0, len)
-        close(fd, function (err) {
-          if (err) return cb(err)
-          if (encoding !== 'buffer') buffer = buffer.toString(encoding)
-          cb(null, buffer)
-        })
-      }
-    })
+      buffer = Buffer.concat(buffers)
+    } else {
+      buffer = Buffer.allocUnsafe(st.size)
 
-    function closeAndError(err) {
-      close(fd, function () {
-        cb(err)
-      })
+      while (true) {
+        const r = await read(fd, len ? buffer.subarray(len) : buffer)
+        len += r
+        if (r === 0 || len === buffer.byteLength) break
+      }
+
+      if (len !== buffer.byteLength) buffer = buffer.subarray(0, len)
     }
-  })
+
+    if (encoding !== 'buffer') buffer = buffer.toString(encoding)
+
+    return ok(buffer, cb)
+  } catch (err) {
+    fail(err, cb)
+  } finally {
+    if (fd === -1) return
+    try {
+      await close(fd)
+    } catch {}
+  }
 }
 
 function readFileSync(filepath, opts) {
-  if (typeof filepath !== 'string') {
-    throw typeError(
-      'ERR_INVALID_ARG_TYPE',
-      'Path must be a string. Received type ' +
-        typeof filepath +
-        ' (' +
-        filepath +
-        ')'
-    )
-  }
-
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
   const { encoding = 'buffer' } = opts
 
-  const fd = openSync(filepath, opts.flag || 'r')
-
+  let fd = -1
   try {
+    fd = openSync(filepath, opts.flag || 'r')
+
     const st = fstatSync(fd)
 
     let buffer
@@ -1499,8 +1458,10 @@ function readFileSync(filepath, opts) {
     }
 
     if (encoding !== 'buffer') buffer = buffer.toString(encoding)
+
     return buffer
   } finally {
+    if (fd === -1) return
     try {
       closeSync(fd)
     } catch {}
@@ -1528,6 +1489,8 @@ async function writeFile(filepath, data, opts, cb) {
       len += await write(fd, len ? data.subarray(len) : data)
       if (len === data.byteLength) break
     }
+
+    return ok(cb)
   } catch (err) {
     fail(err, cb)
   } finally {
@@ -1594,9 +1557,9 @@ function watch(filepath, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const watcher = new Watcher(toNamespacedPath(filepath), opts)
-  if (cb) watcher.on('change', cb)
-  return watcher
+  filepath = toNamespacedPath(filepath)
+
+  return new Watcher(filepath, opts, cb)
 }
 
 class Stats {
@@ -1669,79 +1632,114 @@ class Dir {
   constructor(path, handle, opts = {}) {
     const { encoding = 'utf8', bufferSize = 32 } = opts
 
-    this._dirents = null
+    this.path = path
+
     this._encoding = encoding
+    this._capacity = bufferSize
     this._buffer = []
     this._ended = false
     this._handle = handle
-
-    this.path = path
   }
 
-  read(cb) {
-    if (this._buffer.length) {
-      return queueMicrotask(() => cb(null, this._buffer.shift()))
-    }
+  async read(cb) {
+    if (this._buffer.length) return ok(this._buffer.shift(), cb)
+    if (this._ended) return ok(null, cb)
 
-    if (this._ended) {
-      return queueMicrotask(() => cb(null, null))
-    }
+    const req = new FileRequest()
 
-    const data = []
-    const req = getReq()
+    let err = null
+    try {
+      req.data = binding.readdir(req.handle, this._handle, this._capacity)
 
-    req.callback = (err, _) => {
-      if (err) return cb(err, null)
-      if (data.length === 0) this._ended = true
+      await req
+
+      const entries = binding.requestResultDirents(req.handle)
+
+      if (entries.length === 0) this._ended
       else {
-        for (const entry of data) {
+        for (const entry of entries) {
           let name = Buffer.from(entry.name)
+
           if (this._encoding !== 'buffer') name = name.toString(this._encoding)
+
           this._buffer.push(new Dirent(this.path, name, entry.type))
         }
       }
-
-      if (this._ended) return cb(null, null)
-      cb(null, this._buffer.shift())
+    } catch (e) {
+      err = new FileError(e.message, { code: e.code, path: this.path })
+    } finally {
+      req.destroy()
     }
 
-    binding.readdir(req.handle, this._handle, this._dirents, data)
+    if (err) return fail(err, cb)
+
+    if (this._ended) return ok(null, cb)
+
+    return ok(this._buffer.shift(), cb)
   }
 
   readSync() {
     if (this._buffer.length) return this._buffer.shift()
     if (this._ended) return null
 
-    const data = []
+    const req = new FileRequest()
 
-    binding.readdirSync(this._handle, this._dirents, data)
+    try {
+      req.data = binding.readdirSync(req.handle, this._handle, this._capacity)
 
-    if (data.length === 0) this._ended = true
-    else {
-      for (const entry of data) {
-        let name = Buffer.from(entry.name)
-        if (this._encoding !== 'buffer') name = name.toString(this._encoding)
-        this._buffer.push(new Dirent(this.path, name, entry.type))
+      const entries = binding.requestResultDirents(req.handle)
+
+      if (entries.length === 0) this._ended
+      else {
+        for (const entry of entries) {
+          let name = Buffer.from(entry.name)
+
+          if (this._encoding !== 'buffer') name = name.toString(this._encoding)
+
+          this._buffer.push(new Dirent(this.path, name, entry.type))
+        }
       }
+    } catch (e) {
+      throw new FileError(e.message, { code: e.code, path: this.path })
+    } finally {
+      req.destroy()
     }
 
     if (this._ended) return null
+
     return this._buffer.shift()
   }
 
-  close(cb) {
-    const req = getReq()
+  async close(cb) {
+    const req = new FileRequest()
 
-    req.callback = (err, _) => {
-      this._handle = null
-      cb(err)
+    let err = null
+    try {
+      binding.closedir(req.handle, this._handle)
+
+      await req
+    } catch (e) {
+      err = new FileError(e.message, { code: e.code, path: this.path })
+    } finally {
+      req.destroy()
     }
 
-    binding.closedir(req.handle, this._handle)
+    this._handle = null
+
+    return done(err, cb)
   }
 
   closeSync() {
-    binding.closedirSync(this._handle)
+    const req = new FileRequest()
+
+    try {
+      binding.closedirSync(req.handle, this._handle)
+    } catch (e) {
+      throw new FileError(e.message, { code: e.code, path: this.path })
+    } finally {
+      req.destroy()
+    }
+
     this._handle = null
   }
 
@@ -1771,29 +1769,25 @@ class Dir {
 
   [Symbol.asyncIterator]() {
     return {
-      next: () =>
-        new Promise((resolve, reject) => {
-          if (this._buffer.length) {
-            return resolve({ done: false, value: this._buffer.shift() })
-          }
+      next: async () => {
+        if (this._buffer.length) {
+          return { done: false, value: this._buffer.shift() }
+        }
 
-          if (this._ended) {
-            return resolve({ done: true })
-          }
+        if (this._ended) {
+          return { done: true }
+        }
 
-          this.read((err, entry) => {
-            if (err) return reject(err)
+        const entry = await this.read()
 
-            if (entry) {
-              return resolve({ done: false, value: entry })
-            }
+        if (entry) {
+          return { done: false, value: entry }
+        }
 
-            this.close((err) => {
-              if (err) reject(err)
-              else resolve({ done: true })
-            })
-          })
-        })
+        await this.close()
+
+        return { done: true }
+      }
     }
   }
 }
@@ -1839,30 +1833,49 @@ class FileWriteStream extends Writable {
     super({ map })
 
     this.path = path
-    this.fd = -1
+    this.fd = typeof opts.fd === 'number' ? opts.fd : -1
     this.flags = opts.flags || 'w'
     this.mode = opts.mode || 0o666
   }
 
-  _open(cb) {
-    open(this.path, this.flags, this.mode, (err, fd) => {
-      if (err) return cb(err)
-      this.fd = fd
-      cb(null)
-    })
+  async _open(cb) {
+    if (this.fd !== -1) return cb(null)
+
+    let err = null
+    try {
+      this.fd = await open(this.path, this.flags, this.mode)
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
   }
 
-  _writev(batch, cb) {
-    writev(
-      this.fd,
-      batch.map(({ chunk }) => chunk),
-      cb
-    )
+  async _writev(batch, cb) {
+    let err = null
+    try {
+      await writev(
+        this.fd,
+        batch.map(({ chunk }) => chunk)
+      )
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
   }
 
-  _destroy(err, cb) {
+  async _destroy(err, cb) {
     if (this.fd === -1) return cb(err)
-    close(this.fd, () => cb(err))
+
+    err = null
+    try {
+      await close(this.fd)
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
   }
 }
 
@@ -1871,7 +1884,7 @@ class FileReadStream extends Readable {
     super()
 
     this.path = path
-    this.fd = -1
+    this.fd = typeof opts.fd === 'number' ? opts.fd : -1
 
     this._offset = opts.start || 0
     this._missing = 0
@@ -1885,74 +1898,98 @@ class FileReadStream extends Readable {
     }
   }
 
-  _open(cb) {
-    open(this.path, constants.O_RDONLY, (err, fd) => {
+  async _open(cb) {
+    let err
+
+    if (this.fd === -1) {
+      err = null
+      try {
+        this.fd = await open(this.path, constants.O_RDONLY)
+      } catch (e) {
+        err = e
+      }
+
       if (err) return cb(err)
+    }
 
-      const onerror = (err) => close(fd, () => cb(err))
+    let st
+    err = null
+    try {
+      st = await fstat(this.fd)
+    } catch (e) {
+      err = e
+    }
 
-      fstat(fd, (err, st) => {
-        if (err) return onerror(err)
+    if (err) return cb(err)
 
-        if (!st.isFile()) {
-          return onerror(new Error(this.path + ' is not a file'))
-        }
+    if (!st.isFile()) {
+      return cb(
+        new FileError('bad file descriptor', { code: 'EBADF', path: this.path })
+      )
+    }
 
-        this.fd = fd
+    if (this._missing === -1) this._missing = st.size
 
-        if (this._missing === -1) this._missing = st.size
+    if (st.size < this._offset) {
+      this._offset = st.size
+      this._missing = 0
+      return cb(null)
+    }
 
-        if (st.size < this._offset) {
-          this._offset = st.size
-          this._missing = 0
-          return cb(null)
-        }
+    if (st.size < this._offset + this._missing) {
+      this._missing = st.size - this._offset
+      return cb(null)
+    }
 
-        if (st.size < this._offset + this._missing) {
-          this._missing = st.size - this._offset
-          return cb(null)
-        }
-
-        cb(null)
-      })
-    })
+    cb(null)
   }
 
-  _read(size) {
-    if (this._missing <= 0) {
-      this.push(null)
-      return
-    }
+  async _read(size) {
+    if (this._missing <= 0) return this.push(null)
 
     const data = Buffer.allocUnsafe(Math.min(this._missing, size))
 
-    read(this.fd, data, 0, data.byteLength, this._offset, (err, read) => {
-      if (err) return this.destroy(err)
+    let len
+    let err = null
+    try {
+      len = await read(this.fd, data, 0, data.byteLength, this._offset)
+    } catch (e) {
+      err = e
+    }
 
-      if (read === 0) {
-        this.push(null)
-        return
-      }
+    if (err) return cb(err)
 
-      if (this._missing < read) read = this._missing
+    if (len === 0) return this.push(null)
 
-      this.push(data.subarray(0, read))
+    if (this._missing < len) len = this._missing
 
-      this._missing -= read
-      this._offset += read
+    this.push(data.subarray(0, len))
 
-      if (this._missing <= 0) this.push(null)
-    })
+    this._missing -= len
+    this._offset += read
   }
 
-  _destroy(err, cb) {
+  async _destroy(err, cb) {
     if (this.fd === -1) return cb(err)
-    close(this.fd, () => cb(err))
+
+    err = null
+    try {
+      await close(this.fd)
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
   }
 }
 
 class Watcher extends EventEmitter {
-  constructor(path, opts) {
+  constructor(path, opts, onchange) {
+    if (typeof opts === 'function') {
+      onchange = opts
+      opts = {}
+    }
+
     const { persistent = true, recursive = false, encoding = 'utf8' } = opts
 
     super()
@@ -1968,6 +2005,8 @@ class Watcher extends EventEmitter {
     )
 
     if (!persistent) this.unref()
+
+    if (onchange) this.on('change', onchange)
   }
 
   close() {
