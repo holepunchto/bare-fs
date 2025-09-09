@@ -83,7 +83,6 @@ test('access, is not executable', { skip: isWindows }, async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt')
 
   fs.access(file, fs.constants.X_OK, (err) => {
-    t.comment(err)
     t.ok(err)
   })
 })
