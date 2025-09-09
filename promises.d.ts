@@ -1,9 +1,10 @@
 import Buffer, { BufferEncoding } from 'bare-buffer'
-import fs, {
+import {
   AppendFileOptions,
   Dir,
   MkdirOptions,
   OpendirOptions,
+  Path,
   ReadFileOptions,
   ReaddirOptions,
   ReadlinkOptions,
@@ -15,255 +16,252 @@ import fs, {
   WriteFileOptions
 } from '.'
 
-export function access(filepath: string, mode?: number): Promise<void>
+export function access(filepath: Path, mode?: number): Promise<void>
 
 export function appendFile(
-  filepath: string,
+  filepath: Path,
   data: string | Buffer | ArrayBufferView,
   opts?: AppendFileOptions
 ): Promise<void>
 
 export function appendFile(
-  filepath: string,
+  filepath: Path,
   data: string | Buffer | ArrayBufferView,
   encoding: BufferEncoding
 ): Promise<void>
 
-export function chmod(filepath: string, mode: string | number): Promise<void>
+export function chmod(filepath: Path, mode: string | number): Promise<void>
 
-export function copyFile(src: string, dst: string, mode?: number): Promise<void>
+export function copyFile(src: Path, dst: Path, mode?: number): Promise<void>
 
-export function lstat(filepath: string): Promise<Stats>
+export function lstat(filepath: Path): Promise<Stats>
 
-export function mkdir(filepath: string, opts?: MkdirOptions): Promise<void>
+export function mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>
 
-export function mkdir(filepath: string, mode: number): Promise<void>
+export function mkdir(filepath: Path, mode: number): Promise<void>
 
 export function opendir(
-  filepath: string,
+  filepath: Path,
   opts: OpendirOptions & { encoding?: BufferEncoding }
 ): Promise<Dir<string>>
 
 export function opendir(
-  filepath: string,
+  filepath: Path,
   opts: OpendirOptions & { encoding: 'buffer' }
 ): Promise<Dir<Buffer>>
 
-export function opendir(filepath: string, opts: OpendirOptions): Promise<Dir>
+export function opendir(filepath: Path, opts: OpendirOptions): Promise<Dir>
 
 export function opendir(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding
 ): Promise<Dir<string>>
 
 export function opendir(
-  filepath: string,
+  filepath: Path,
   encoding: 'buffer'
 ): Promise<Dir<Buffer>>
 
 export function opendir(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding | 'buffer'
 ): Promise<Dir>
 
-export function opendir(filepath: string): Promise<Dir<string>>
+export function opendir(filepath: Path): Promise<Dir<string>>
 
 export function readFile(
-  filepath: string,
+  filepath: Path,
   opts: ReadFileOptions & { encoding: BufferEncoding }
 ): Promise<string>
 
 export function readFile(
-  filepath: string,
+  filepath: Path,
   opts: ReadFileOptions & { encoding?: 'buffer' }
 ): Promise<Buffer>
 
 export function readFile(
-  filepath: string,
+  filepath: Path,
   opts: ReadFileOptions
 ): Promise<string | Buffer>
 
 export function readFile(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding
 ): Promise<string>
 
-export function readFile(filepath: string, encoding: 'buffer'): Promise<Buffer>
+export function readFile(filepath: Path, encoding: 'buffer'): Promise<Buffer>
 
 export function readFile(
-  filepath: string,
+  filepath: Path,
   encoding?: BufferEncoding | 'buffer'
 ): Promise<string | Buffer>
 
-export function readFile(filepath: string): Promise<Buffer>
+export function readFile(filepath: Path): Promise<Buffer>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding }
 ): Promise<Dir<string>[] | string[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes: true }
 ): Promise<Dir<string>[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes?: false }
 ): Promise<string[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer' }
 ): Promise<Dir<Buffer>[] | Buffer[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes: true }
 ): Promise<Dir<Buffer>[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes?: false }
 ): Promise<Buffer[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { withFileTypes: true }
 ): Promise<Dir<string | Buffer>[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions & { withFileTypes?: false }
 ): Promise<string[] | Buffer[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   opts: ReaddirOptions
 ): Promise<Dir[] | string[] | Buffer[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding
 ): Promise<string[]>
 
-export function readdir(filepath: string, encoding: 'buffer'): Promise<Buffer[]>
+export function readdir(filepath: Path, encoding: 'buffer'): Promise<Buffer[]>
 
 export function readdir(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding | 'buffer'
 ): Promise<string[] | Buffer[]>
 
-export function readdir(filepath: string): Promise<string[]>
+export function readdir(filepath: Path): Promise<string[]>
 
 export function readlink(
-  filepath: string,
+  filepath: Path,
   opts: ReadlinkOptions & { encoding?: BufferEncoding }
 ): Promise<string>
 
 export function readlink(
-  filepath: string,
+  filepath: Path,
   opts: ReadlinkOptions & { encoding: 'buffer' }
 ): Promise<Buffer>
 
 export function readlink(
-  filepath: string,
+  filepath: Path,
   opts: ReadlinkOptions
 ): Promise<string | Buffer>
 
 export function readlink(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding
 ): Promise<string>
 
-export function readlink(filepath: string, encoding: 'buffer'): Promise<Buffer>
+export function readlink(filepath: Path, encoding: 'buffer'): Promise<Buffer>
 
 export function readlink(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding | 'buffer'
 ): Promise<string | Buffer>
 
-export function readlink(filepath: string): Promise<string>
+export function readlink(filepath: Path): Promise<string>
 
 export function realpath(
-  filepath: string,
+  filepath: Path,
   opts: RealpathOptions & { encoding?: BufferEncoding }
 ): Promise<string>
 
 export function realpath(
-  filepath: string,
+  filepath: Path,
   opts: RealpathOptions & { encoding: 'buffer' }
 ): Promise<Buffer>
 
 export function realpath(
-  filepath: string,
+  filepath: Path,
   opts: RealpathOptions
 ): Promise<string | Buffer>
 
 export function realpath(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding
 ): Promise<string>
 
-export function realpath(filepath: string, encoding: 'buffer'): Promise<Buffer>
+export function realpath(filepath: Path, encoding: 'buffer'): Promise<Buffer>
 
 export function realpath(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding | 'buffer'
 ): Promise<string | Buffer>
 
-export function realpath(filepath: string): Promise<string>
+export function realpath(filepath: Path): Promise<string>
 
-export function rename(src: string, dst: string): Promise<void>
+export function rename(src: Path, dst: Path): Promise<void>
 
-export function rm(filepath: string, opts?: RmOptions): Promise<void>
+export function rm(filepath: Path, opts?: RmOptions): Promise<void>
 
-export function rmdir(filepath: string): Promise<void>
+export function rmdir(filepath: Path): Promise<void>
 
-export function stat(filepath: string): Promise<Stats>
+export function stat(filepath: Path): Promise<Stats>
 
 export function symlink(
-  target: string,
-  filepath: string,
+  target: Path,
+  filepath: Path,
   type?: string | number
 ): Promise<void>
 
-export function unlink(filepath: string): Promise<void>
+export function unlink(filepath: Path): Promise<void>
 
 export function watch(
-  filepath: string,
+  filepath: Path,
   opts: WatcherOptions & { encoding?: BufferEncoding }
 ): Watcher<string>
 
 export function watch(
-  filepath: string,
+  filepath: Path,
   opts: WatcherOptions & { encoding: 'buffer' }
 ): Watcher<Buffer>
 
-export function watch(filepath: string, opts: WatcherOptions): Watcher
+export function watch(filepath: Path, opts: WatcherOptions): Watcher
+
+export function watch(filepath: Path, encoding: BufferEncoding): Watcher<string>
+
+export function watch(filepath: Path, encoding: 'buffer'): Watcher<Buffer>
 
 export function watch(
-  filepath: string,
-  encoding: BufferEncoding
-): Watcher<string>
-
-export function watch(filepath: string, encoding: 'buffer'): Watcher<Buffer>
-
-export function watch(
-  filepath: string,
+  filepath: Path,
   encoding: BufferEncoding | 'buffer'
 ): Watcher
 
-export function watch(filepath: string): Watcher<string>
+export function watch(filepath: Path): Watcher<string>
 
 export function writeFile(
-  filepath: string,
+  filepath: Path,
   data: string | Buffer | ArrayBufferView,
   opts?: WriteFileOptions
 ): Promise<void>
 
 export function writeFile(
-  filepath: string,
+  filepath: Path,
   data: string | Buffer | ArrayBufferView,
   encoding: BufferEncoding
 ): Promise<void>

@@ -1,1 +1,22 @@
-module.exports = require('.').promises
+const fs = require('.')
+
+exports.access = fs.access
+exports.appendFile = fs.appendFile
+exports.chmod = fs.chmod
+exports.copyFile = fs.copyFile
+exports.lstat = fs.lstat
+exports.mkdir = fs.mkdir
+exports.opendir = fs.opendir
+exports.readFile = fs.readFile
+exports.readdir = fs.readdir
+exports.readlink = fs.readlink
+exports.realpath = fs.realpath
+exports.rename = fs.rename
+exports.rm = fs.rm
+exports.rmdir = fs.rmdir
+exports.stat = fs.stat
+exports.symlink = fs.symlink
+exports.unlink = fs.unlink
+exports.utimes = fs.utimes
+exports.writeFile = fs.writeFile
+exports.watch = fs.watch

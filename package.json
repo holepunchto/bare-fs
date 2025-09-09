@@ -1,7 +1,7 @@
 {
   "name": "bare-fs",
-  "version": "4.2.3",
-  "description": "Native file system for Javascript",
+  "version": "4.3.0-0",
+  "description": "Native file system operations for Javascript",
   "exports": {
     "./package": "./package.json",
     ".": {
@@ -48,7 +48,8 @@
   "dependencies": {
     "bare-events": "^2.5.4",
     "bare-path": "^3.0.0",
-    "bare-stream": "^2.6.4"
+    "bare-stream": "^2.6.4",
+    "bare-url": "^2.2.2"
   },
   "devDependencies": {
     "bare-buffer": "^3.0.2",
@@ -58,10 +59,14 @@
     "prettier-config-standard": "^7.0.0"
   },
   "peerDependencies": {
-    "bare-buffer": "*"
+    "bare-buffer": "*",
+    "bare-url": "*"
   },
   "peerDependenciesMeta": {
     "bare-buffer": {
+      "optional": true
+    },
+    "bare-url": {
       "optional": true
     }
   }
