@@ -1,5 +1,5 @@
 import Buffer, { BufferEncoding } from 'bare-buffer'
-import fs, {
+import {
   AppendFileOptions,
   Dir,
   MkdirOptions,
