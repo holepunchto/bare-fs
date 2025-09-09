@@ -1313,28 +1313,6 @@ async function symlink(target, filepath, type, cb) {
 }
 
 function symlinkSync(target, filepath, type) {
-  if (typeof target !== 'string') {
-    throw typeError(
-      'ERR_INVALID_ARG_TYPE',
-      'Target must be a string. Received type ' +
-        typeof filepath +
-        ' (' +
-        filepath +
-        ')'
-    )
-  }
-
-  if (typeof filepath !== 'string') {
-    throw typeError(
-      'ERR_INVALID_ARG_TYPE',
-      'Path must be a string. Received type ' +
-        typeof filepath +
-        ' (' +
-        filepath +
-        ')'
-    )
-  }
-
   filepath = toNamespacedPath(filepath)
 
   if (typeof type === 'string') {
