@@ -1,7 +1,7 @@
 {
   "name": "bare-fs",
   "version": "4.3.0-0",
-  "description": "Native file system for Javascript",
+  "description": "Native file system operations for Javascript",
   "exports": {
     "./package": "./package.json",
     ".": {
@@ -59,10 +59,14 @@
     "prettier-config-standard": "^7.0.0"
   },
   "peerDependencies": {
-    "bare-buffer": "*"
+    "bare-buffer": "*",
+    "bare-url": "*"
   },
   "peerDependenciesMeta": {
     "bare-buffer": {
+      "optional": true
+    },
+    "bare-url": {
       "optional": true
     }
   }

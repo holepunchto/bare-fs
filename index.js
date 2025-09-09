@@ -1828,63 +1828,14 @@ class Dirent {
   }
 }
 
-class FileWriteStream extends Writable {
-  constructor(path, opts = {}) {
-    super({ map })
-
-    this.path = path
-    this.fd = typeof opts.fd === 'number' ? opts.fd : -1
-    this.flags = opts.flags || 'w'
-    this.mode = opts.mode || 0o666
-  }
-
-  async _open(cb) {
-    if (this.fd !== -1) return cb(null)
-
-    let err = null
-    try {
-      this.fd = await open(this.path, this.flags, this.mode)
-    } catch (e) {
-      err = e
-    }
-
-    cb(err)
-  }
-
-  async _writev(batch, cb) {
-    let err = null
-    try {
-      await writev(
-        this.fd,
-        batch.map(({ chunk }) => chunk)
-      )
-    } catch (e) {
-      err = e
-    }
-
-    cb(err)
-  }
-
-  async _destroy(err, cb) {
-    if (this.fd === -1) return cb(err)
-
-    err = null
-    try {
-      await close(this.fd)
-    } catch (e) {
-      err = e
-    }
-
-    cb(err)
-  }
-}
-
 class FileReadStream extends Readable {
   constructor(path, opts = {}) {
     super()
 
     this.path = path
     this.fd = typeof opts.fd === 'number' ? opts.fd : -1
+    this.flags = opts.flags || 'r'
+    this.mode = opts.mode || 0o666
 
     this._offset = opts.start || 0
     this._missing = 0
@@ -1904,7 +1855,7 @@ class FileReadStream extends Readable {
     if (this.fd === -1) {
       err = null
       try {
-        this.fd = await open(this.path, constants.O_RDONLY)
+        this.fd = await open(this.path, this.flags, this.mode)
       } catch (e) {
         err = e
       }
@@ -1983,12 +1934,65 @@ class FileReadStream extends Readable {
   }
 }
 
+class FileWriteStream extends Writable {
+  constructor(path, opts = {}) {
+    super({ map })
+
+    this.path = path
+    this.fd = typeof opts.fd === 'number' ? opts.fd : -1
+    this.flags = opts.flags || 'w'
+    this.mode = opts.mode || 0o666
+  }
+
+  async _open(cb) {
+    if (this.fd !== -1) return cb(null)
+
+    let err = null
+    try {
+      this.fd = await open(this.path, this.flags, this.mode)
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
+  }
+
+  async _writev(batch, cb) {
+    let err = null
+    try {
+      await writev(
+        this.fd,
+        batch.map(({ chunk }) => chunk)
+      )
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
+  }
+
+  async _destroy(err, cb) {
+    if (this.fd === -1) return cb(err)
+
+    err = null
+    try {
+      await close(this.fd)
+    } catch (e) {
+      err = e
+    }
+
+    cb(err)
+  }
+}
+
 class Watcher extends EventEmitter {
   constructor(path, opts, onchange) {
     if (typeof opts === 'function') {
       onchange = opts
       opts = {}
     }
+
+    if (!opts) opts = {}
 
     const { persistent = true, recursive = false, encoding = 'utf8' } = opts
 
@@ -2148,6 +2152,7 @@ exports.readFileSync = readFileSync
 exports.readSync = readSync
 exports.readdirSync = readdirSync
 exports.readlinkSync = readlinkSync
+exports.readvSync = readvSync
 exports.realpathSync = realpathSync
 exports.renameSync = renameSync
 exports.rmSync = rmSync
@@ -2158,6 +2163,7 @@ exports.unlinkSync = unlinkSync
 exports.utimesSync = utimesSync
 exports.writeFileSync = writeFileSync
 exports.writeSync = writeSync
+exports.writevSync = writevSync
 
 exports.promises = require('./promises')
 
