@@ -113,7 +113,11 @@ async function open(filepath, flags = 'r', mode = 0o666, cb) {
 
     fd = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'open',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -132,7 +136,11 @@ function openSync(filepath, flags = 'r', mode = 0o666) {
   try {
     return binding.openSync(req.handle, filepath, flags, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'open',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -147,7 +155,7 @@ async function close(fd, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'close', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -161,7 +169,7 @@ function closeSync(fd) {
   try {
     binding.closeSync(req.handle, fd)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'close', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -183,7 +191,11 @@ async function access(filepath, mode = constants.F_OK, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'access',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -199,7 +211,11 @@ function accessSync(filepath, mode = constants.F_OK) {
   try {
     binding.accessSync(req.handle, filepath, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'access',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -259,7 +275,7 @@ async function read(
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'read', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -279,7 +295,7 @@ function readSync(
   try {
     return binding.readSync(req.handle, fd, buffer, offset, len, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'read', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -302,7 +318,7 @@ async function readv(fd, buffers, pos = -1, cb) {
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'readv', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -318,7 +334,7 @@ function readvSync(fd, buffers, pos = -1) {
   try {
     return binding.readvSync(req.handle, fd, buffers, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'readv', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -373,7 +389,7 @@ async function write(fd, data, offset = 0, len, pos = -1, cb) {
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'write', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -391,7 +407,7 @@ function writeSync(fd, data, offset = 0, len, pos = -1) {
   try {
     return binding.writeSync(req.handle, fd, data, offset, len, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'write', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -414,7 +430,7 @@ async function writev(fd, buffers, pos = -1, cb) {
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'writev', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -430,7 +446,7 @@ function writevSync(fd, buffers, pos = -1) {
   try {
     return binding.writevSync(req.handle, fd, buffers, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'writev', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -450,7 +466,11 @@ async function stat(filepath, cb) {
 
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'stat',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -468,7 +488,11 @@ function statSync(filepath) {
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'stat',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -488,7 +512,11 @@ async function lstat(filepath, cb) {
 
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'lstat',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -506,7 +534,11 @@ function lstatSync(filepath) {
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'lstat',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -524,7 +556,7 @@ async function fstat(fd, cb) {
 
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'fstat', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -540,7 +572,7 @@ function fstatSync(fd) {
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'fstat', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -562,7 +594,7 @@ async function ftruncate(fd, len = 0, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'ftruncate', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -578,7 +610,7 @@ function ftruncateSync(fd, len = 0) {
   try {
     binding.ftruncateSync(req.handle, fd, len)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'ftruncate', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -597,7 +629,11 @@ async function chmod(filepath, mode, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'chmod',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -615,7 +651,11 @@ function chmodSync(filepath, mode) {
   try {
     binding.chmodSync(req.handle, filepath, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'chmod',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -632,7 +672,7 @@ async function fchmod(fd, mode, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, fd })
+    err = new FileError(e.message, { operation: 'fchmod', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -648,7 +688,7 @@ function fchmodSync(fd, mode) {
   try {
     binding.fchmodSync(req.handle, fd, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, fd })
+    throw new FileError(e.message, { operation: 'fchmod', code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -668,7 +708,11 @@ async function utimes(filepath, atime, mtime, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'utimes',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -687,7 +731,11 @@ function utimesSync(filepath, atime, mtime) {
   try {
     binding.utimesSync(req.handle, filepath, atime, mtime)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'utimes',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -742,7 +790,11 @@ async function mkdir(filepath, opts, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'mkdir',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -791,7 +843,11 @@ function mkdirSync(filepath, opts) {
   try {
     binding.mkdirSync(req.handle, filepath, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'mkdir',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -808,7 +864,11 @@ async function rmdir(filepath, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'rmdir',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -824,7 +884,11 @@ function rmdirSync(filepath) {
   try {
     binding.rmdirSync(req.handle, filepath)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'rmdir',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -860,7 +924,11 @@ async function rm(filepath, opts, cb) {
         }
       } else {
         fail(
-          new FileError('is a directory', { code: 'EISDIR', path: filepath }),
+          new FileError('is a directory', {
+            operation: 'rm',
+            code: 'EISDIR',
+            path: filepath
+          }),
           cb
         )
       }
@@ -897,6 +965,7 @@ function rmSync(filepath, opts) {
         }
       } else {
         throw new FileError('is a directory', {
+          operation: 'rm',
           code: 'EISDIR',
           path: filepath
         })
@@ -920,7 +989,11 @@ async function unlink(filepath, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'unlink',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -936,7 +1009,11 @@ function unlinkSync(filepath) {
   try {
     binding.unlinkSync(req.handle, filepath)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'unlink',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -955,6 +1032,7 @@ async function rename(src, dst, cb) {
     await req
   } catch (e) {
     err = new FileError(e.message, {
+      operation: 'rename',
       code: e.code,
       path: src,
       destination: dst
@@ -976,6 +1054,7 @@ function renameSync(src, dst) {
     binding.renameSync(req.handle, src, dst)
   } catch (e) {
     throw new FileError(e.message, {
+      operation: 'rename',
       code: e.code,
       path: src,
       destination: dst
@@ -1003,6 +1082,7 @@ async function copyFile(src, dst, mode = 0, cb) {
     await req
   } catch (e) {
     err = new FileError(e.message, {
+      operation: 'copyfile',
       code: e.code,
       path: src,
       destination: dst
@@ -1024,6 +1104,7 @@ function copyFileSync(src, dst, mode = 0) {
     binding.copyfileSync(req.handle, src, dst, mode)
   } catch (e) {
     throw new FileError(e.message, {
+      operation: 'copyfile',
       code: e.code,
       path: src,
       destination: dst
@@ -1059,7 +1140,11 @@ async function realpath(filepath, opts, cb) {
 
     if (encoding !== 'buffer') res = res.toString(encoding)
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'realpath',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1085,6 +1170,12 @@ function realpathSync(filepath, opts) {
     if (encoding !== 'buffer') res = res.toString(encoding)
 
     return res
+  } catch (e) {
+    throw new FileError(e.message, {
+      operation: 'realpath',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1116,7 +1207,11 @@ async function readlink(filepath, opts, cb) {
 
     if (encoding !== 'buffer') res = res.toString(encoding)
   } catch (e) {
-    err = e
+    err = new FileError(e.message, {
+      operation: 'readlink',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1142,6 +1237,12 @@ function readlinkSync(filepath, opts) {
     if (encoding !== 'buffer') res = res.toString(encoding)
 
     return res
+  } catch (e) {
+    throw new FileError(e.message, {
+      operation: 'readlink',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1207,6 +1308,7 @@ async function symlink(target, filepath, type, cb) {
     await req
   } catch (e) {
     err = new FileError(e.message, {
+      operation: 'symlink',
       code: e.code,
       path: target,
       destination: filepath
@@ -1280,6 +1382,7 @@ function symlinkSync(target, filepath, type) {
     binding.symlinkSync(req.handle, target, filepath, type)
   } catch (e) {
     throw new FileError(e.message, {
+      operation: 'symlink',
       code: e.code,
       path: target,
       destination: filepath
@@ -1311,7 +1414,11 @@ async function opendir(filepath, opts, cb) {
 
     dir = new Dir(filepath, binding.requestResultDir(req.handle), opts)
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      operation: 'opendir',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1332,7 +1439,11 @@ function opendirSync(filepath, opts) {
 
     return new Dir(filepath, binding.requestResultDir(req.handle), opts)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      operation: 'opendir',
+      code: e.code,
+      path: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1671,33 +1782,39 @@ class Dir {
 
     const req = new FileRequest()
 
+    let entries
     let err = null
     try {
       req.data = binding.readdir(req.handle, this._handle, this._capacity)
 
       await req
 
-      const entries = binding.requestResultDirents(req.handle)
-
-      if (entries.length === 0) this._ended
-      else {
-        for (const entry of entries) {
-          let name = Buffer.from(entry.name)
-
-          if (this._encoding !== 'buffer') name = name.toString(this._encoding)
-
-          this._buffer.push(new Dirent(this.path, name, entry.type))
-        }
-      }
+      entries = binding.requestResultDirents(req.handle)
     } catch (e) {
-      err = new FileError(e.message, { code: e.code, path: this.path })
+      err = new FileError(e.message, {
+        operation: 'readdir',
+        code: e.code,
+        path: this.path
+      })
     } finally {
       req.destroy()
     }
 
     if (err) return fail(err, cb)
 
-    if (this._ended) return ok(null, cb)
+    if (entries.length === 0) {
+      this._ended = true
+
+      return ok(null, cb)
+    }
+
+    for (const entry of entries) {
+      let name = Buffer.from(entry.name)
+
+      if (this._encoding !== 'buffer') name = name.toString(this._encoding)
+
+      this._buffer.push(new Dirent(this.path, name, entry.type))
+    }
 
     return ok(this._buffer.shift(), cb)
   }
@@ -1708,28 +1825,34 @@ class Dir {
 
     const req = new FileRequest()
 
+    let entries
     try {
       req.data = binding.readdirSync(req.handle, this._handle, this._capacity)
 
-      const entries = binding.requestResultDirents(req.handle)
-
-      if (entries.length === 0) this._ended
-      else {
-        for (const entry of entries) {
-          let name = Buffer.from(entry.name)
-
-          if (this._encoding !== 'buffer') name = name.toString(this._encoding)
-
-          this._buffer.push(new Dirent(this.path, name, entry.type))
-        }
-      }
+      entries = binding.requestResultDirents(req.handle)
     } catch (e) {
-      throw new FileError(e.message, { code: e.code, path: this.path })
+      throw new FileError(e.message, {
+        operation: 'readdir',
+        code: e.code,
+        path: this.path
+      })
     } finally {
       req.destroy()
     }
 
-    if (this._ended) return null
+    if (entries.length === 0) {
+      this._ended = true
+
+      return null
+    }
+
+    for (const entry of entries) {
+      let name = Buffer.from(entry.name)
+
+      if (this._encoding !== 'buffer') name = name.toString(this._encoding)
+
+      this._buffer.push(new Dirent(this.path, name, entry.type))
+    }
 
     return this._buffer.shift()
   }
@@ -1743,7 +1866,11 @@ class Dir {
 
       await req
     } catch (e) {
-      err = new FileError(e.message, { code: e.code, path: this.path })
+      err = new FileError(e.message, {
+        operation: 'closedir',
+        code: e.code,
+        path: this.path
+      })
     } finally {
       req.destroy()
     }
@@ -1759,7 +1886,11 @@ class Dir {
     try {
       binding.closedirSync(req.handle, this._handle)
     } catch (e) {
-      throw new FileError(e.message, { code: e.code, path: this.path })
+      throw new FileError(e.message, {
+        operation: 'closedir',
+        code: e.code,
+        path: this.path
+      })
     } finally {
       req.destroy()
     }
@@ -1897,23 +2028,13 @@ class FileReadStream extends Readable {
 
     if (err) return cb(err)
 
-    if (!st.isFile()) {
-      return cb(
-        new FileError('bad file descriptor', { code: 'EBADF', path: this.path })
-      )
-    }
-
     if (this._missing === -1) this._missing = st.size
 
     if (st.size < this._offset) {
       this._offset = st.size
       this._missing = 0
-      return cb(null)
-    }
-
-    if (st.size < this._offset + this._missing) {
+    } else if (st.size < this._offset + this._missing) {
       this._missing = st.size - this._offset
-      return cb(null)
     }
 
     cb(null)
