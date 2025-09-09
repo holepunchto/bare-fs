@@ -1,9 +1,7 @@
 declare class FileError extends Error {
-  constructor(msg: string, fn: Error)
+  private constructor(msg: string)
 
   readonly code: string
-
-  static ENOENT(msg: string, path: string): FileError
 }
 
 export = FileError
