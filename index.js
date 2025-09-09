@@ -17,16 +17,16 @@ class FileRequest {
     this._promise = promise
     this._resolve = resolve
     this._reject = reject
-    this._data = null
+    this._retain = null
     this._handle = binding.requestInit(this, this._onresult)
-  }
-
-  set data(value) {
-    this._data = value
   }
 
   get handle() {
     return this._handle
+  }
+
+  retain(value) {
+    this._retain = value // Tie the lifetime of `value` to the lifetime of `this`
   }
 
   reset() {
@@ -35,7 +35,7 @@ class FileRequest {
     this._promise = promise
     this._resolve = resolve
     this._reject = reject
-    this._data = null
+    this._retain = null
 
     binding.requestReset(this._handle)
   }
@@ -46,7 +46,7 @@ class FileRequest {
     this._promise = null
     this._resolve = null
     this._reject = null
-    this._data = null
+    this._retain = null
     this._handle = null
   }
 
@@ -1781,7 +1781,7 @@ class Dir {
     let entries
     let err = null
     try {
-      req.data = binding.readdir(req.handle, this._handle, this._capacity)
+      req.retain(binding.readdir(req.handle, this._handle, this._capacity))
 
       await req
 
@@ -1823,7 +1823,7 @@ class Dir {
 
     let entries
     try {
-      req.data = binding.readdirSync(req.handle, this._handle, this._capacity)
+      req.retain(binding.readdirSync(req.handle, this._handle, this._capacity))
 
       entries = binding.requestResultDirents(req.handle)
     } catch (e) {
