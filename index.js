@@ -147,7 +147,7 @@ async function close(fd, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -161,7 +161,7 @@ function closeSync(fd) {
   try {
     binding.closeSync(req.handle, fd)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -199,7 +199,7 @@ function accessSync(filepath, mode = constants.F_OK) {
   try {
     binding.accessSync(req.handle, filepath, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -259,7 +259,7 @@ async function read(
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -279,7 +279,7 @@ function readSync(
   try {
     return binding.readSync(req.handle, fd, buffer, offset, len, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -302,7 +302,7 @@ async function readv(fd, buffers, pos = -1, cb) {
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -318,7 +318,7 @@ function readvSync(fd, buffers, pos = -1) {
   try {
     return binding.readvSync(req.handle, fd, buffers, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -373,7 +373,7 @@ async function write(fd, data, offset = 0, len, pos = -1, cb) {
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -391,7 +391,7 @@ function writeSync(fd, data, offset = 0, len, pos = -1) {
   try {
     return binding.writeSync(req.handle, fd, data, offset, len, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -414,7 +414,7 @@ async function writev(fd, buffers, pos = -1, cb) {
 
     bytes = await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -430,7 +430,7 @@ function writevSync(fd, buffers, pos = -1) {
   try {
     return binding.writevSync(req.handle, fd, buffers, pos)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -524,7 +524,7 @@ async function fstat(fd, cb) {
 
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -540,7 +540,7 @@ function fstatSync(fd) {
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -562,7 +562,7 @@ async function ftruncate(fd, len = 0, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -578,7 +578,7 @@ function ftruncateSync(fd, len = 0) {
   try {
     binding.ftruncateSync(req.handle, fd, len)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -597,7 +597,7 @@ async function chmod(filepath, mode, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -615,7 +615,7 @@ function chmodSync(filepath, mode) {
   try {
     binding.chmodSync(req.handle, filepath, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -632,7 +632,7 @@ async function fchmod(fd, mode, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -648,7 +648,7 @@ function fchmodSync(fd, mode) {
   try {
     binding.fchmodSync(req.handle, fd, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, fd })
   } finally {
     req.destroy()
   }
@@ -668,7 +668,7 @@ async function utimes(filepath, atime, mtime, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -687,7 +687,7 @@ function utimesSync(filepath, atime, mtime) {
   try {
     binding.utimesSync(req.handle, filepath, atime, mtime)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -742,7 +742,7 @@ async function mkdir(filepath, opts, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -791,7 +791,7 @@ function mkdirSync(filepath, opts) {
   try {
     binding.mkdirSync(req.handle, filepath, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -920,7 +920,7 @@ async function unlink(filepath, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, { code: e.code, path: filepath })
   } finally {
     req.destroy()
   }
@@ -954,7 +954,11 @@ async function rename(src, dst, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, {
+      code: e.code,
+      path: src,
+      destination: dst
+    })
   } finally {
     req.destroy()
   }
@@ -971,7 +975,11 @@ function renameSync(src, dst) {
   try {
     binding.renameSync(req.handle, src, dst)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, {
+      code: e.code,
+      path: src,
+      destination: dst
+    })
   } finally {
     req.destroy()
   }
@@ -994,7 +1002,11 @@ async function copyFile(src, dst, mode = 0, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code })
+    err = new FileError(e.message, {
+      code: e.code,
+      path: src,
+      destination: dst
+    })
   } finally {
     req.destroy()
   }
@@ -1011,7 +1023,11 @@ function copyFileSync(src, dst, mode = 0) {
   try {
     binding.copyfileSync(req.handle, src, dst, mode)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code })
+    throw new FileError(e.message, {
+      code: e.code,
+      path: src,
+      destination: dst
+    })
   } finally {
     req.destroy()
   }
@@ -1190,7 +1206,11 @@ async function symlink(target, filepath, type, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, { code: e.code, path: filepath })
+    err = new FileError(e.message, {
+      code: e.code,
+      path: target,
+      destination: filepath
+    })
   } finally {
     req.destroy()
   }
@@ -1259,7 +1279,11 @@ function symlinkSync(target, filepath, type) {
   try {
     binding.symlinkSync(req.handle, target, filepath, type)
   } catch (e) {
-    throw new FileError(e.message, { code: e.code, path: filepath })
+    throw new FileError(e.message, {
+      code: e.code,
+      path: target,
+      destination: filepath
+    })
   } finally {
     req.destroy()
   }
