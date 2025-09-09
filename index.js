@@ -21,10 +21,6 @@ class FileRequest {
     this._handle = binding.requestInit(this, this._onresult)
   }
 
-  get data() {
-    return this._data
-  }
-
   set data(value) {
     this._data = value
   }
