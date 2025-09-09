@@ -1491,7 +1491,7 @@ async function readFile(filepath, opts, cb) {
 
       while (true) {
         buffer = Buffer.allocUnsafe(8192)
-        const r = await read(fd, buffer, 0, 8192)
+        const r = await read(fd, buffer)
         len += r
         if (r === 0) break
         buffers.push(buffer.subarray(0, r))
@@ -1543,7 +1543,7 @@ function readFileSync(filepath, opts) {
 
       while (true) {
         buffer = Buffer.allocUnsafe(8192)
-        const r = readSync(fd, buffer, 0, 8192)
+        const r = readSync(fd, buffer)
         len += r
         if (r === 0) break
         buffers.push(buffer.subarray(0, r))
@@ -2032,7 +2032,7 @@ class FileReadStream extends Readable {
     this.push(data.subarray(0, len))
 
     this._missing -= len
-    this._offset += read
+    this._offset += len
   }
 
   async _destroy(err, cb) {
