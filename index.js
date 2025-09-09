@@ -12,12 +12,8 @@ exports.constants = constants
 
 class FileRequest {
   constructor() {
-    const { promise, resolve, reject } = Promise.withResolvers()
+    this._reset()
 
-    this._promise = promise
-    this._resolve = resolve
-    this._reject = reject
-    this._retain = null
     this._handle = binding.requestInit(this, this._onresult)
   }
 
@@ -30,28 +26,28 @@ class FileRequest {
   }
 
   reset() {
+    this._reset()
+
+    binding.requestReset(this._handle)
+  }
+
+  destroy() {
+    this._reset()
+
+    binding.requestDestroy(this._handle)
+  }
+
+  then(resolve, reject) {
+    this._promise.then(resolve, reject)
+  }
+
+  _reset() {
     const { promise, resolve, reject } = Promise.withResolvers()
 
     this._promise = promise
     this._resolve = resolve
     this._reject = reject
     this._retain = null
-
-    binding.requestReset(this._handle)
-  }
-
-  destroy() {
-    binding.requestDestroy(this._handle)
-
-    this._promise = null
-    this._resolve = null
-    this._reject = null
-    this._retain = null
-    this._handle = null
-  }
-
-  then(resolve, reject) {
-    this._promise.then(resolve, reject)
   }
 
   _onresult(err, status) {
