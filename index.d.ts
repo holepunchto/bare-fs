@@ -1110,10 +1110,17 @@ export function watch(
 
 export function write(
   fd: number,
-  data: string | Buffer | ArrayBufferView,
+  data: Buffer | ArrayBufferView,
   offset?: number,
   len?: number,
   pos?: number
+): Promise<number>
+
+export function write(
+  fd: number,
+  data: string,
+  pos?: number,
+  encoding?: BufferEncoding
 ): Promise<number>
 
 export function write(
@@ -1136,7 +1143,7 @@ export function write(
 export function write(
   fd: number,
   data: string,
-  pos: string | number,
+  pos: number,
   encoding: BufferEncoding,
   cb: Callback<[len: number]>
 ): void
@@ -1151,7 +1158,7 @@ export function write(
 export function write(
   fd: number,
   data: string,
-  pos: string | number,
+  pos: number,
   cb: Callback<[len: number]>
 ): void
 
@@ -1169,10 +1176,17 @@ export function write(
 
 export function writeSync(
   fd: number,
-  data: string | Buffer | ArrayBufferView,
+  data: Buffer | ArrayBufferView,
   offset?: number,
   len?: number,
   pos?: number
+): number
+
+export function writeSync(
+  fd: number,
+  data: string,
+  pos?: number,
+  encoding?: BufferEncoding
 ): number
 
 export interface WriteFileOptions {

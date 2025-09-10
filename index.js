@@ -390,7 +390,20 @@ async function write(fd, data, offset = 0, len, pos = -1, cb) {
 }
 
 function writeSync(fd, data, offset = 0, len, pos = -1) {
-  if (typeof data === 'string') data = Buffer.from(data)
+  if (typeof data === 'string') {
+    let encoding = len
+    pos = offset
+
+    if (typeof pos === 'string') {
+      encoding = pos
+      pos = -1
+    }
+
+    data = Buffer.from(data, encoding)
+    offset = 0
+    len = data.byteLength
+  }
+
   if (typeof len !== 'number') len = data.byteLength - offset
   if (typeof pos !== 'number') pos = -1
 
