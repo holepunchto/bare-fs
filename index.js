@@ -1889,52 +1889,24 @@ class Dir {
     await this.close()
   }
 
-  [Symbol.iterator]() {
-    return {
-      next: () => {
-        if (this._buffer.length) {
-          return { done: false, value: this._buffer.shift() }
-        }
-
-        if (this._ended) {
-          return { done: true }
-        }
-
-        const entry = this.readSync()
-
-        if (entry) {
-          return { done: false, value: entry }
-        }
-
-        this.closeSync()
-
-        return { done: true }
-      }
+  *[Symbol.iterator]() {
+    while (true) {
+      const entry = this.readSync()
+      if (entry === null) break
+      yield entry
     }
+
+    this.closeSync()
   }
 
-  [Symbol.asyncIterator]() {
-    return {
-      next: async () => {
-        if (this._buffer.length) {
-          return { done: false, value: this._buffer.shift() }
-        }
-
-        if (this._ended) {
-          return { done: true }
-        }
-
-        const entry = await this.read()
-
-        if (entry) {
-          return { done: false, value: entry }
-        }
-
-        await this.close()
-
-        return { done: true }
-      }
+  async *[Symbol.asyncIterator]() {
+    while (true) {
+      const entry = await this.read()
+      if (entry === null) break
+      yield entry
     }
+
+    await this.close()
   }
 }
 
