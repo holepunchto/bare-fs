@@ -1881,6 +1881,14 @@ class Dir {
     this._handle = null
   }
 
+  [Symbol.dispose]() {
+    this.closeSync()
+  }
+
+  async [Symbol.asyncDispose]() {
+    await this.close()
+  }
+
   [Symbol.iterator]() {
     return {
       next: () => {
