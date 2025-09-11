@@ -1,11 +1,15 @@
+import EventEmitter, { EventMap } from 'bare-events'
 import Buffer, { BufferEncoding } from 'bare-buffer'
 import {
+  constants,
   AppendFileOptions,
   Dir,
   MkdirOptions,
   OpendirOptions,
   Path,
   ReadFileOptions,
+  ReadStream,
+  ReadStreamOptions,
   ReaddirOptions,
   ReadlinkOptions,
   RealpathOptions,
@@ -13,8 +17,56 @@ import {
   Stats,
   Watcher,
   WatcherOptions,
-  WriteFileOptions
+  WriteFileOptions,
+  WriteStream,
+  WriteStreamOptions
 } from '.'
+
+export { constants }
+
+interface FileHandleEvents extends EventMap {
+  close: []
+}
+
+interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
+  close(): Promise<void>
+
+  read(
+    buffer: Buffer | ArrayBufferView,
+    offset?: number,
+    len?: number,
+    pos?: number
+  ): Promise<number>
+
+  readv(buffers: ArrayBufferView[], position?: number): Promise<number>
+
+  write(
+    data: Buffer | ArrayBufferView,
+    offset?: number,
+    len?: number,
+    pos?: number
+  ): Promise<number>
+
+  write(data: string, pos?: number, encoding?: BufferEncoding): Promise<number>
+
+  stat(): Promise<Stats>
+
+  chmod(mode: string | number): Promise<void>
+
+  createReadStream(opts?: ReadStreamOptions): ReadStream
+
+  createWriteStream(opts?: WriteStreamOptions): WriteStream
+}
+
+declare class FileHandle {
+  private constructor(fd: number)
+}
+
+export function open(
+  filepath: Path,
+  flags?: Flag | number,
+  mode?: string | number
+): Promise<FileHandle>
 
 export function access(filepath: Path, mode?: number): Promise<void>
 

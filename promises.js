@@ -7,15 +7,10 @@ class FileHandle extends EventEmitter {
   }
 
   async close() {
-    await fs.close(this.fd)
-  }
+    await fs.close(fd)
 
-  createReadStream(opts) {
-    return fs.createReadStream(null, { ...opts, fd: this.fd })
-  }
-
-  createWriteStream(opts) {
-    return fs.createWriteStream(null, { ...opts, fd: this.fd })
+    this.fd = -1
+    this.emit('close')
   }
 
   async read(buffer, ...args) {
@@ -52,6 +47,14 @@ class FileHandle extends EventEmitter {
 
   async chmod(mode) {
     await fs.fchmod(this.fd, mode)
+  }
+
+  createReadStream(opts) {
+    return fs.createReadStream(null, { ...opts, fd: this.fd })
+  }
+
+  createWriteStream(opts) {
+    return fs.createWriteStream(null, { ...opts, fd: this.fd })
   }
 
   async [Symbol.asyncDispose]() {
