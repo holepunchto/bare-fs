@@ -1470,10 +1470,7 @@ async function readFile(filepath, opts, cb) {
   } catch (err) {
     fail(err, cb)
   } finally {
-    if (fd === -1) return
-    try {
-      await close(fd)
-    } catch {}
+    if (fd !== -1) await close(fd)
   }
 }
 
@@ -1520,10 +1517,7 @@ function readFileSync(filepath, opts) {
 
     return buffer
   } finally {
-    if (fd === -1) return
-    try {
-      closeSync(fd)
-    } catch {}
+    if (fd !== -1) closeSync(fd)
   }
 }
 
@@ -1553,10 +1547,7 @@ async function writeFile(filepath, data, opts, cb) {
   } catch (err) {
     fail(err, cb)
   } finally {
-    if (fd === -1) return
-    try {
-      await close(fd)
-    } catch {}
+    if (fd !== -1) await close(fd)
   }
 }
 
@@ -1577,10 +1568,7 @@ function writeFileSync(filepath, data, opts) {
       if (len === data.byteLength) break
     }
   } finally {
-    if (fd === -1) return
-    try {
-      closeSync(fd)
-    } catch {}
+    if (fd !== -1) closeSync(fd)
   }
 }
 
