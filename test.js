@@ -614,6 +614,14 @@ test('readdirSync + withFileTypes: true', async (t) => {
   t.pass('iterated')
 })
 
+test('readFile, file missing', async (t) => {
+  t.plan(1)
+
+  fs.readFile('test/fixtures/foo.txt', (err) => {
+    t.ok(err, 'file missing')
+  })
+})
+
 test('writeFile + readFile', async (t) => {
   t.plan(3)
 
