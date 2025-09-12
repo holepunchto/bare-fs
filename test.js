@@ -224,6 +224,19 @@ test('read out of buffer bounds', async (t) => {
   })
 })
 
+test('read sync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  const fd = fs.openSync(file)
+
+  const data = Buffer.alloc(4)
+  const len = fs.readSync(fd, data, 0, 4, 0)
+  t.is(len, 4)
+  t.alike(data, Buffer.from('foo\n'))
+
+  fs.closeSync(fd)
+})
+
 test('write', async (t) => {
   t.plan(7)
 
@@ -390,6 +403,26 @@ test('write string', async (t) => {
       })
     })
   })
+})
+
+test('write sync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
+
+  const fd = fs.openSync(file, 'w+')
+
+  let data
+  let len
+
+  data = Buffer.from('foo\n')
+  len = fs.writeSync(fd, data, 0, 4, 0)
+  t.is(len, 4)
+
+  data = Buffer.alloc(4)
+  len = fs.readSync(fd, data, 0, 4, 0)
+  t.is(len, 4)
+  t.alike(data, Buffer.from('foo\n'))
+
+  fs.closeSync(fd)
 })
 
 test('stat', async (t) => {
