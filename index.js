@@ -20,11 +20,8 @@ class FileRequest {
   }
 
   static return(req) {
-    // TODO
-    // if (this._free.length < 32) this._free.push(req.reset())
-    // else req.destroy()
-
-    req.destroy()
+    if (this._free.length < 32) this._free.push(req.reset())
+    else req.destroy()
   }
 
   constructor() {
