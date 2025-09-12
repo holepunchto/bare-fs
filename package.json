@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "bare-buffer": "^3.0.2",
+    "bare-crypto": "^1.11.2",
     "brittle": "^3.1.1",
     "cmake-bare": "^1.1.7",
     "prettier": "^3.4.1",

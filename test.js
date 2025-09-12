@@ -1,5 +1,6 @@
 const test = require('brittle')
 const path = require('bare-path')
+const crypto = require('bare-crypto')
 const fs = require('.')
 
 const isWindows = Bare.platform === 'win32'
@@ -870,7 +871,22 @@ test('symlink sync', async (t) => {
 test('createReadStream', async (t) => {
   t.plan(1)
 
-  const expected = Buffer.alloc(1024 * 16 /* 16 KiB */).fill('hello')
+  const expected = crypto.randomBytes(1024 * 16 /* 16 KiB */)
+
+  const file = await withFile(t, 'test/fixtures/foo', expected)
+
+  const stream = fs.createReadStream(file)
+  const read = []
+
+  stream
+    .on('data', (data) => read.push(data))
+    .on('end', () => t.alike(Buffer.concat(read), expected))
+})
+
+test('createReadStream, large file', async (t) => {
+  t.plan(1)
+
+  const expected = crypto.randomBytes(1024 * 512 /* 512 KiB */)
 
   const file = await withFile(t, 'test/fixtures/foo', expected)
 
