@@ -634,7 +634,7 @@ bare_fs__read(js_env_t *env, js_callback_info_t *info, bool async) {
   (void) err;
 
   int status;
-  err = bare_fs__request_pending(env, req, async, NULL);
+  err = bare_fs__request_pending(env, req, async, &status);
   if (err != 1) return NULL;
 
   js_value_t *result;
@@ -714,7 +714,7 @@ bare_fs__readv(js_env_t *env, js_callback_info_t *info, bool async) {
   free(bufs);
 
   int status;
-  err = bare_fs__request_pending(env, req, async, NULL);
+  err = bare_fs__request_pending(env, req, async, &status);
   if (err != 1) return NULL;
 
   js_value_t *result;
@@ -789,7 +789,7 @@ bare_fs__write(js_env_t *env, js_callback_info_t *info, bool async) {
   (void) err;
 
   int status;
-  err = bare_fs__request_pending(env, req, async, NULL);
+  err = bare_fs__request_pending(env, req, async, &status);
   if (err != 1) return NULL;
 
   js_value_t *result;
@@ -870,7 +870,7 @@ bare_fs__writev(js_env_t *env, js_callback_info_t *info, bool async) {
   free(bufs);
 
   int status;
-  err = bare_fs__request_pending(env, req, async, NULL);
+  err = bare_fs__request_pending(env, req, async, &status);
   if (err != 1) return NULL;
 
   js_value_t *result;
