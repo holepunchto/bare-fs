@@ -1,4 +1,4 @@
-const FastFIFO = require('fast-fifo')
+const FIFO = require('fast-fifo')
 const EventEmitter = require('bare-events')
 const path = require('bare-path')
 const { fileURLToPath } = require('bare-url')
@@ -1683,7 +1683,7 @@ class Dir {
 
     this._encoding = encoding
     this._capacity = bufferSize
-    this._buffer = new FastFIFO()
+    this._buffer = new FIFO()
     this._ended = false
     this._handle = handle
   }
