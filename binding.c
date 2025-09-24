@@ -1976,13 +1976,7 @@ bare_fs_watcher_init(js_env_t *env, js_callback_info_t *info) {
   }
 
   err = uv_fs_event_start(&watcher->handle, bare_fs__on_watcher_event, (char *) path, recursive ? UV_FS_EVENT_RECURSIVE : 0);
-
-  if (err < 0) {
-    err = js_throw_error(env, uv_err_name(err), uv_strerror(err));
-    assert(err == 0);
-
-    return NULL;
-  }
+  assert(err == 0);
 
   watcher->env = env;
   watcher->closing = false;
