@@ -1869,7 +1869,9 @@ class Dirent {
 
 class FileReadStream extends Readable {
   constructor(path, opts = {}) {
-    super()
+    const { eagerOpen = true } = opts
+
+    super({ eagerOpen, ...opts })
 
     this.path = path
     this.fd = typeof opts.fd === 'number' ? opts.fd : -1
@@ -1965,7 +1967,9 @@ class FileReadStream extends Readable {
 
 class FileWriteStream extends Writable {
   constructor(path, opts = {}) {
-    super({ map })
+    const { eagerOpen = true } = opts
+
+    super({ eagerOpen, ...opts })
 
     this.path = path
     this.fd = typeof opts.fd === 'number' ? opts.fd : -1
@@ -2235,10 +2239,6 @@ exports.WriteStream = FileWriteStream
 
 exports.createWriteStream = function createWriteStream(path, opts) {
   return new FileWriteStream(path, opts)
-}
-
-function map(data) {
-  return typeof data === 'string' ? Buffer.from(data) : data
 }
 
 function toNamespacedPath(filepath) {
