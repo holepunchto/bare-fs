@@ -3,6 +3,7 @@ import Buffer, { BufferEncoding } from 'bare-buffer'
 import {
   constants,
   AppendFileOptions,
+  CpOptions,
   Dir,
   MkdirOptions,
   OpendirOptions,
@@ -85,6 +86,8 @@ export function appendFile(
 export function chmod(filepath: Path, mode: string | number): Promise<void>
 
 export function copyFile(src: Path, dst: Path, mode?: number): Promise<void>
+
+export function cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>
 
 export function lstat(filepath: Path): Promise<Stats>
 

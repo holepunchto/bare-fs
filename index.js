@@ -1076,6 +1076,58 @@ function copyFileSync(src, dst, mode = 0) {
   }
 }
 
+async function cp(src, dst, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+
+  if (!opts) opts = {}
+
+  async function _cp(src, dst, opts) {
+    src = toNamespacedPath(src)
+    dst = toNamespacedPath(dst)
+
+    const st = await lstat(src)
+
+    if (st.isDirectory()) {
+      if (opts.recursive !== true) {
+        throw new FileError('is a directory', {
+          operation: 'cp',
+          code: 'EISDIR',
+          path: src
+        })
+      }
+
+      try {
+        await lstat(dst)
+      } catch (err) {
+        if (err.code === 'ENOENT') {
+          await mkdir(dst, { recursive: true })
+          await chmod(dst, st.mode)
+        } else {
+          throw err
+        }
+      }
+
+      const dir = await opendir(src)
+      for await (const { name } of dir) {
+        await _cp(path.join(src, name), path.join(dst, name), opts)
+      }
+    } else if (st.isFile()) {
+      await copyFile(src, dst)
+      await chmod(dst, st.mode)
+    }
+  }
+
+  try {
+    await _cp(src, dst, opts)
+    done(null, cb)
+  } catch (err) {
+    done(err, cb)
+  }
+}
+
 async function realpath(filepath, opts, cb) {
   if (typeof opts === 'function') {
     cb = opts
@@ -2143,6 +2195,7 @@ exports.chmod = chmod
 // exports.chown = chown TODO
 exports.close = close
 exports.copyFile = copyFile
+exports.cp = cp
 exports.exists = exists
 exports.fchmod = fchmod
 // exports.fchown = fchown TODO

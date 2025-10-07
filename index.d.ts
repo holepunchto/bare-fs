@@ -268,6 +268,16 @@ export function copyFile(src: Path, dst: Path, cb: Callback): void
 
 export function copyFileSync(src: Path, dst: Path, mode?: number): void
 
+export interface CpOptions {
+  recursive?: boolean
+}
+
+export function cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>
+
+export function cp(src: Path, dst: Path, opts: CpOptions, cb: Callback): void
+
+export function cp(src: Path, dst: Path, cb: Callback): void
+
 export function exists(filepath: Path): Promise<boolean>
 
 export function exists(filepath: Path, cb: (exists: boolean) => void): void
