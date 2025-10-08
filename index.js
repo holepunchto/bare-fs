@@ -737,31 +737,36 @@ async function mkdir(filepath, opts, cb) {
   filepath = toNamespacedPath(filepath)
 
   if (opts.recursive) {
+    let err = null
     try {
-      await mkdir(filepath, { mode })
-    } catch (err) {
-      if (err.code !== 'ENOENT' && (await stat(filepath)).isDirectory()) {
-        return ok(cb)
-      }
-
-      while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
-      const i = filepath.lastIndexOf(path.sep)
-      if (i <= 0) return fail(err, cb)
-
-      await mkdir(filepath.slice(0, i), { mode, recursive: true })
-
       try {
         await mkdir(filepath, { mode })
       } catch (err) {
-        if ((await stat(filepath)).isDirectory()) {
+        if (err.code !== 'ENOENT' && (await stat(filepath)).isDirectory()) {
           return ok(cb)
         }
 
-        return fail(err, cb)
+        while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
+        const i = filepath.lastIndexOf(path.sep)
+        if (i <= 0) return fail(err, cb)
+
+        await mkdir(filepath.slice(0, i), { mode, recursive: true })
+
+        try {
+          await mkdir(filepath, { mode })
+        } catch (err) {
+          if ((await stat(filepath)).isDirectory()) {
+            return ok(cb)
+          }
+
+          return fail(err, cb)
+        }
       }
+    } catch (e) {
+      err = e
     }
 
-    return ok(cb)
+    return done(err, cb)
   }
 
   using req = FileRequest.borrow()
@@ -878,6 +883,7 @@ async function rm(filepath, opts, cb) {
 
   filepath = toNamespacedPath(filepath)
 
+  let err = null
   try {
     const st = await lstat(filepath)
 
@@ -897,21 +903,20 @@ async function rm(filepath, opts, cb) {
           await rmdir(filepath)
         }
       } else {
-        fail(
-          new FileError('is a directory', {
-            operation: 'rm',
-            code: 'EISDIR',
-            path: filepath
-          }),
-          cb
-        )
+        throw new FileError('is a directory', {
+          operation: 'rm',
+          code: 'EISDIR',
+          path: filepath
+        })
       }
     } else {
       await unlink(filepath)
     }
-  } catch (err) {
-    if (err.code !== 'ENOENT' || !opts.force) fail(err, cb)
+  } catch (e) {
+    if (e.code !== 'ENOENT' || !opts.force) err = e
   }
+
+  return done(err, cb)
 }
 
 function rmSync(filepath, opts) {
