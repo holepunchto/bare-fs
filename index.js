@@ -742,24 +742,18 @@ async function mkdir(filepath, opts, cb) {
       try {
         await mkdir(filepath, { mode })
       } catch (err) {
-        if (err.code !== 'ENOENT' && (await stat(filepath)).isDirectory()) {
-          return ok(cb)
-        }
+        if (err.code === 'ENOENT' || !(await stat(filepath)).isDirectory()) {
+          while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
+          const i = filepath.lastIndexOf(path.sep)
+          if (i <= 0) throw err
 
-        while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
-        const i = filepath.lastIndexOf(path.sep)
-        if (i <= 0) return fail(err, cb)
+          await mkdir(filepath.slice(0, i), { mode, recursive: true })
 
-        await mkdir(filepath.slice(0, i), { mode, recursive: true })
-
-        try {
-          await mkdir(filepath, { mode })
-        } catch (err) {
-          if ((await stat(filepath)).isDirectory()) {
-            return ok(cb)
+          try {
+            await mkdir(filepath, { mode })
+          } catch (err) {
+            if (!(await stat(filepath)).isDirectory()) throw err
           }
-
-          return fail(err, cb)
         }
       }
     } catch (e) {
@@ -799,24 +793,18 @@ function mkdirSync(filepath, opts) {
     try {
       mkdirSync(filepath, { mode })
     } catch (err) {
-      if (err.code !== 'ENOENT' && statSync(filepath).isDirectory()) {
-        return
-      }
+      if (err.code === 'ENOENT' || !statSync(filepath).isDirectory()) {
+        while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
+        const i = filepath.lastIndexOf(path.sep)
+        if (i <= 0) throw err
 
-      while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
-      const i = filepath.lastIndexOf(path.sep)
-      if (i <= 0) throw err
+        mkdirSync(filepath.slice(0, i), { mode, recursive: true })
 
-      mkdirSync(filepath.slice(0, i), { mode, recursive: true })
-
-      try {
-        mkdirSync(filepath, { mode })
-      } catch (err) {
-        if (statSync(filepath).isDirectory()) {
-          return
+        try {
+          mkdirSync(filepath, { mode })
+        } catch (err) {
+          if (!statSync(filepath).isDirectory()) throw err
         }
-
-        throw err
       }
     }
 
@@ -1437,12 +1425,13 @@ async function readFile(filepath, opts, cb) {
   const { encoding = 'buffer' } = opts
 
   let fd = -1
+  let buffer = null
+  let err = null
   try {
     fd = await open(filepath, opts.flag || 'r')
 
     const st = await fstat(fd)
 
-    let buffer
     let len = 0
 
     if (st.size === 0) {
@@ -1470,13 +1459,13 @@ async function readFile(filepath, opts, cb) {
     }
 
     if (encoding !== 'buffer') buffer = buffer.toString(encoding)
-
-    return ok(buffer, cb)
-  } catch (err) {
-    fail(err, cb)
+  } catch (e) {
+    err = e
   } finally {
     if (fd !== -1) await close(fd)
   }
+
+  return done(err, buffer, cb)
 }
 
 function readFileSync(filepath, opts) {
@@ -1538,22 +1527,22 @@ async function writeFile(filepath, data, opts, cb) {
   if (typeof data === 'string') data = Buffer.from(data, opts.encoding)
 
   let fd = -1
+  let len = 0
+  let err = null
   try {
     fd = await open(filepath, opts.flag || 'w', opts.mode || 0o666)
-
-    let len = 0
 
     while (true) {
       len += await write(fd, len ? data.subarray(len) : data)
       if (len === data.byteLength) break
     }
-
-    return ok(cb)
   } catch (err) {
-    fail(err, cb)
+    err = e
   } finally {
     if (fd !== -1) await close(fd)
   }
+
+  return done(err, len, cb)
 }
 
 function writeFileSync(filepath, data, opts) {
