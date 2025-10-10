@@ -1943,10 +1943,10 @@ class FileReadStream extends Readable {
 
     if (this._missing < len) len = this._missing
 
-    this.push(data.subarray(0, len))
-
     this._missing -= len
     this._offset += len
+
+    this.push(data.subarray(0, len))
   }
 
   async _destroy(err, cb) {
