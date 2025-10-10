@@ -742,7 +742,9 @@ async function mkdir(filepath, opts, cb) {
       try {
         await mkdir(filepath, { mode })
       } catch (err) {
-        if (err.code === 'ENOENT' || !(await stat(filepath)).isDirectory()) {
+        if (err.code !== 'ENOENT') {
+          if (!(await stat(filepath)).isDirectory()) throw err
+        } else {
           while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
           const i = filepath.lastIndexOf(path.sep)
           if (i <= 0) throw err
@@ -793,7 +795,9 @@ function mkdirSync(filepath, opts) {
     try {
       mkdirSync(filepath, { mode })
     } catch (err) {
-      if (err.code === 'ENOENT' || !statSync(filepath).isDirectory()) {
+      if (err.code !== 'ENOENT') {
+        if (!statSync(filepath).isDirectory()) throw err
+      } else {
         while (filepath.endsWith(path.sep)) filepath = filepath.slice(0, -1)
         const i = filepath.lastIndexOf(path.sep)
         if (i <= 0) throw err
