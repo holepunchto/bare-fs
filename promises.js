@@ -71,6 +71,7 @@ exports.appendFile = fs.appendFile
 exports.chmod = fs.chmod
 exports.constants = fs.constants
 exports.copyFile = fs.copyFile
+exports.cp = fs.cp
 exports.lstat = fs.lstat
 exports.mkdir = fs.mkdir
 exports.opendir = fs.opendir
