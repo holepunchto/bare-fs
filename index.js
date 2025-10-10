@@ -1933,7 +1933,7 @@ class FileReadStream extends Readable {
       err = e
     }
 
-    if (err) return cb(err)
+    if (err) return this.destroy(err)
 
     if (len === 0) return this.push(null)
 
