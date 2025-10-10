@@ -219,9 +219,9 @@ async function access(filepath, mode = constants.F_OK, cb) {
 }
 
 function accessSync(filepath, mode = constants.F_OK) {
-  using req = FileRequest.borrow()
-
   filepath = toNamespacedPath(filepath)
+
+  using req = FileRequest.borrow()
 
   try {
     binding.accessSync(req.handle, filepath, mode)
