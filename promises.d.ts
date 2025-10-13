@@ -107,20 +107,11 @@ export function opendir(
 
 export function opendir(filepath: Path, opts: OpendirOptions): Promise<Dir>
 
-export function opendir(
-  filepath: Path,
-  encoding: BufferEncoding
-): Promise<Dir<string>>
+export function opendir(filepath: Path, encoding: BufferEncoding): Promise<Dir<string>>
 
-export function opendir(
-  filepath: Path,
-  encoding: 'buffer'
-): Promise<Dir<Buffer>>
+export function opendir(filepath: Path, encoding: 'buffer'): Promise<Dir<Buffer>>
 
-export function opendir(
-  filepath: Path,
-  encoding: BufferEncoding | 'buffer'
-): Promise<Dir>
+export function opendir(filepath: Path, encoding: BufferEncoding | 'buffer'): Promise<Dir>
 
 export function opendir(filepath: Path): Promise<Dir<string>>
 
@@ -134,15 +125,9 @@ export function readFile(
   opts: ReadFileOptions & { encoding?: 'buffer' }
 ): Promise<Buffer>
 
-export function readFile(
-  filepath: Path,
-  opts: ReadFileOptions
-): Promise<string | Buffer>
+export function readFile(filepath: Path, opts: ReadFileOptions): Promise<string | Buffer>
 
-export function readFile(
-  filepath: Path,
-  encoding: BufferEncoding
-): Promise<string>
+export function readFile(filepath: Path, encoding: BufferEncoding): Promise<string>
 
 export function readFile(filepath: Path, encoding: 'buffer'): Promise<Buffer>
 
@@ -193,15 +178,9 @@ export function readdir(
   opts: ReaddirOptions & { withFileTypes?: false }
 ): Promise<string[] | Buffer[]>
 
-export function readdir(
-  filepath: Path,
-  opts: ReaddirOptions
-): Promise<Dir[] | string[] | Buffer[]>
+export function readdir(filepath: Path, opts: ReaddirOptions): Promise<Dir[] | string[] | Buffer[]>
 
-export function readdir(
-  filepath: Path,
-  encoding: BufferEncoding
-): Promise<string[]>
+export function readdir(filepath: Path, encoding: BufferEncoding): Promise<string[]>
 
 export function readdir(filepath: Path, encoding: 'buffer'): Promise<Buffer[]>
 
@@ -222,15 +201,9 @@ export function readlink(
   opts: ReadlinkOptions & { encoding: 'buffer' }
 ): Promise<Buffer>
 
-export function readlink(
-  filepath: Path,
-  opts: ReadlinkOptions
-): Promise<string | Buffer>
+export function readlink(filepath: Path, opts: ReadlinkOptions): Promise<string | Buffer>
 
-export function readlink(
-  filepath: Path,
-  encoding: BufferEncoding
-): Promise<string>
+export function readlink(filepath: Path, encoding: BufferEncoding): Promise<string>
 
 export function readlink(filepath: Path, encoding: 'buffer'): Promise<Buffer>
 
@@ -251,15 +224,9 @@ export function realpath(
   opts: RealpathOptions & { encoding: 'buffer' }
 ): Promise<Buffer>
 
-export function realpath(
-  filepath: Path,
-  opts: RealpathOptions
-): Promise<string | Buffer>
+export function realpath(filepath: Path, opts: RealpathOptions): Promise<string | Buffer>
 
-export function realpath(
-  filepath: Path,
-  encoding: BufferEncoding
-): Promise<string>
+export function realpath(filepath: Path, encoding: BufferEncoding): Promise<string>
 
 export function realpath(filepath: Path, encoding: 'buffer'): Promise<Buffer>
 
@@ -278,11 +245,7 @@ export function rmdir(filepath: Path): Promise<void>
 
 export function stat(filepath: Path): Promise<Stats>
 
-export function symlink(
-  target: Path,
-  filepath: Path,
-  type?: string | number
-): Promise<void>
+export function symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
 
 export function unlink(filepath: Path): Promise<void>
 
@@ -302,10 +265,7 @@ export function watch(filepath: Path, encoding: BufferEncoding): Watcher<string>
 
 export function watch(filepath: Path, encoding: 'buffer'): Watcher<Buffer>
 
-export function watch(
-  filepath: Path,
-  encoding: BufferEncoding | 'buffer'
-): Watcher
+export function watch(filepath: Path, encoding: BufferEncoding | 'buffer'): Watcher
 
 export function watch(filepath: Path): Watcher<string>
 

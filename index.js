@@ -255,14 +255,7 @@ function existsSync(filepath) {
   return true
 }
 
-async function read(
-  fd,
-  buffer,
-  offset = 0,
-  len = buffer.byteLength - offset,
-  pos = -1,
-  cb
-) {
+async function read(fd, buffer, offset = 0, len = buffer.byteLength - offset, pos = -1, cb) {
   if (typeof offset === 'function') {
     cb = offset
     offset = 0
@@ -294,13 +287,7 @@ async function read(
   return done(err, bytes, cb)
 }
 
-function readSync(
-  fd,
-  buffer,
-  offset = 0,
-  len = buffer.byteLength - offset,
-  pos = -1
-) {
+function readSync(fd, buffer, offset = 0, len = buffer.byteLength - offset, pos = -1) {
   using req = FileRequest.borrow()
 
   try {
@@ -2080,13 +2067,7 @@ class Watcher extends EventEmitter {
 
     this._closed = false
     this._encoding = encoding
-    this._handle = binding.watcherInit(
-      path,
-      recursive,
-      this,
-      this._onevent,
-      this._onclose
-    )
+    this._handle = binding.watcherInit(path, recursive, this, this._onevent, this._onclose)
 
     if (!persistent) this.unref()
 
@@ -2147,8 +2128,7 @@ class Watcher extends EventEmitter {
         new Promise((resolve, reject) => {
           if (error) return reject(error)
 
-          if (buffer.length)
-            return resolve({ done: false, value: buffer.shift() })
+          if (buffer.length) return resolve({ done: false, value: buffer.shift() })
 
           if (done) return resolve({ done })
 
@@ -2315,61 +2295,31 @@ function toFlags(flags) {
       return constants.O_TRUNC | constants.O_CREAT | constants.O_WRONLY
     case 'wx': // Fall through.
     case 'xw':
-      return (
-        constants.O_TRUNC |
-        constants.O_CREAT |
-        constants.O_WRONLY |
-        constants.O_EXCL
-      )
+      return constants.O_TRUNC | constants.O_CREAT | constants.O_WRONLY | constants.O_EXCL
 
     case 'w+':
       return constants.O_TRUNC | constants.O_CREAT | constants.O_RDWR
     case 'wx+': // Fall through.
     case 'xw+':
-      return (
-        constants.O_TRUNC |
-        constants.O_CREAT |
-        constants.O_RDWR |
-        constants.O_EXCL
-      )
+      return constants.O_TRUNC | constants.O_CREAT | constants.O_RDWR | constants.O_EXCL
 
     case 'a':
       return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY
     case 'ax': // Fall through.
     case 'xa':
-      return (
-        constants.O_APPEND |
-        constants.O_CREAT |
-        constants.O_WRONLY |
-        constants.O_EXCL
-      )
+      return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY | constants.O_EXCL
     case 'as': // Fall through.
     case 'sa':
-      return (
-        constants.O_APPEND |
-        constants.O_CREAT |
-        constants.O_WRONLY |
-        constants.O_SYNC
-      )
+      return constants.O_APPEND | constants.O_CREAT | constants.O_WRONLY | constants.O_SYNC
 
     case 'a+':
       return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR
     case 'ax+': // Fall through.
     case 'xa+':
-      return (
-        constants.O_APPEND |
-        constants.O_CREAT |
-        constants.O_RDWR |
-        constants.O_EXCL
-      )
+      return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR | constants.O_EXCL
     case 'as+': // Fall through.
     case 'sa+':
-      return (
-        constants.O_APPEND |
-        constants.O_CREAT |
-        constants.O_RDWR |
-        constants.O_SYNC
-      )
+      return constants.O_APPEND | constants.O_CREAT | constants.O_RDWR | constants.O_SYNC
     default:
       return 0
   }
