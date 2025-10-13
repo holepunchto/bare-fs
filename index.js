@@ -1087,6 +1087,7 @@ async function cp(src, dst, opts, cb) {
   src = toNamespacedPath(src)
   dst = toNamespacedPath(dst)
 
+  let err = null
   try {
     const st = await lstat(src)
 
@@ -1101,28 +1102,27 @@ async function cp(src, dst, opts, cb) {
 
       try {
         await lstat(dst)
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          await mkdir(dst, { recursive: true })
-          await chmod(dst, st.mode)
+      } catch (e) {
+        if (e.code === 'ENOENT') {
+          await mkdir(dst, { mode: st.mode, recursive: true })
         } else {
-          throw err
+          throw e
         }
       }
 
       const dir = await opendir(src)
       for await (const { name } of dir) {
-        await cp(path.join(src, name), path.join(dst, name), opts, null)
+        await cp(path.join(src, name), path.join(dst, name), opts)
       }
     } else if (st.isFile()) {
       await copyFile(src, dst)
       await chmod(dst, st.mode)
     }
-
-    return ok(null, cb)
-  } catch (err) {
-    fail(err, cb)
+  } catch (e) {
+    err = e
   }
+
+  return done(err, cb)
 }
 
 async function realpath(filepath, opts, cb) {
