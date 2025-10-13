@@ -1084,10 +1084,10 @@ async function cp(src, dst, opts, cb) {
 
   if (!opts) opts = {}
 
-  async function _cp(src, dst, opts) {
-    src = toNamespacedPath(src)
-    dst = toNamespacedPath(dst)
+  src = toNamespacedPath(src)
+  dst = toNamespacedPath(dst)
 
+  try {
     const st = await lstat(src)
 
     if (st.isDirectory()) {
@@ -1112,19 +1112,16 @@ async function cp(src, dst, opts, cb) {
 
       const dir = await opendir(src)
       for await (const { name } of dir) {
-        await _cp(path.join(src, name), path.join(dst, name), opts)
+        await cp(path.join(src, name), path.join(dst, name), opts, null)
       }
     } else if (st.isFile()) {
       await copyFile(src, dst)
       await chmod(dst, st.mode)
     }
-  }
 
-  try {
-    await _cp(src, dst, opts)
-    done(null, cb)
+    return ok(null, cb)
   } catch (err) {
-    done(err, cb)
+    fail(err, cb)
   }
 }
 
