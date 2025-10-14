@@ -829,11 +829,7 @@ test('copyFileSync with COPYFILE_EXCL', async (t) => {
 
   t.exception(
     () =>
-      fs.copyFileSync(
-        'test/fixtures/foo.txt',
-        'test/fixtures/bar.txt',
-        fs.constants.COPYFILE_EXCL
-      ),
+      fs.copyFileSync('test/fixtures/foo.txt', 'test/fixtures/bar.txt', fs.constants.COPYFILE_EXCL),
     /file already exists/
   )
 })
@@ -846,46 +842,41 @@ test('cp', async (t) => {
 
   await withDir(t, 'test/fixtures/dir2', false)
 
-  fs.cp(
-    'test/fixtures/dir',
-    'test/fixtures/dir2',
-    { recursive: true },
-    (err) => {
-      t.absent(err, 'directory copied')
+  fs.cp('test/fixtures/dir', 'test/fixtures/dir2', { recursive: true }, (err) => {
+    t.absent(err, 'directory copied')
 
-      fs.open('test/fixtures/dir/foo/bar/baz/foo.txt', (err, fd) => {
-        t.absent(err, 'original copy opened')
+    fs.open('test/fixtures/dir/foo/bar/baz/foo.txt', (err, fd) => {
+      t.absent(err, 'original copy opened')
 
-        const data = Buffer.alloc(4)
+      const data = Buffer.alloc(4)
 
-        fs.read(fd, data, 0, 4, 0, (err, len) => {
-          t.absent(err, 'read original copy')
-          t.is(len, 4)
-          t.alike(data, Buffer.from('foo\n'), 'check original copy content')
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err, 'read original copy')
+        t.is(len, 4)
+        t.alike(data, Buffer.from('foo\n'), 'check original copy content')
 
-          fs.close(fd, (err) => {
-            t.absent(err, 'original copy closed')
-          })
+        fs.close(fd, (err) => {
+          t.absent(err, 'original copy closed')
         })
       })
+    })
 
-      fs.open('test/fixtures/dir2/foo/bar/baz/foo.txt', (err, fd) => {
-        t.absent(err, 'new copy opened')
+    fs.open('test/fixtures/dir2/foo/bar/baz/foo.txt', (err, fd) => {
+      t.absent(err, 'new copy opened')
 
-        const data = Buffer.alloc(4)
+      const data = Buffer.alloc(4)
 
-        fs.read(fd, data, 0, 4, 0, (err, len) => {
-          t.absent(err, 'read new copy')
-          t.is(len, 4)
-          t.alike(data, Buffer.from('foo\n'), 'check new copy content')
+      fs.read(fd, data, 0, 4, 0, (err, len) => {
+        t.absent(err, 'read new copy')
+        t.is(len, 4)
+        t.alike(data, Buffer.from('foo\n'), 'check new copy content')
 
-          fs.close(fd, (err) => {
-            t.absent(err, 'new copy closed')
-          })
+        fs.close(fd, (err) => {
+          t.absent(err, 'new copy closed')
         })
       })
-    }
-  )
+    })
+  })
 })
 
 test('realpath', async (t) => {
