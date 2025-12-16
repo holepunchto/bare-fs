@@ -917,6 +917,34 @@ test('readlink sync', async (t) => {
   t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
+test('readlink result should be comparable with path.resolve using startsWith', async (t) => {
+  t.plan(2)
+
+  await withDir(t, 'test/fixtures/more')
+  await withFile(t, 'test/fixtures/more/c.txt', 'hello\n')
+
+  const symlinkTarget = 'more' + path.sep + 'c.txt'
+  const link = await withSymlink(t, 'test/fixtures/link-to-c.txt', symlinkTarget)
+
+  const root = path.resolve('test/fixtures')
+
+  fs.readlink(link, (err, linkTarget) => {
+    t.absent(err)
+
+    if (isWindows) {
+      const isAbsoluteLink = /^[A-Za-z]:/.test(linkTarget)
+      if (isAbsoluteLink) {
+        const startsWithRoot = linkTarget.startsWith(root)
+        t.ok(startsWithRoot, `readlink "${linkTarget}" should start with root "${root}"`)
+      } else {
+        t.pass('relative path returned')
+      }
+    } else {
+      t.is(linkTarget, symlinkTarget)
+    }
+  })
+})
+
 test('symlink', async (t) => {
   t.plan(3)
 
