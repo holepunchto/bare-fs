@@ -332,7 +332,7 @@ function readvSync(fd, buffers, pos = -1) {
   }
 }
 
-async function write(fd, data, offset = 0, len, pos = -1, cb) {
+async function write(fd, data, offset, len, pos = -1, cb) {
   if (typeof data === 'string') {
     let encoding = len
     cb = pos
@@ -369,6 +369,7 @@ async function write(fd, data, offset = 0, len, pos = -1, cb) {
     pos = -1
   }
 
+  if (typeof offset !== 'number') offset = 0
   if (typeof len !== 'number') len = data.byteLength - offset
   if (typeof pos !== 'number') pos = -1
 
@@ -387,7 +388,7 @@ async function write(fd, data, offset = 0, len, pos = -1, cb) {
   return done(err, bytes, cb)
 }
 
-function writeSync(fd, data, offset = 0, len, pos = -1) {
+function writeSync(fd, data, offset, len, pos = -1) {
   if (typeof data === 'string') {
     let encoding = len
     pos = offset
@@ -402,6 +403,7 @@ function writeSync(fd, data, offset = 0, len, pos = -1) {
     len = data.byteLength
   }
 
+  if (typeof offset !== 'number') offset = 0
   if (typeof len !== 'number') len = data.byteLength - offset
   if (typeof pos !== 'number') pos = -1
 
