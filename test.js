@@ -358,6 +358,70 @@ test('write + current position', async (t) => {
   })
 })
 
+test('write in append mode', async (t) => {
+  t.plan(9)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
+
+  fs.open(file, 'a+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    fs.write(fd, Buffer.from('foo'), (err, len) => {
+      t.absent(err)
+      t.is(len, 3)
+
+      fs.write(fd, Buffer.from('bar\n'), (err, len) => {
+        t.absent(err)
+        t.is(len, 4)
+
+        const data = Buffer.alloc(7)
+
+        fs.read(fd, data, 0, 7, 0, (err, len) => {
+          t.absent(err)
+          t.is(len, 7)
+          t.alike(data, Buffer.from('foobar\n'))
+
+          fs.close(fd, (err) => {
+            t.absent(err, 'closed')
+          })
+        })
+      })
+    })
+  })
+})
+
+test('write string in append mode', async (t) => {
+  t.plan(9)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', false)
+
+  fs.open(file, 'a+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    fs.write(fd, 'foo', (err, len) => {
+      t.absent(err)
+      t.is(len, 3)
+
+      fs.write(fd, 'bar\n', (err, len) => {
+        t.absent(err)
+        t.is(len, 4)
+
+        const data = Buffer.alloc(7)
+
+        fs.read(fd, data, 0, 7, 0, (err, len) => {
+          t.absent(err)
+          t.is(len, 7)
+          t.alike(data, Buffer.from('foobar\n'))
+
+          fs.close(fd, (err) => {
+            t.absent(err, 'closed')
+          })
+        })
+      })
+    })
+  })
+})
+
 test('write out of buffer bounds', async (t) => {
   t.plan(6)
 
