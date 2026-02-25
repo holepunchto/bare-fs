@@ -290,7 +290,7 @@ bare_fs_request_result_stat(js_env_t *env, js_callback_info_t *info) {
     uv_timespec_t time = req->handle.statbuf.st_##property; \
 \
     js_value_t *value; \
-    err = js_create_int64(env, time.tv_sec * 1e3 + time.tv_nsec / 1e6, &value); \
+    err = js_create_int64(env, time.tv_sec * 1000 + time.tv_nsec / 1000000, &value); \
     assert(err == 0); \
 \
     err = js_set_element(env, result, i++, value); \
