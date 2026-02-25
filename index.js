@@ -12,8 +12,6 @@ const isWindows = Bare.platform === 'win32'
 exports.constants = constants
 
 class FileRequest {
-  static _free = []
-
   static borrow() {
     if (this._free.length > 0) return this._free.pop()
     return new FileRequest()
@@ -70,16 +68,11 @@ class FileRequest {
     return this
   }
 
-  [Symbol.dispose]() {
-    this.return()
-  }
-
   _reset() {
-    const { promise, resolve, reject } = Promise.withResolvers()
-
-    this._promise = promise
-    this._resolve = resolve
-    this._reject = reject
+    this._promise = new Promise((resolve, reject) => {
+      this._resolve = resolve
+      this._reject = reject
+    })
     this._retain = null
   }
 
@@ -88,6 +81,8 @@ class FileRequest {
     else this._resolve(status)
   }
 }
+
+FileRequest._free = []
 
 function ok(result, cb) {
   if (typeof result === 'function') {
@@ -129,7 +124,7 @@ async function open(filepath, flags = 'r', mode = 0o666, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let fd
   let err = null
@@ -143,6 +138,8 @@ async function open(filepath, flags = 'r', mode = 0o666, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, fd, cb)
@@ -154,7 +151,7 @@ function openSync(filepath, flags = 'r', mode = 0o666) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     return binding.openSync(req.handle, filepath, flags, mode)
@@ -164,11 +161,13 @@ function openSync(filepath, flags = 'r', mode = 0o666) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
 async function close(fd, cb) {
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -177,18 +176,22 @@ async function close(fd, cb) {
     await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'close', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
 }
 
 function closeSync(fd) {
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.closeSync(req.handle, fd)
   } catch (e) {
     throw new FileError(e.message, { operation: 'close', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -200,7 +203,7 @@ async function access(filepath, mode = constants.F_OK, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -213,6 +216,8 @@ async function access(filepath, mode = constants.F_OK, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -221,7 +226,7 @@ async function access(filepath, mode = constants.F_OK, cb) {
 function accessSync(filepath, mode = constants.F_OK) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.accessSync(req.handle, filepath, mode)
@@ -231,6 +236,8 @@ function accessSync(filepath, mode = constants.F_OK) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -272,7 +279,7 @@ async function read(fd, buffer, offset = 0, len = buffer.byteLength - offset, po
 
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let bytes
   let err = null
@@ -282,18 +289,22 @@ async function read(fd, buffer, offset = 0, len = buffer.byteLength - offset, po
     bytes = await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'read', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, bytes, cb)
 }
 
 function readSync(fd, buffer, offset = 0, len = buffer.byteLength - offset, pos = -1) {
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     return binding.readSync(req.handle, fd, buffer, offset, len, pos)
   } catch (e) {
     throw new FileError(e.message, { operation: 'read', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -305,7 +316,7 @@ async function readv(fd, buffers, pos = -1, cb) {
 
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let bytes
   let err = null
@@ -315,6 +326,8 @@ async function readv(fd, buffers, pos = -1, cb) {
     bytes = await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'readv', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, bytes, cb)
@@ -323,12 +336,14 @@ async function readv(fd, buffers, pos = -1, cb) {
 function readvSync(fd, buffers, pos = -1) {
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     return binding.readvSync(req.handle, fd, buffers, pos)
   } catch (e) {
     throw new FileError(e.message, { operation: 'readv', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -373,7 +388,7 @@ async function write(fd, data, offset, len, pos = -1, cb) {
   if (typeof len !== 'number') len = data.byteLength - offset
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let bytes
   let err = null
@@ -383,6 +398,8 @@ async function write(fd, data, offset, len, pos = -1, cb) {
     bytes = await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'write', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, bytes, cb)
@@ -407,12 +424,14 @@ function writeSync(fd, data, offset, len, pos = -1) {
   if (typeof len !== 'number') len = data.byteLength - offset
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     return binding.writeSync(req.handle, fd, data, offset, len, pos)
   } catch (e) {
     throw new FileError(e.message, { operation: 'write', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -424,7 +443,7 @@ async function writev(fd, buffers, pos = -1, cb) {
 
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let bytes
   let err = null
@@ -434,6 +453,8 @@ async function writev(fd, buffers, pos = -1, cb) {
     bytes = await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'writev', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, bytes, cb)
@@ -442,19 +463,21 @@ async function writev(fd, buffers, pos = -1, cb) {
 function writevSync(fd, buffers, pos = -1) {
   if (typeof pos !== 'number') pos = -1
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     return binding.writevSync(req.handle, fd, buffers, pos)
   } catch (e) {
     throw new FileError(e.message, { operation: 'writev', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
 async function stat(filepath, cb) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let st
   let err = null
@@ -470,6 +493,8 @@ async function stat(filepath, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, st, cb)
@@ -478,7 +503,7 @@ async function stat(filepath, cb) {
 function statSync(filepath) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.statSync(req.handle, filepath)
@@ -490,13 +515,15 @@ function statSync(filepath) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
 async function lstat(filepath, cb) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let st
   let err = null
@@ -512,6 +539,8 @@ async function lstat(filepath, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, st, cb)
@@ -520,7 +549,7 @@ async function lstat(filepath, cb) {
 function lstatSync(filepath) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.lstatSync(req.handle, filepath)
@@ -532,11 +561,13 @@ function lstatSync(filepath) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
 async function fstat(fd, cb) {
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let st
   let err = null
@@ -548,13 +579,15 @@ async function fstat(fd, cb) {
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
     err = new FileError(e.message, { operation: 'fstat', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, st, cb)
 }
 
 function fstatSync(fd) {
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.fstatSync(req.handle, fd)
@@ -562,6 +595,8 @@ function fstatSync(fd) {
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
     throw new FileError(e.message, { operation: 'fstat', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -573,7 +608,7 @@ async function ftruncate(fd, len = 0, cb) {
 
   if (typeof len !== 'number') len = 0
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -582,6 +617,8 @@ async function ftruncate(fd, len = 0, cb) {
     await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'ftruncate', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -590,12 +627,14 @@ async function ftruncate(fd, len = 0, cb) {
 function ftruncateSync(fd, len = 0) {
   if (typeof len !== 'number') len = 0
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.ftruncateSync(req.handle, fd, len)
   } catch (e) {
     throw new FileError(e.message, { operation: 'ftruncate', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -604,7 +643,7 @@ async function chmod(filepath, mode, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -617,6 +656,8 @@ async function chmod(filepath, mode, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -627,7 +668,7 @@ function chmodSync(filepath, mode) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.chmodSync(req.handle, filepath, mode)
@@ -637,13 +678,15 @@ function chmodSync(filepath, mode) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
 async function fchmod(fd, mode, cb) {
   if (typeof mode === 'string') mode = toMode(mode)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -652,6 +695,8 @@ async function fchmod(fd, mode, cb) {
     await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'fchmod', code: e.code, fd })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -660,12 +705,14 @@ async function fchmod(fd, mode, cb) {
 function fchmodSync(fd, mode) {
   if (typeof mode === 'string') mode = toMode(mode)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.fchmodSync(req.handle, fd, mode)
   } catch (e) {
     throw new FileError(e.message, { operation: 'fchmod', code: e.code, fd })
+  } finally {
+    req.return()
   }
 }
 
@@ -675,7 +722,7 @@ async function utimes(filepath, atime, mtime, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -688,6 +735,8 @@ async function utimes(filepath, atime, mtime, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -699,7 +748,7 @@ function utimesSync(filepath, atime, mtime) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.utimesSync(req.handle, filepath, atime, mtime)
@@ -709,6 +758,8 @@ function utimesSync(filepath, atime, mtime) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -754,7 +805,7 @@ async function mkdir(filepath, opts, cb) {
     return done(err, cb)
   }
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -767,6 +818,8 @@ async function mkdir(filepath, opts, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -804,7 +857,7 @@ function mkdirSync(filepath, opts) {
     return
   }
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.mkdirSync(req.handle, filepath, mode)
@@ -814,13 +867,15 @@ function mkdirSync(filepath, opts) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
 async function rmdir(filepath, cb) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -833,6 +888,8 @@ async function rmdir(filepath, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -841,7 +898,7 @@ async function rmdir(filepath, cb) {
 function rmdirSync(filepath) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.rmdirSync(req.handle, filepath)
@@ -851,6 +908,8 @@ function rmdirSync(filepath) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -941,7 +1000,7 @@ function rmSync(filepath, opts) {
 async function unlink(filepath, cb) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -954,6 +1013,8 @@ async function unlink(filepath, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -962,7 +1023,7 @@ async function unlink(filepath, cb) {
 function unlinkSync(filepath) {
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.unlinkSync(req.handle, filepath)
@@ -972,6 +1033,8 @@ function unlinkSync(filepath) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -979,7 +1042,7 @@ async function rename(src, dst, cb) {
   src = toNamespacedPath(src)
   dst = toNamespacedPath(dst)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -993,6 +1056,8 @@ async function rename(src, dst, cb) {
       path: src,
       destination: dst
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -1002,7 +1067,7 @@ function renameSync(src, dst) {
   src = toNamespacedPath(src)
   dst = toNamespacedPath(dst)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.renameSync(req.handle, src, dst)
@@ -1013,6 +1078,8 @@ function renameSync(src, dst) {
       path: src,
       destination: dst
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -1025,7 +1092,7 @@ async function copyFile(src, dst, mode = 0, cb) {
   src = toNamespacedPath(src)
   dst = toNamespacedPath(dst)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -1039,6 +1106,8 @@ async function copyFile(src, dst, mode = 0, cb) {
       path: src,
       destination: dst
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -1048,7 +1117,7 @@ function copyFileSync(src, dst, mode = 0) {
   src = toNamespacedPath(src)
   dst = toNamespacedPath(dst)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.copyfileSync(req.handle, src, dst, mode)
@@ -1059,6 +1128,8 @@ function copyFileSync(src, dst, mode = 0) {
       path: src,
       destination: dst
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -1124,7 +1195,7 @@ async function realpath(filepath, opts, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let res
   let err = null
@@ -1142,6 +1213,8 @@ async function realpath(filepath, opts, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, res, cb)
@@ -1155,7 +1228,7 @@ function realpathSync(filepath, opts) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.realpathSync(req.handle, filepath)
@@ -1171,6 +1244,8 @@ function realpathSync(filepath, opts) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -1187,7 +1262,7 @@ async function readlink(filepath, opts, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let res
   let err = null
@@ -1205,6 +1280,8 @@ async function readlink(filepath, opts, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, res, cb)
@@ -1218,7 +1295,7 @@ function readlinkSync(filepath, opts) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.readlinkSync(req.handle, filepath)
@@ -1234,6 +1311,8 @@ function readlinkSync(filepath, opts) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -1288,7 +1367,7 @@ async function symlink(target, filepath, type, cb) {
 
   target = normalizeSymlinkTarget(target, type, filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let err = null
   try {
@@ -1302,6 +1381,8 @@ async function symlink(target, filepath, type, cb) {
       path: target,
       destination: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, cb)
@@ -1341,7 +1422,7 @@ function symlinkSync(target, filepath, type) {
 
   target = normalizeSymlinkTarget(target, type, filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.symlinkSync(req.handle, target, filepath, type)
@@ -1352,6 +1433,8 @@ function symlinkSync(target, filepath, type) {
       path: target,
       destination: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -1366,7 +1449,7 @@ async function opendir(filepath, opts, cb) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   let dir
   let err = null
@@ -1382,6 +1465,8 @@ async function opendir(filepath, opts, cb) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 
   return done(err, dir, cb)
@@ -1393,7 +1478,7 @@ function opendirSync(filepath, opts) {
 
   filepath = toNamespacedPath(filepath)
 
-  using req = FileRequest.borrow()
+  const req = FileRequest.borrow()
 
   try {
     binding.opendirSync(req.handle, filepath)
@@ -1405,6 +1490,8 @@ function opendirSync(filepath, opts) {
       code: e.code,
       path: filepath
     })
+  } finally {
+    req.return()
   }
 }
 
@@ -1728,7 +1815,7 @@ class Dir {
     if (this._buffer.length) return ok(this._buffer.shift(), cb)
     if (this._ended) return ok(null, cb)
 
-    using req = FileRequest.borrow()
+    const req = FileRequest.borrow()
 
     let entries
     let err = null
@@ -1744,6 +1831,8 @@ class Dir {
         code: e.code,
         path: this.path
       })
+    } finally {
+      req.return()
     }
 
     if (err) return fail(err, cb)
@@ -1769,7 +1858,7 @@ class Dir {
     if (this._buffer.length) return this._buffer.shift()
     if (this._ended) return null
 
-    using req = FileRequest.borrow()
+    const req = FileRequest.borrow()
 
     let entries
     try {
@@ -1782,6 +1871,8 @@ class Dir {
         code: e.code,
         path: this.path
       })
+    } finally {
+      req.return()
     }
 
     if (entries.length === 0) {
@@ -1802,7 +1893,7 @@ class Dir {
   }
 
   async close(cb) {
-    using req = FileRequest.borrow()
+    const req = FileRequest.borrow()
 
     let err = null
     try {
@@ -1815,6 +1906,8 @@ class Dir {
         code: e.code,
         path: this.path
       })
+    } finally {
+      req.return()
     }
 
     this._handle = null
@@ -1823,7 +1916,7 @@ class Dir {
   }
 
   closeSync() {
-    using req = FileRequest.borrow()
+    const req = FileRequest.borrow()
 
     try {
       binding.closedirSync(req.handle, this._handle)
@@ -1833,6 +1926,8 @@ class Dir {
         code: e.code,
         path: this.path
       })
+    } finally {
+      req.return()
     }
 
     this._handle = null
