@@ -1695,7 +1695,7 @@ class Stats {
   }
 
   isCharacterDevice() {
-    return (this.mode & constants.S_IFCHR) === constants.S_IFCHR
+    return (this.mode & constants.S_IFMT) === constants.S_IFCHR
   }
 
   isFIFO() {
