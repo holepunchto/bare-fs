@@ -1990,11 +1990,10 @@ class FileReadStream extends Readable {
   async _destroy(err, cb) {
     if (this.fd === -1) return cb(err)
 
-    err = null
     try {
       await close(this.fd)
     } catch (e) {
-      err = e
+      err = err || e
     }
 
     cb(err)
