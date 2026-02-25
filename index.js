@@ -1694,7 +1694,7 @@ class Stats {
     return (this.mode & constants.S_IFMT) === constants.S_IFBLK
   }
 
-  ischaracterdevice() {
+  isCharacterDevice() {
     return (this.mode & constants.S_IFMT) === constants.S_IFCHR
   }
 
