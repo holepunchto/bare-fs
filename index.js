@@ -1239,7 +1239,7 @@ function readlinkSync(filepath, opts) {
 
 function normalizeSymlinkTarget(target, type, filepath) {
   if (isWindows) {
-    if (type === 'junction') target = path.resolve(filepath, '..', target)
+    if (type === constants.UV_FS_SYMLINK_JUNCTION) target = path.resolve(filepath, '..', target)
 
     if (path.isAbsolute(target)) return path.toNamespacedPath(target)
 
@@ -1286,7 +1286,7 @@ async function symlink(target, filepath, type, cb) {
     }
   }
 
-  target = normalizeSymlinkTarget(target)
+  target = normalizeSymlinkTarget(target, type, filepath)
 
   using req = FileRequest.borrow()
 
@@ -1339,7 +1339,7 @@ function symlinkSync(target, filepath, type) {
     }
   }
 
-  target = normalizeSymlinkTarget(target)
+  target = normalizeSymlinkTarget(target, type, filepath)
 
   using req = FileRequest.borrow()
 
@@ -1694,7 +1694,7 @@ class Stats {
     return (this.mode & constants.S_IFMT) === constants.S_IFBLK
   }
 
-  isCharacterDevice() {
+  ischaracterdevice() {
     return (this.mode & constants.S_IFMT) === constants.S_IFCHR
   }
 
