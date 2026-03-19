@@ -1,7 +1,7 @@
 const FIFO = require('fast-fifo')
 const EventEmitter = require('bare-events')
 const path = require('bare-path')
-const { fileURLToPath } = require('bare-url')
+const { isURL, fileURLToPath } = require('bare-url')
 const { Readable, Writable } = require('bare-stream')
 const binding = require('./binding')
 const constants = require('./lib/constants')
@@ -2366,7 +2366,7 @@ exports.createWriteStream = function createWriteStream(path, opts) {
 
 function toNamespacedPath(filepath) {
   if (typeof filepath !== 'string') {
-    if (URL.isURL(filepath)) filepath = fileURLToPath(filepath)
+    if (isURL(filepath)) filepath = fileURLToPath(filepath)
     else filepath = filepath.toString()
   }
 
