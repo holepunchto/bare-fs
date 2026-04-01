@@ -1150,21 +1150,15 @@ async function cp(src, dst, opts, cb) {
 
     if (st.isDirectory()) {
       if (opts.recursive !== true) {
-        throw new FileError('is a directory', {
-          operation: 'cp',
-          code: 'EISDIR',
-          path: src
-        })
+        throw new FileError('is a directory', { operation: 'cp', code: 'EISDIR', path: src })
       }
 
       try {
         await lstat(dst)
       } catch (e) {
-        if (e.code === 'ENOENT') {
-          await mkdir(dst, { mode: st.mode, recursive: true })
-        } else {
-          throw e
-        }
+        if (e.code !== 'ENOENT') throw e
+
+        await mkdir(dst, { mode: st.mode, recursive: true })
       }
 
       const dir = await opendir(src)
@@ -1180,6 +1174,35 @@ async function cp(src, dst, opts, cb) {
   }
 
   return done(err, cb)
+}
+
+function cpSync(src, dst, opts = {}) {
+  src = toNamespacedPath(src)
+  dst = toNamespacedPath(dst)
+
+  const st = lstatSync(src)
+
+  if (st.isDirectory()) {
+    if (opts.recursive !== true) {
+      throw new FileError('is a directory', { operation: 'cp', code: 'EISDIR', path: src })
+    }
+
+    try {
+      lstatSync(dst)
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e
+
+      mkdirSync(dst, { mode: st.mode, recursive: true })
+    }
+
+    const dir = opendirSync(src)
+    for (const { name } of dir) {
+      cpSync(path.join(src, name), path.join(dst, name), opts)
+    }
+  } else if (st.isFile()) {
+    copyFileSync(src, dst)
+    chmodSync(dst, st.mode)
+  }
 }
 
 async function realpath(filepath, opts, cb) {
@@ -2309,6 +2332,7 @@ exports.chmodSync = chmodSync
 // exports.chownSync = chownSync TODO
 exports.closeSync = closeSync
 exports.copyFileSync = copyFileSync
+exports.cpSync = cpSync
 exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
 // exports.fchownSync = fchownSync TODO
