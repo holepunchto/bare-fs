@@ -306,6 +306,51 @@ bare_fs_request_result_stat(js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_fs_request_result_statfs(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  uv_statfs_t *statfs = req->handle.ptr;
+
+  js_value_t *result;
+  err = js_create_array_with_length(env, 7, &result);
+  assert(err == 0);
+
+  uint32_t i = 0;
+
+#define V(property) \
+  { \
+    js_value_t *value; \
+    err = js_create_int64(env, statfs->f_##property, &value); \
+    assert(err == 0); \
+\
+    err = js_set_element(env, result, i++, value); \
+    assert(err == 0); \
+  }
+  V(type)
+  V(bsize)
+  V(blocks)
+  V(bfree)
+  V(bavail)
+  V(files)
+  V(ffree)
+#undef V
+
+  return result;
+}
+
+static js_value_t *
 bare_fs_request_result_string(js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -1471,6 +1516,54 @@ bare_fs_fstat_sync(js_env_t *env, js_callback_info_t *info) {
 }
 
 static void
+bare_fs__on_statfs(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__statfs(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_statfs(loop, &req->handle, (char *) path, async ? bare_fs__on_statfs : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_statfs(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__statfs(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_statfs_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__statfs(env, info, bare_fs_sync);
+}
+
+static void
 bare_fs__on_unlink(uv_fs_t *handle) {
   bare_fs__on_request_result(handle);
 }
@@ -2115,6 +2208,7 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("requestDestroy", bare_fs_request_destroy)
   V("requestReset", bare_fs_request_reset)
   V("requestResultStat", bare_fs_request_result_stat)
+  V("requestResultStatfs", bare_fs_request_result_statfs)
   V("requestResultString", bare_fs_request_result_string)
   V("requestResultDir", bare_fs_request_result_dir)
   V("requestResultDirents", bare_fs_request_result_dirents)
@@ -2155,6 +2249,8 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("lstatSync", bare_fs_lstat_sync)
   V("fstat", bare_fs_fstat)
   V("fstatSync", bare_fs_fstat_sync)
+  V("statfs", bare_fs_statfs)
+  V("statfsSync", bare_fs_statfs_sync)
   V("unlink", bare_fs_unlink)
   V("unlinkSync", bare_fs_unlink_sync)
   V("realpath", bare_fs_realpath)

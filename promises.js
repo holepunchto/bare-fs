@@ -85,6 +85,7 @@ exports.rename = fs.rename
 exports.rm = fs.rm
 exports.rmdir = fs.rmdir
 exports.stat = fs.stat
+exports.statfs = fs.statfs
 exports.symlink = fs.symlink
 exports.unlink = fs.unlink
 exports.utimes = fs.utimes

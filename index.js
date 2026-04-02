@@ -488,11 +488,7 @@ async function stat(filepath, cb) {
 
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    err = new FileError(e.message, {
-      operation: 'stat',
-      code: e.code,
-      path: filepath
-    })
+    err = new FileError(e.message, { operation: 'stat', code: e.code, path: filepath })
   } finally {
     req.return()
   }
@@ -510,11 +506,7 @@ function statSync(filepath) {
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    throw new FileError(e.message, {
-      operation: 'stat',
-      code: e.code,
-      path: filepath
-    })
+    throw new FileError(e.message, { operation: 'stat', code: e.code, path: filepath })
   } finally {
     req.return()
   }
@@ -534,11 +526,7 @@ async function lstat(filepath, cb) {
 
     st = new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    err = new FileError(e.message, {
-      operation: 'lstat',
-      code: e.code,
-      path: filepath
-    })
+    err = new FileError(e.message, { operation: 'lstat', code: e.code, path: filepath })
   } finally {
     req.return()
   }
@@ -556,11 +544,7 @@ function lstatSync(filepath) {
 
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
-    throw new FileError(e.message, {
-      operation: 'lstat',
-      code: e.code,
-      path: filepath
-    })
+    throw new FileError(e.message, { operation: 'lstat', code: e.code, path: filepath })
   } finally {
     req.return()
   }
@@ -595,6 +579,44 @@ function fstatSync(fd) {
     return new Stats(...binding.requestResultStat(req.handle))
   } catch (e) {
     throw new FileError(e.message, { operation: 'fstat', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+}
+
+async function statfs(filepath, cb) {
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  let st
+  let err = null
+  try {
+    binding.statfs(req.handle, filepath)
+
+    await req
+
+    st = new StatFs(...binding.requestResultStatfs(req.handle))
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'statfs', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+
+  return done(err, st, cb)
+}
+
+function statfsSync(filepath) {
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.statfsSync(req.handle, filepath)
+
+    return new StatFs(...binding.requestResultStatfs(req.handle))
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'statfs', code: e.code, path: filepath })
   } finally {
     req.return()
   }
@@ -1821,6 +1843,18 @@ class Stats {
   }
 }
 
+class StatFs {
+  constructor(type, bsize, blocks, bfree, bavail, files, ffree) {
+    this.type = type
+    this.bsize = bsize
+    this.blocks = blocks
+    this.bfree = bfree
+    this.bavail = bavail
+    this.files = files
+    this.ffree = ffree
+  }
+}
+
 class Dir {
   constructor(path, handle, opts = {}) {
     const { encoding = 'utf8', bufferSize = 32 } = opts
@@ -2316,7 +2350,7 @@ exports.rename = rename
 exports.rm = rm
 exports.rmdir = rmdir
 exports.stat = stat
-// exports.statfs = statfs TODO
+exports.statfs = statfs
 exports.symlink = symlink
 // exports.truncate = truncate TODO
 exports.unlink = unlink
@@ -2360,7 +2394,7 @@ exports.renameSync = renameSync
 exports.rmSync = rmSync
 exports.rmdirSync = rmdirSync
 exports.statSync = statSync
-// exports.statfsSync = statfsSync TODO
+exports.statfsSync = statfsSync
 exports.symlinkSync = symlinkSync
 // exports.truncateSync = truncateSync TODO
 exports.unlinkSync = unlinkSync
@@ -2372,6 +2406,7 @@ exports.writevSync = writevSync
 exports.promises = require('./promises')
 
 exports.Stats = Stats
+exports.StatFs = StatFs
 exports.Dir = Dir
 exports.Dirent = Dirent
 exports.Watcher = Watcher

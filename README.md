@@ -158,6 +158,18 @@ Callback version of `fs.fstat()`.
 
 Synchronous version of `fs.fstat()`.
 
+#### `const stats = await fs.statfs(filepath)`
+
+Get filesystem statistics. Returns a `StatFs` object.
+
+#### `fs.statfs(filepath, callback)`
+
+Callback version of `fs.statfs()`.
+
+#### `const stats = fs.statfsSync(filepath)`
+
+Synchronous version of `fs.statfs()`.
+
 #### `await fs.ftruncate(fd[, len])`
 
 Truncate a file to `len` bytes. `len` defaults to `0`.

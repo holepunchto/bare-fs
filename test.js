@@ -568,6 +568,27 @@ test('lstat sync', async (t) => {
   t.ok(st)
 })
 
+test('statfs', async (t) => {
+  t.plan(2)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  fs.statfs(file, (err, st) => {
+    t.absent(err, 'stat')
+    for (const [key, value] of Object.entries(st)) t.comment(key, value)
+    t.ok(st)
+  })
+})
+
+test('statfs sync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  const st = fs.statfsSync(file)
+
+  for (const [key, value] of Object.entries(st)) t.comment(key, value)
+  t.ok(st)
+})
+
 test('utimes', async (t) => {
   t.plan(3)
 
