@@ -971,6 +971,14 @@ export function symlink(target: string, filepath: Path, cb: Callback): void
 
 export function symlinkSync(target: string, filepath: Path, type?: string | number): void
 
+export function truncate(filepath: Path, len?: number): Promise<void>
+
+export function truncate(filepath: Path, len: number, cb: Callback): void
+
+export function truncate(filepath: Path, cb: Callback): void
+
+export function truncateSync(filepath: Path, len?: number): void
+
 export function unlink(filepath: Path): Promise<void>
 
 export function unlink(filepath: Path, cb: Callback): void

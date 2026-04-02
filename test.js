@@ -620,6 +620,32 @@ test('ftruncateSync', async (t) => {
   fs.readFile(file, (err, data) => t.alike(data, Buffer.from('hello')))
 })
 
+test('truncate', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'hello world')
+
+  fs.truncate(file, 5, (err) => {
+    t.absent(err, 'truncated')
+
+    fs.readFile(file, (err, data) => {
+      t.absent(err, 'file read')
+
+      t.alike(data, Buffer.from('hello'), 'check file content')
+    })
+  })
+})
+
+test('truncateSync', async (t) => {
+  t.plan(1)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'hello world')
+
+  fs.truncateSync(file, 5)
+
+  fs.readFile(file, (err, data) => t.alike(data, Buffer.from('hello')))
+})
+
 test('utimes', async (t) => {
   t.plan(3)
 

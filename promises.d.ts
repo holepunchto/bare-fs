@@ -249,6 +249,8 @@ export function stat(filepath: Path): Promise<Stats>
 
 export function statfs(filepath: Path): Promise<StatFs>
 
+export function truncate(filepath: Path, len?: number): Promise<void>
+
 export function symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
 
 export function unlink(filepath: Path): Promise<void>

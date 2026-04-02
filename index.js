@@ -660,6 +660,38 @@ function ftruncateSync(fd, len = 0) {
   }
 }
 
+async function truncate(filepath, len, cb) {
+  let fd = -1
+  let err
+
+  try {
+    fd = await open(filepath, 'r+')
+
+    await ftruncate(fd, len)
+  } catch (e) {
+    err = e
+  } finally {
+    if (fd !== -1) await close(fd)
+  }
+
+  return done(err, cb)
+}
+
+async function truncateSync(filepath, len, cb) {
+  let fd = -1
+  let err
+
+  try {
+    fd = openSync(filepath, 'r+')
+
+    ftruncateSync(fd, len)
+  } catch (e) {
+    err = e
+  } finally {
+    if (fd !== -1) closeSync(fd)
+  }
+}
+
 async function chmod(filepath, mode, cb) {
   if (typeof mode === 'string') mode = toMode(mode)
 
@@ -2352,7 +2384,7 @@ exports.rmdir = rmdir
 exports.stat = stat
 exports.statfs = statfs
 exports.symlink = symlink
-// exports.truncate = truncate TODO
+exports.truncate = truncate
 exports.unlink = unlink
 exports.utimes = utimes
 exports.watch = watch
@@ -2396,7 +2428,7 @@ exports.rmdirSync = rmdirSync
 exports.statSync = statSync
 exports.statfsSync = statfsSync
 exports.symlinkSync = symlinkSync
-// exports.truncateSync = truncateSync TODO
+exports.truncateSync = truncateSync
 exports.unlinkSync = unlinkSync
 exports.utimesSync = utimesSync
 exports.writeFileSync = writeFileSync

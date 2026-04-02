@@ -90,6 +90,7 @@ exports.rm = fs.rm
 exports.rmdir = fs.rmdir
 exports.stat = fs.stat
 exports.statfs = fs.statfs
+exports.truncate = fs.truncate
 exports.symlink = fs.symlink
 exports.unlink = fs.unlink
 exports.utimes = fs.utimes
