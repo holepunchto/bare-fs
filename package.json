@@ -1,7 +1,7 @@
 {
   "name": "bare-fs",
   "version": "4.6.0",
-  "description": "Native file system operations for Javascript",
+  "description": "Native file system operations for Bare",
   "exports": {
     "./package": "./package.json",
     ".": {
