@@ -3,11 +3,13 @@ const fs = require('.')
 
 class FileHandle extends EventEmitter {
   constructor(fd) {
+    super()
+
     this.fd = fd
   }
 
   async close() {
-    await fs.close(fd)
+    await fs.close(this.fd)
 
     this.fd = -1
     this.emit('close')

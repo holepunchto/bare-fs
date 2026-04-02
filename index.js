@@ -1361,15 +1361,15 @@ async function symlink(target, filepath, type, cb) {
 
   if (typeof type === 'string') {
     switch (type) {
-      case 'file':
-      default:
-        type = 0
-        break
       case 'dir':
         type = constants.UV_FS_SYMLINK_DIR
         break
       case 'junction':
         type = constants.UV_FS_SYMLINK_JUNCTION
+        break
+      case 'file':
+      default:
+        type = 0
         break
     }
   } else if (typeof type !== 'number') {
@@ -1416,15 +1416,15 @@ function symlinkSync(target, filepath, type) {
 
   if (typeof type === 'string') {
     switch (type) {
-      case 'file':
-      default:
-        type = 0
-        break
       case 'dir':
         type = constants.UV_FS_SYMLINK_DIR
         break
       case 'junction':
         type = constants.UV_FS_SYMLINK_JUNCTION
+        break
+      case 'file':
+      default:
+        type = 0
         break
     }
   } else if (typeof type !== 'number') {
