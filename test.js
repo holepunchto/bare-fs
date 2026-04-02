@@ -589,6 +589,37 @@ test('statfs sync', async (t) => {
   t.ok(st)
 })
 
+test('ftruncate', async (t) => {
+  t.plan(4)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'hello world')
+
+  fs.open(file, 'r+', (err, fd) => {
+    t.absent(err, 'opened')
+
+    fs.ftruncate(fd, 5, (err) => {
+      t.absent(err, 'truncated')
+
+      fs.readFile(file, (err, data) => {
+        t.absent(err, 'file read')
+
+        t.alike(data, Buffer.from('hello'), 'check file content')
+      })
+    })
+  })
+})
+
+test('ftruncateSync', async (t) => {
+  t.plan(1)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'hello world')
+  const fd = fs.openSync(file, 'r+')
+
+  fs.ftruncateSync(fd, 5)
+
+  fs.readFile(file, (err, data) => t.alike(data, Buffer.from('hello')))
+})
+
 test('utimes', async (t) => {
   t.plan(3)
 
