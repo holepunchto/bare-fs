@@ -51,6 +51,10 @@ class FileHandle extends EventEmitter {
     await fs.fchmod(this.fd, mode)
   }
 
+  async truncate(len) {
+    await fs.ftruncate(this.fd, len)
+  }
+
   createReadStream(opts) {
     return fs.createReadStream(null, { ...opts, fd: this.fd })
   }

@@ -54,6 +54,8 @@ interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
 
   chmod(mode: string | number): Promise<void>
 
+  truncate(len?: number): Promise<void>
+
   createReadStream(opts?: ReadStreamOptions): ReadStream
 
   createWriteStream(opts?: WriteStreamOptions): WriteStream

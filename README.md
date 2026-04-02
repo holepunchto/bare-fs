@@ -823,6 +823,10 @@ Get the status of the file.
 
 Change the permissions of the file.
 
+#### `await handle.truncate(len)`
+
+Truncate the file.
+
 #### `const stream = handle.createReadStream([opts])`
 
 Create a readable stream for the file.
