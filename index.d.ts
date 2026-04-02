@@ -271,6 +271,8 @@ export function cp(src: Path, dst: Path, opts: CpOptions, cb: Callback): void
 
 export function cp(src: Path, dst: Path, cb: Callback): void
 
+export function cpSync(src: Path, dst: Path, opts?: CpOptions): void
+
 export function exists(filepath: Path): Promise<boolean>
 
 export function exists(filepath: Path, cb: (exists: boolean) => void): void
