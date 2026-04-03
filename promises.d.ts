@@ -54,6 +54,10 @@ interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
 
   chmod(mode: string | number): Promise<void>
 
+  datasync(): Promise<void>
+
+  sync(): Promise<void>
+
   truncate(len?: number): Promise<void>
 
   utimes(atime: number | Date, mtime: number | Date): Promise<void>

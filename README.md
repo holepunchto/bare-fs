@@ -883,6 +883,14 @@ Get the status of the file.
 
 Change the permissions of the file.
 
+#### `await handle.datasync()`
+
+Similar to `fsync`, but does not flush modified metadata unless necessary.
+
+#### `await handle.sync()`
+
+Flush all modified in-core data of the file.
+
 #### `await handle.truncate(len)`
 
 Truncate the file.

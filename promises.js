@@ -51,6 +51,14 @@ class FileHandle extends EventEmitter {
     await fs.fchmod(this.fd, mode)
   }
 
+  async datasync() {
+    return fs.fdatasync(this.fd)
+  }
+
+  async sync() {
+    return fs.fsync(this.fd)
+  }
+
   async truncate(len) {
     await fs.ftruncate(this.fd, len)
   }
