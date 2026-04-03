@@ -1256,6 +1256,8 @@ test('sync methods', async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt')
   const fd = fs.openSync(file)
 
+  t.teardown(() => fs.closeSync(fd))
+
   t.execution(fs.fsyncSync(fd), 'fsyncSync')
   t.execution(fs.fdatasyncSync(fd), 'fdatasyncSync')
 
@@ -1264,8 +1266,6 @@ test('sync methods', async (t) => {
 
     fs.fdatasync(fd, (err) => t.absent(err, 'fdatasync'))
   })
-
-  t.teardown(() => fs.closeSync(fd))
 })
 
 async function withFile(t, path, data = Buffer.alloc(0), opts = {}) {
