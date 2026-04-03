@@ -1254,7 +1254,7 @@ test('sync methods', async (t) => {
   t.plan(4)
 
   const file = await withFile(t, 'test/fixtures/foo.txt')
-  const fd = fs.openSync(file)
+  const fd = fs.openSync(file, 'w+')
 
   t.teardown(() => fs.closeSync(fd))
 
