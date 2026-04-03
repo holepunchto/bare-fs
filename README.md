@@ -851,6 +851,10 @@ Change the permissions of the file.
 
 Truncate the file.
 
+#### `await handle.utimes(mode)`
+
+Change the access and modification times of the file.
+
 #### `const stream = handle.createReadStream([opts])`
 
 Create a readable stream for the file.

@@ -55,6 +55,10 @@ class FileHandle extends EventEmitter {
     await fs.ftruncate(this.fd, len)
   }
 
+  async utimes(atime, mtime) {
+    await fs.futimes(this.fd, atime, mtime)
+  }
+
   createReadStream(opts) {
     return fs.createReadStream(null, { ...opts, fd: this.fd })
   }

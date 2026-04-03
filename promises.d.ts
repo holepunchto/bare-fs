@@ -56,6 +56,8 @@ interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
 
   truncate(len?: number): Promise<void>
 
+  utimes(atime: number | Date, mtime: number | Date): Promise<void>
+
   createReadStream(opts?: ReadStreamOptions): ReadStream
 
   createWriteStream(opts?: WriteStreamOptions): WriteStream
