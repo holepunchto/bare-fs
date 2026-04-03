@@ -728,6 +728,8 @@ test('futimes', async (t) => {
 
     t.ok(oldStat.atimeMs < newStat.atimeMs)
     t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+
+    fs.closeSync(fd)
   })
 })
 
@@ -744,6 +746,8 @@ test('futimes sync', async (t) => {
 
   t.ok(oldStat.atimeMs < newStat.atimeMs)
   t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+
+  fs.closeSync(fd)
 })
 
 test('opendir + close', async (t) => {
