@@ -809,6 +809,45 @@ function utimesSync(filepath, atime, mtime) {
   }
 }
 
+async function lutimes(filepath, atime, mtime, cb) {
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
+
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.lutimes(req.handle, filepath, atime, mtime)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'lutimes', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function lutimesSync(filepath, atime, mtime) {
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
+
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.lutimesSync(req.handle, filepath, atime, mtime)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'lutimes', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+}
+
 async function futimes(fd, atime, mtime, cb) {
   if (typeof atime !== 'number') atime = atime.getTime() / 1000
   if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
@@ -2392,7 +2431,7 @@ exports.ftruncate = ftruncate
 exports.futimes = futimes
 // exports.lchmod = lchmod TODO
 // exports.lchown = lchown TODO
-// exports.lutimes = lutimes TODO
+exports.lutimes = lutimes
 // exports.link = link TODO
 exports.lstat = lstat
 exports.mkdir = mkdir
@@ -2436,7 +2475,7 @@ exports.ftruncateSync = ftruncateSync
 exports.futimesSync = futimesSync
 // exports.lchmodSync = lchmodSync TODO
 // exports.lchownSync = lchownSync TODO
-// exports.lutimesSync = lutimesSync TODO
+exports.lutimesSync = lutimesSync
 // exports.linkSync = linkSync TODO
 exports.lstatSync = lstatSync
 exports.mkdirSync = mkdirSync

@@ -338,6 +338,17 @@ export function utimes(
 
 export function utimesSync(filepath: Path, atime: number | Date, mtime: number | Date): void
 
+export function lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
+
+export function lutimes(
+  filepath: Path,
+  atime: number | Date,
+  mtime: number | Date,
+  cb: Callback
+): void
+
+export function lutimesSync(filepath: Path, atime: number | Date, mtime: number | Date): void
+
 export function futimes(fd: number, atime: number | Date, mtime: number | Date): Promise<void>
 
 export function futimes(fd: number, atime: number | Date, mtime: number | Date, cb: Callback): void

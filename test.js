@@ -678,6 +678,40 @@ test('utimes sync', async (t) => {
   t.ok(oldStat.mtimeMs < newStat.mtimeMs)
 })
 
+test('lutimes', async (t) => {
+  t.plan(3)
+
+  const target = await withFile(t, 'test/fixtures/foo.txt')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
+
+  const oldStat = fs.lstatSync(link)
+
+  const future = new Date(Date.now() + 1000)
+  fs.lutimes(link, future, future, (err) => {
+    t.absent(err)
+
+    const newStat = fs.lstatSync(link)
+
+    t.ok(oldStat.atimeMs < newStat.atimeMs)
+    t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+  })
+})
+
+test('lutimes sync', async (t) => {
+  const target = await withFile(t, 'test/fixtures/foo.txt')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
+
+  const oldStat = fs.lstatSync(link)
+
+  const future = Date.now() / 1000 + 1000
+  fs.lutimesSync(link, future, future)
+
+  const newStat = fs.lstatSync(link)
+
+  t.ok(oldStat.atimeMs < newStat.atimeMs)
+  t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+})
+
 test('futimes', async (t) => {
   t.plan(3)
 

@@ -1163,6 +1163,57 @@ bare_fs_utimes_sync(js_env_t *env, js_callback_info_t *info) {
   return bare_fs__utimes(env, info, bare_fs_sync);
 }
 
+static inline js_value_t *
+bare_fs__lutimes(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  double atime;
+  err = js_get_value_double(env, argv[2], &atime);
+  assert(err == 0);
+
+  double mtime;
+  err = js_get_value_double(env, argv[3], &mtime);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_lutime(loop, &req->handle, (char *) path, atime, mtime, async ? bare_fs__on_utimes : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_lutimes(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__lutimes(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_lutimes_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__lutimes(env, info, bare_fs_sync);
+}
+
 static void
 bare_fs__on_futimes(uv_fs_t *handle) {
   bare_fs__on_request_result(handle);
@@ -2291,6 +2342,8 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("fchmodSync", bare_fs_fchmod_sync)
   V("utimes", bare_fs_utimes)
   V("utimesSync", bare_fs_utimes_sync)
+  V("lutimes", bare_fs_lutimes)
+  V("lutimesSync", bare_fs_lutimes_sync)
   V("futimes", bare_fs_futimes)
   V("futimesSync", bare_fs_futimes_sync)
   V("rename", bare_fs_rename)
