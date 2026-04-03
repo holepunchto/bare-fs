@@ -111,13 +111,13 @@ test('chmod', async (t) => {
 
   const { mode: oldMode } = fs.statSync(file)
 
-  fs.chmod(file, 0o777, (err) => {
+  fs.chmod(file, 0o555, (err) => {
     t.absent(err)
 
     const { mode: newMode } = fs.statSync(file)
 
-    t.ok(oldMode < newMode)
-    t.is(newMode, 33279)
+    t.ok(oldMode > newMode)
+    t.is(newMode, 33133)
   })
 })
 
@@ -126,12 +126,12 @@ test('chmodSync', async (t) => {
 
   const { mode: oldMode } = fs.statSync(file)
 
-  fs.chmodSync(file, 0o777)
+  fs.chmodSync(file, 0o555)
 
   const { mode: newMode } = fs.statSync(file)
 
-  t.ok(oldMode < newMode)
-  t.is(newMode, 33279)
+  t.ok(oldMode > newMode)
+  t.is(newMode, 33133)
 })
 
 test('fchmod', async (t) => {
@@ -144,13 +144,13 @@ test('fchmod', async (t) => {
 
   const { mode: oldMode } = fs.statSync(file)
 
-  fs.fchmod(fd, 0o777, (err) => {
+  fs.fchmod(fd, 0o555, (err) => {
     t.absent(err)
 
     const { mode: newMode } = fs.statSync(file)
 
-    t.ok(oldMode < newMode)
-    t.is(newMode, 33279)
+    t.ok(oldMode > newMode)
+    t.is(newMode, 33133)
   })
 })
 
@@ -160,12 +160,12 @@ test('fchmodSync', async (t) => {
 
   const { mode: oldMode } = fs.statSync(file)
 
-  fs.fchmodSync(fd, 0o777)
+  fs.fchmodSync(fd, 0o555)
 
   const { mode: newMode } = fs.statSync(file)
 
-  t.ok(oldMode < newMode)
-  t.is(newMode, 33279)
+  t.ok(oldMode > newMode)
+  t.is(newMode, 33133)
 
   fs.closeSync(fd)
 })
