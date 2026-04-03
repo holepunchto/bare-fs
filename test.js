@@ -1250,6 +1250,24 @@ test('createWriteStream', async (t) => {
   stream.end(' world')
 })
 
+test('sync methods', async (t) => {
+  t.plan(4)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+  const fd = fs.openSync(file)
+
+  t.execution(fs.fsyncSync(fd), 'fsyncSync')
+  t.execution(fs.fdatasyncSync(fd), 'fdatasyncSync')
+
+  fs.fsync(fd, (err) => {
+    t.absent(err, 'fsync')
+
+    fs.fdatasync(fd, (err) => t.absent(err, 'fdatasync'))
+  })
+
+  t.teardown(() => fs.closeSync(fd))
+})
+
 async function withFile(t, path, data = Buffer.alloc(0), opts = {}) {
   if (data) await fs.promises.writeFile(path, data, opts)
 
