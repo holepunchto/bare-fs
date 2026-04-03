@@ -116,8 +116,8 @@ test('chmod', async (t) => {
 
     const { mode: newMode } = fs.statSync(file)
 
-    t.ok(oldMode > newMode)
-    t.is(newMode, 33133)
+    t.ok(oldMode !== newMode)
+    t.is(newMode, isWindows ? 33060 : 33133)
   })
 })
 
@@ -130,8 +130,8 @@ test('chmodSync', async (t) => {
 
   const { mode: newMode } = fs.statSync(file)
 
-  t.ok(oldMode > newMode)
-  t.is(newMode, 33133)
+  t.ok(oldMode !== newMode)
+  t.is(newMode, isWindows ? 33060 : 33133)
 })
 
 test('fchmod', async (t) => {
@@ -149,8 +149,8 @@ test('fchmod', async (t) => {
 
     const { mode: newMode } = fs.statSync(file)
 
-    t.ok(oldMode > newMode)
-    t.is(newMode, 33133)
+    t.ok(oldMode !== newMode)
+    t.is(newMode, isWindows ? 33060 : 33133)
   })
 })
 
@@ -164,8 +164,8 @@ test('fchmodSync', async (t) => {
 
   const { mode: newMode } = fs.statSync(file)
 
-  t.ok(oldMode > newMode)
-  t.is(newMode, 33133)
+  t.ok(oldMode !== newMode)
+  t.is(newMode, isWindows ? 33060 : 33133)
 
   fs.closeSync(fd)
 })
