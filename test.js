@@ -716,7 +716,7 @@ test('futimes', async (t) => {
   t.plan(3)
 
   const file = await withFile(t, 'test/fixtures/foo.txt')
-  const fd = fs.openSync(file)
+  const fd = fs.openSync(file, 'w+')
 
   const oldStat = fs.fstatSync(fd)
 
@@ -733,7 +733,7 @@ test('futimes', async (t) => {
 
 test('futimes sync', async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt')
-  const fd = fs.openSync(file)
+  const fd = fs.openSync(file, 'w+')
 
   const oldStat = fs.fstatSync(fd)
 
