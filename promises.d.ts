@@ -255,6 +255,8 @@ export function symlink(target: Path, filepath: Path, type?: string | number): P
 
 export function unlink(filepath: Path): Promise<void>
 
+export function utimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
+
 export function watch(
   filepath: Path,
   opts: WatcherOptions & { encoding?: BufferEncoding }
