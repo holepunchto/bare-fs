@@ -218,6 +218,18 @@ Callback version of `fs.utimes()`.
 
 Synchronous version of `fs.utimes()`.
 
+#### `await fs.futimes(fd, atime, mtime)`
+
+Change the access and modification times of a file by its file descriptor. Times may be numbers (seconds since epoch) or `Date` objects.
+
+#### `fs.futimes(fd, atime, mtime, callback)`
+
+Callback version of `fs.futimes()`.
+
+#### `fs.futimesSync(fd, atime, mtime)`
+
+Synchronous version of `fs.futimes()`.
+
 #### `await fs.mkdir(filepath[, opts])`
 
 Create a directory at `filepath`.

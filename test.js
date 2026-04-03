@@ -678,6 +678,40 @@ test('utimes sync', async (t) => {
   t.ok(oldStat.mtimeMs < newStat.mtimeMs)
 })
 
+test('futimes', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+  const fd = fs.openSync(file)
+
+  const oldStat = fs.fstatSync(fd)
+
+  const future = new Date(Date.now() + 1000)
+  fs.futimes(fd, future, future, (err) => {
+    t.absent(err)
+
+    const newStat = fs.statSync(file)
+
+    t.ok(oldStat.atimeMs < newStat.atimeMs)
+    t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+  })
+})
+
+test('futimes sync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+  const fd = fs.openSync(file)
+
+  const oldStat = fs.fstatSync(fd)
+
+  const future = Date.now() / 1000 + 1000
+  fs.futimesSync(fd, future, future)
+
+  const newStat = fs.statSync(file)
+
+  t.ok(oldStat.atimeMs < newStat.atimeMs)
+  t.ok(oldStat.mtimeMs < newStat.mtimeMs)
+})
+
 test('opendir + close', async (t) => {
   t.plan(2)
 

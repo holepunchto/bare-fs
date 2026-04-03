@@ -784,11 +784,7 @@ async function utimes(filepath, atime, mtime, cb) {
 
     await req
   } catch (e) {
-    err = new FileError(e.message, {
-      operation: 'utimes',
-      code: e.code,
-      path: filepath
-    })
+    err = new FileError(e.message, { operation: 'utimes', code: e.code, path: filepath })
   } finally {
     req.return()
   }
@@ -807,11 +803,42 @@ function utimesSync(filepath, atime, mtime) {
   try {
     binding.utimesSync(req.handle, filepath, atime, mtime)
   } catch (e) {
-    throw new FileError(e.message, {
-      operation: 'utimes',
-      code: e.code,
-      path: filepath
-    })
+    throw new FileError(e.message, { operation: 'utimes', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+}
+
+async function futimes(fd, atime, mtime, cb) {
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
+
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.futimes(req.handle, fd, atime, mtime)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'futimes', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function futimesSync(fd, atime, mtime) {
+  if (typeof atime !== 'number') atime = atime.getTime() / 1000
+  if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.futimesSync(req.handle, fd, atime, mtime)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'futimesSync', code: e.code, fd })
   } finally {
     req.return()
   }
@@ -2362,7 +2389,7 @@ exports.fchmod = fchmod
 exports.fstat = fstat
 // exports.fsync = fsync TODO
 exports.ftruncate = ftruncate
-// exports.futimes = futimes TODO
+exports.futimes = futimes
 // exports.lchmod = lchmod TODO
 // exports.lchown = lchown TODO
 // exports.lutimes = lutimes TODO
@@ -2406,7 +2433,7 @@ exports.fchmodSync = fchmodSync
 exports.fstatSync = fstatSync
 // exports.fsyncSync = fsyncSync TODO
 exports.ftruncateSync = ftruncateSync
-// exports.futimesSync = futimesSync TODO
+exports.futimesSync = futimesSync
 // exports.lchmodSync = lchmodSync TODO
 // exports.lchownSync = lchownSync TODO
 // exports.lutimesSync = lutimesSync TODO
