@@ -210,6 +210,8 @@ Synchronous version of `fs.fchmod()`.
 
 Change the owner and group of a file.
 
+**NOTE**: The `chown` functions are not implemented on Windows.
+
 #### `fs.chown(filepath,  uid, gid, callback)`
 
 Callback version of `fs.chown()`.
@@ -922,6 +924,8 @@ Change the permissions of the file.
 #### `await handle.chown(uid, gid)`
 
 Change the owner and group of the file.
+
+**NOTE**: This function is not implemented on Windows.
 
 #### `await handle.datasync()`
 
