@@ -245,6 +245,8 @@ export function rmdir(filepath: Path): Promise<void>
 
 export function stat(filepath: Path): Promise<Stats>
 
+export function statfs(filepath: Path): Promise<StatFs>
+
 export function symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
 
 export function unlink(filepath: Path): Promise<void>

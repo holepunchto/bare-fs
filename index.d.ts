@@ -116,6 +116,28 @@ export class Stats {
   )
 }
 
+export interface StatFs {
+  readonly type: number
+  readonly bsize: number
+  readonly blocks: number
+  readonly bfree: number
+  readonly bavail: number
+  readonly files: number
+  readonly ffree: number
+}
+
+export class StatsFs {
+  private constructor(
+    type: number,
+    bsize: number,
+    blocks: number,
+    bfree: number,
+    bavail: number,
+    files: number,
+    ffree: number
+  )
+}
+
 export interface ReadStreamOptions {
   fd?: number
   flags?: Flag
@@ -934,6 +956,12 @@ export function stat(filepath: Path): Promise<Stats>
 export function stat(filepath: Path, cb: Callback<[stats: Stats | null]>): void
 
 export function statSync(filepath: Path): Stats
+
+export function statfs(filepath: Path): Promise<StatFs>
+
+export function statfs(filepath: Path, cb: Callback<[stats: StatFs | null]>): void
+
+export function statfsSync(filepath: Path): StatFs
 
 export function symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
 
