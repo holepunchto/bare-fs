@@ -919,6 +919,10 @@ Get the status of the file.
 
 Change the permissions of the file.
 
+#### `await handle.chown(uid, gid)`
+
+Change the owner and group of the file.
+
 #### `await handle.datasync()`
 
 Similar to `fsync`, but does not flush modified metadata unless necessary.
