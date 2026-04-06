@@ -677,7 +677,7 @@ async function truncate(filepath, len, cb) {
   return done(err, cb)
 }
 
-async function truncateSync(filepath, len, cb) {
+function truncateSync(filepath, len) {
   let fd = -1
   let err
 
