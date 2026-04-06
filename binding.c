@@ -1132,11 +1132,11 @@ bare_fs__chown(js_env_t *env, js_callback_info_t *info, bool async) {
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
 
-  uv_uid_t uid;
+  uint32_t uid;
   err = js_get_value_uint32(env, argv[2], &uid);
   assert(err == 0);
 
-  uv_gid_t gid;
+  uint32_t gid;
   err = js_get_value_uint32(env, argv[3], &gid);
   assert(err == 0);
 
@@ -1188,11 +1188,11 @@ bare_fs__lchown(js_env_t *env, js_callback_info_t *info, bool async) {
   err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
   assert(err == 0);
 
-  uv_uid_t uid;
+  uint32_t uid;
   err = js_get_value_uint32(env, argv[2], &uid);
   assert(err == 0);
 
-  uv_gid_t gid;
+  uint32_t gid;
   err = js_get_value_uint32(env, argv[3], &gid);
   assert(err == 0);
 
@@ -1244,11 +1244,11 @@ bare_fs__fchown(js_env_t *env, js_callback_info_t *info, bool async) {
   err = js_get_value_uint32(env, argv[1], &fd);
   assert(err == 0);
 
-  uv_uid_t uid;
+  uint32_t uid;
   err = js_get_value_uint32(env, argv[2], &uid);
   assert(err == 0);
 
-  uv_gid_t gid;
+  uint32_t gid;
   err = js_get_value_uint32(env, argv[3], &gid);
   assert(err == 0);
 

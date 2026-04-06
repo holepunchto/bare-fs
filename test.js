@@ -214,7 +214,7 @@ test('read + offset', async (t) => {
   })
 })
 
-test('chown', { skip: isWindows }, async (t) => {
+test('chown', async (t) => {
   t.plan(3)
 
   const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
@@ -231,7 +231,7 @@ test('chown', { skip: isWindows }, async (t) => {
   })
 })
 
-test('chownSync', { skip: isWindows }, async (t) => {
+test('chownSync', async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
 
   const oldStat = fs.statSync(file)
@@ -244,7 +244,7 @@ test('chownSync', { skip: isWindows }, async (t) => {
   t.is(oldStat.gid, newStat.gid)
 })
 
-test('fchown', { skip: isWindows }, async (t) => {
+test('fchown', async (t) => {
   t.plan(3)
 
   const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
@@ -264,7 +264,7 @@ test('fchown', { skip: isWindows }, async (t) => {
   })
 })
 
-test('fchownSync', { skip: isWindows }, async (t) => {
+test('fchownSync', async (t) => {
   const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
   const fd = fs.openSync(file)
 
@@ -280,7 +280,7 @@ test('fchownSync', { skip: isWindows }, async (t) => {
   t.is(oldStat.gid, newStat.gid)
 })
 
-test('lchown', { skip: isWindows }, async (t) => {
+test('lchown', async (t) => {
   t.plan(3)
 
   const target = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
@@ -298,7 +298,7 @@ test('lchown', { skip: isWindows }, async (t) => {
   })
 })
 
-test('lchownSync', { skip: isWindows }, async (t) => {
+test('lchownSync', async (t) => {
   const target = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
   const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
 
