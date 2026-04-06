@@ -904,8 +904,8 @@ async function link(src, dst, cb) {
 }
 
 function linkSync(src, dst) {
-  filepath = toNamespacedPath(src)
-  linkpath = toNamespacedPath(dst)
+  src = toNamespacedPath(src)
+  dst = toNamespacedPath(dst)
 
   const req = FileRequest.borrow()
 
