@@ -56,6 +56,8 @@ interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
 
   truncate(len?: number): Promise<void>
 
+  utimes(atime: number | Date, mtime: number | Date): Promise<void>
+
   createReadStream(opts?: ReadStreamOptions): ReadStream
 
   createWriteStream(opts?: WriteStreamOptions): WriteStream
@@ -90,6 +92,8 @@ export function chmod(filepath: Path, mode: string | number): Promise<void>
 export function copyFile(src: Path, dst: Path, mode?: number): Promise<void>
 
 export function cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>
+
+export function lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
 
 export function lstat(filepath: Path): Promise<Stats>
 
@@ -254,6 +258,8 @@ export function truncate(filepath: Path, len?: number): Promise<void>
 export function symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
 
 export function unlink(filepath: Path): Promise<void>
+
+export function utimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
 
 export function watch(
   filepath: Path,

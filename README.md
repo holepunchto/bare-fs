@@ -218,6 +218,30 @@ Callback version of `fs.utimes()`.
 
 Synchronous version of `fs.utimes()`.
 
+#### `await fs.lutimes(filepath, atime, mtime)`
+
+Like `fs.utimes()`, but if `filepath` is a symbolic link, the timestamps of the link is changed, not the file it refers to.
+
+#### `fs.lutimes(filepath, atime, mtime, callback)`
+
+Callback version of `fs.lutimes()`.
+
+#### `fs.lutimesSync(filepath, atime, mtime)`
+
+Synchronous version of `fs.lutimes()`.
+
+#### `await fs.futimes(fd, atime, mtime)`
+
+Change the access and modification times of a file by its file descriptor. Times may be numbers (seconds since epoch) or `Date` objects.
+
+#### `fs.futimes(fd, atime, mtime, callback)`
+
+Callback version of `fs.futimes()`.
+
+#### `fs.futimesSync(fd, atime, mtime)`
+
+Synchronous version of `fs.futimes()`.
+
 #### `await fs.mkdir(filepath[, opts])`
 
 Create a directory at `filepath`.
@@ -838,6 +862,10 @@ Change the permissions of the file.
 #### `await handle.truncate(len)`
 
 Truncate the file.
+
+#### `await handle.utimes(mode)`
+
+Change the access and modification times of the file.
 
 #### `const stream = handle.createReadStream([opts])`
 
