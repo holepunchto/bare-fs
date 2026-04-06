@@ -1212,7 +1212,7 @@ test('link', async (t) => {
 
   const path = 'test/fixtures/bar.txt'
 
-  t.teardown(() => fs.unlink(path, noop))
+  t.teardown(() => fs.promises.rm(path, { force: true }))
 
   fs.link(target, path, (err) => {
     t.absent(err)
@@ -1232,7 +1232,7 @@ test('linkSync', async (t) => {
 
   const path = 'test/fixtures/bar.txt'
 
-  t.teardown(() => fs.unlink(path, noop))
+  t.teardown(() => fs.promises.rm(path, { force: true }))
 
   t.execution(fs.linkSync(target, path))
 
@@ -1401,5 +1401,3 @@ async function withDir(t, path, create = true) {
 
   return path
 }
-
-function noop() {}
