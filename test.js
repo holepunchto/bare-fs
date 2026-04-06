@@ -104,6 +104,72 @@ test('access async, file missing', async (t) => {
   }
 })
 
+test('chmod', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  const { mode: oldMode } = fs.statSync(file)
+
+  fs.chmod(file, 0o555, (err) => {
+    t.absent(err)
+
+    const { mode: newMode } = fs.statSync(file)
+
+    t.ok(oldMode !== newMode)
+    t.is(newMode, isWindows ? 33060 : 33133)
+  })
+})
+
+test('chmodSync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  const { mode: oldMode } = fs.statSync(file)
+
+  fs.chmodSync(file, 0o555)
+
+  const { mode: newMode } = fs.statSync(file)
+
+  t.ok(oldMode !== newMode)
+  t.is(newMode, isWindows ? 33060 : 33133)
+})
+
+test('fchmod', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const fd = fs.openSync(file, 'w+')
+
+  t.teardown(() => fs.closeSync(fd))
+
+  const { mode: oldMode } = fs.statSync(file)
+
+  fs.fchmod(fd, 0o555, (err) => {
+    t.absent(err)
+
+    const { mode: newMode } = fs.statSync(file)
+
+    t.ok(oldMode !== newMode)
+    t.is(newMode, isWindows ? 33060 : 33133)
+  })
+})
+
+test('fchmodSync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const fd = fs.openSync(file, 'w+')
+
+  const { mode: oldMode } = fs.statSync(file)
+
+  fs.fchmodSync(fd, 0o555)
+
+  const { mode: newMode } = fs.statSync(file)
+
+  t.ok(oldMode !== newMode)
+  t.is(newMode, isWindows ? 33060 : 33133)
+
+  fs.closeSync(fd)
+})
+
 test('read', async (t) => {
   t.plan(5)
 
