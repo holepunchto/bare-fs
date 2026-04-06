@@ -99,6 +99,8 @@ export function cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>
 
 export function lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
 
+export function link(src: Path, dst: Path): Promise<void>
+
 export function lstat(filepath: Path): Promise<Stats>
 
 export function mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>

@@ -1205,6 +1205,44 @@ test('cp sync', async (t) => {
   })
 })
 
+test('link', async (t) => {
+  t.plan(3)
+
+  const target = await withFile(t, 'test/fixtures/foo.txt', 'foo')
+
+  const path = 'test/fixtures/bar.txt'
+
+  t.teardown(() => fs.unlink(path, noop))
+
+  fs.link(target, path, (err) => {
+    t.absent(err)
+
+    fs.readFile(path, (err, data) => {
+      t.absent(err)
+
+      t.alike(data, Buffer.from('foo'))
+    })
+  })
+})
+
+test('linkSync', async (t) => {
+  t.plan(3)
+
+  const target = await withFile(t, 'test/fixtures/foo.txt', 'foo')
+
+  const path = 'test/fixtures/bar.txt'
+
+  t.teardown(() => fs.unlink(path, noop))
+
+  t.execution(fs.linkSync(target, path))
+
+  fs.readFile(path, (err, data) => {
+    t.absent(err)
+
+    t.alike(data, Buffer.from('foo'))
+  })
+})
+
 test('realpath', async (t) => {
   t.plan(2)
 
@@ -1363,3 +1401,5 @@ async function withDir(t, path, create = true) {
 
   return path
 }
+
+function noop() {}

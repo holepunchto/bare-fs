@@ -242,6 +242,18 @@ Callback version of `fs.futimes()`.
 
 Synchronous version of `fs.futimes()`.
 
+####  `await fs.link(src, dst)`
+
+Creates a new link (also known as a hard link) to an existing file.
+
+####  `fs.link(src, dst, callback)`
+
+Callback version of `fs.link()`.
+
+####  `fs.linkSync(src, dst)`
+
+Synchronous version of `fs.link()`.
+
 #### `await fs.mkdir(filepath[, opts])`
 
 Create a directory at `filepath`.
