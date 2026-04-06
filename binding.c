@@ -1200,7 +1200,7 @@ bare_fs__lchown(js_env_t *env, js_callback_info_t *info, bool async) {
   err = js_get_env_loop(env, &loop);
   assert(err == 0);
 
-  err = uv_fs_lutime(loop, &req->handle, (char *) path, uid, gid, async ? bare_fs__on_lchown : NULL);
+  err = uv_fs_lchown(loop, &req->handle, (char *) path, uid, gid, async ? bare_fs__on_lchown : NULL);
   (void) err;
 
   err = bare_fs__request_pending(env, req, async, NULL);
