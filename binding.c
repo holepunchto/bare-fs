@@ -1163,6 +1163,11 @@ bare_fs_utimes_sync(js_env_t *env, js_callback_info_t *info) {
   return bare_fs__utimes(env, info, bare_fs_sync);
 }
 
+static void
+bare_fs__on_lutimes(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
 static inline js_value_t *
 bare_fs__lutimes(js_env_t *env, js_callback_info_t *info, bool async) {
   int err;
@@ -1195,7 +1200,7 @@ bare_fs__lutimes(js_env_t *env, js_callback_info_t *info, bool async) {
   err = js_get_env_loop(env, &loop);
   assert(err == 0);
 
-  err = uv_fs_lutime(loop, &req->handle, (char *) path, atime, mtime, async ? bare_fs__on_utimes : NULL);
+  err = uv_fs_lutime(loop, &req->handle, (char *) path, atime, mtime, async ? bare_fs__on_lutimes : NULL);
   (void) err;
 
   err = bare_fs__request_pending(env, req, async, NULL);
