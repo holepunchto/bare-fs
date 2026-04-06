@@ -307,11 +307,23 @@ export function fchmod(fd: number, mode: string | number, cb: Callback): void
 
 export function fchmodSync(fd: number, mode: string | number): void
 
+export function fdatasync(fd: number): Promise<void>
+
+export function fdatasync(fd: number, cb: Callback): void
+
+export function fdatasyncSync(fd: number): void
+
 export function fstat(fd: number): Promise<Stats>
 
 export function fstat(fd: number, cb: Callback<[stats: Stats | null]>): void
 
 export function fstatSync(fd: number): Stats
+
+export function fsync(fd: number): Promise<void>
+
+export function fsync(fd: number, cb: Callback): void
+
+export function fsyncSync(fd: number): void
 
 export function ftruncate(fd: number, len?: number): Promise<void>
 

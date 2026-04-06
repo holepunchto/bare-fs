@@ -1459,6 +1459,64 @@ function readlinkSync(filepath, opts) {
   }
 }
 
+async function fsync(fd, cb) {
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.fsync(req.handle, fd)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'fsync', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function fsyncSync(fd) {
+  const req = FileRequest.borrow()
+
+  try {
+    binding.fsyncSync(req.handle, fd)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'fsyncSync', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+}
+
+async function fdatasync(fd, cb) {
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.fdatasync(req.handle, fd)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'fdatasync', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function fdatasyncSync(fd) {
+  const req = FileRequest.borrow()
+
+  try {
+    binding.fdatasyncSync(req.handle, fd)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'fdatasyncSync', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+}
+
 function normalizeSymlinkTarget(target, type, filepath) {
   if (isWindows) {
     if (type === constants.UV_FS_SYMLINK_JUNCTION) target = path.resolve(filepath, '..', target)
@@ -2424,9 +2482,9 @@ exports.cp = cp
 exports.exists = exists
 exports.fchmod = fchmod
 // exports.fchown = fchown TODO
-// exports.fdatasync = fdatasync TODO
+exports.fdatasync = fdatasync
 exports.fstat = fstat
-// exports.fsync = fsync TODO
+exports.fsync = fsync
 exports.ftruncate = ftruncate
 exports.futimes = futimes
 // exports.lchmod = lchmod TODO
@@ -2468,9 +2526,9 @@ exports.cpSync = cpSync
 exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
 // exports.fchownSync = fchownSync TODO
-// exports.fdatasyncSync = fdatasyncSync TODO
+exports.fdatasyncSync = fdatasyncSync
 exports.fstatSync = fstatSync
-// exports.fsyncSync = fsyncSync TODO
+exports.fsyncSync = fsyncSync
 exports.ftruncateSync = ftruncateSync
 exports.futimesSync = futimesSync
 // exports.lchmodSync = lchmodSync TODO

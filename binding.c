@@ -2048,6 +2048,102 @@ bare_fs_closedir_sync(js_env_t *env, js_callback_info_t *info) {
 }
 
 static void
+bare_fs__on_fsync(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__fsync(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[1], &fd);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_fsync(loop, &req->handle, fd, async ? bare_fs__on_fsync : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_fsync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__fsync(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_fsync_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__fsync(env, info, bare_fs_sync);
+}
+
+static void
+bare_fs__on_fdatasync(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__fdatasync(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[1], &fd);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_fdatasync(loop, &req->handle, fd, async ? bare_fs__on_fdatasync : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_fdatasync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__fdatasync(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_fdatasync_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__fdatasync(env, info, bare_fs_sync);
+}
+
+static void
 bare_fs__on_watcher_event(uv_fs_event_t *handle, const char *filename, int events, int status) {
   int err;
 
@@ -2381,6 +2477,10 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("readdirSync", bare_fs_readdir_sync)
   V("closedir", bare_fs_closedir)
   V("closedirSync", bare_fs_closedir_sync)
+  V("fsync", bare_fs_fsync)
+  V("fsyncSync", bare_fs_fsync_sync)
+  V("fdatasync", bare_fs_fdatasync)
+  V("fdatasyncSync", bare_fs_fdatasync_sync)
 
   V("watcherInit", bare_fs_watcher_init)
   V("watcherClose", bare_fs_watcher_close)

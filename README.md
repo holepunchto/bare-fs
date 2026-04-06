@@ -424,6 +424,30 @@ Callback version of `fs.symlink()`.
 
 Synchronous version of `fs.symlink()`.
 
+#### `await fs.fsync(fd)`
+
+Flush all modified in-core data of the file referred by its file descriptor to the disk device.
+
+#### `fs.fsync(fs, callback)`
+
+Callback version of `fs.fsync()`.
+
+#### `fs.fsyncSync(fd)`
+
+Synchronous version of `fs.fsync()`.
+
+#### `await fs.fdatasync(fd)`
+
+Similar to `fsync`, but does not flush modified metadata unless necessary.
+
+#### `fs.fdatasync(fs, callback)`
+
+Callback version of `fs.fdatasync()`.
+
+#### `fs.fdatasyncSync(fd)`
+
+Synchronous version of `fs.fdatasync()`.
+
 #### `const dir = await fs.opendir(filepath[, opts])`
 
 Open a directory for iteration. Returns a `Dir` object.
@@ -858,6 +882,14 @@ Get the status of the file.
 #### `await handle.chmod(mode)`
 
 Change the permissions of the file.
+
+#### `await handle.datasync()`
+
+Similar to `fsync`, but does not flush modified metadata unless necessary.
+
+#### `await handle.sync()`
+
+Flush all modified in-core data of the file.
 
 #### `await handle.truncate(len)`
 
