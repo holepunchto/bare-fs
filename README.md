@@ -376,6 +376,18 @@ Callback version of `fs.readlink()`.
 
 Synchronous version of `fs.readlink()`.
 
+#### `await fs.truncate(filename[, len])`
+
+Truncate the file at `filename` to `len` bytes. `len` defaults to `0`.
+
+#### `fs.truncate(filename[, len], callback)`
+
+Callback version of `fs.truncate()`.
+
+#### `fs.truncateSync(filename[, len])`
+
+Synchronous version of `fs.truncate()`.
+
 #### `await fs.symlink(target, filepath[, type])`
 
 Create a symbolic link at `filepath` pointing to `target`. `type` may be `'file'`, `'dir'`, or `'junction'` (Windows only) or a numeric flag. On Windows, if `type` is not provided, it is inferred from the target.
@@ -822,6 +834,10 @@ Get the status of the file.
 #### `await handle.chmod(mode)`
 
 Change the permissions of the file.
+
+#### `await handle.truncate(len)`
+
+Truncate the file.
 
 #### `const stream = handle.createReadStream([opts])`
 

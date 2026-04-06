@@ -54,6 +54,8 @@ interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
 
   chmod(mode: string | number): Promise<void>
 
+  truncate(len?: number): Promise<void>
+
   createReadStream(opts?: ReadStreamOptions): ReadStream
 
   createWriteStream(opts?: WriteStreamOptions): WriteStream
@@ -246,6 +248,8 @@ export function rmdir(filepath: Path): Promise<void>
 export function stat(filepath: Path): Promise<Stats>
 
 export function statfs(filepath: Path): Promise<StatFs>
+
+export function truncate(filepath: Path, len?: number): Promise<void>
 
 export function symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
 

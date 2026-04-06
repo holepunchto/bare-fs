@@ -51,6 +51,10 @@ class FileHandle extends EventEmitter {
     await fs.fchmod(this.fd, mode)
   }
 
+  async truncate(len) {
+    await fs.ftruncate(this.fd, len)
+  }
+
   createReadStream(opts) {
     return fs.createReadStream(null, { ...opts, fd: this.fd })
   }
@@ -86,6 +90,7 @@ exports.rm = fs.rm
 exports.rmdir = fs.rmdir
 exports.stat = fs.stat
 exports.statfs = fs.statfs
+exports.truncate = fs.truncate
 exports.symlink = fs.symlink
 exports.unlink = fs.unlink
 exports.utimes = fs.utimes
