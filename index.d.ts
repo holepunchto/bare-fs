@@ -269,6 +269,12 @@ export function chmod(filepath: Path, mode: string | number, cb: Callback): void
 
 export function chmodSync(filepath: Path, mode: string | number): void
 
+export function chown(filepath: Path, uid: number, gid: number): Promise<void>
+
+export function chown(filepath: Path, uid: number, gid: number, cb: Callback): void
+
+export function chownSync(filepath: Path, uid: number, gid: number): void
+
 export function close(fd: number): Promise<void>
 
 export function close(fd: number, cb: Callback): void
@@ -307,6 +313,12 @@ export function fchmod(fd: number, mode: string | number, cb: Callback): void
 
 export function fchmodSync(fd: number, mode: string | number): void
 
+export function fchown(fd: number, uid: number, gid: number): Promise<void>
+
+export function fchown(fd: number, uid: number, gid: number, cb: Callback): void
+
+export function fchownSync(fd: number, uid: number, gid: number): void
+
 export function fdatasync(fd: number): Promise<void>
 
 export function fdatasync(fd: number, cb: Callback): void
@@ -332,6 +344,12 @@ export function ftruncate(fd: number, len: number, cb: Callback): void
 export function ftruncate(fd: number, cb: Callback): void
 
 export function ftruncateSync(fd: number, len?: number): void
+
+export function lchown(filepath: Path, uid: number, gid: number): Promise<void>
+
+export function lchown(filepath: Path, uid: number, gid: number, cb: Callback): void
+
+export function lchownSync(filepath: Path, uid: number, gid: number): void
 
 export function lstat(filepath: Path): Promise<Stats>
 

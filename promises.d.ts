@@ -93,9 +93,13 @@ export function appendFile(
 
 export function chmod(filepath: Path, mode: string | number): Promise<void>
 
+export function chown(filepath: Path, uid: number, gid: number): Promise<void>
+
 export function copyFile(src: Path, dst: Path, mode?: number): Promise<void>
 
 export function cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>
+
+export function lchown(filepath: Path, uid: number, gid: number): Promise<void>
 
 export function lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
 

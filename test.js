@@ -214,6 +214,104 @@ test('read + offset', async (t) => {
   })
 })
 
+test('chown', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  const oldStat = fs.statSync(file)
+
+  fs.chown(file, oldStat.uid, oldStat.gid, (err) => {
+    t.absent(err)
+
+    const newStat = fs.lstatSync(file)
+
+    t.is(oldStat.uid, newStat.uid)
+    t.is(oldStat.gid, newStat.gid)
+  })
+})
+
+test('chownSync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+
+  const oldStat = fs.statSync(file)
+
+  t.execution(fs.chownSync(file, oldStat.uid, oldStat.gid))
+
+  const newStat = fs.lstatSync(file)
+
+  t.is(oldStat.uid, newStat.uid)
+  t.is(oldStat.gid, newStat.gid)
+})
+
+test('fchown', async (t) => {
+  t.plan(3)
+
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const fd = fs.openSync(file)
+
+  t.teardown(() => fs.closeSync(fd))
+
+  const oldStat = fs.fstatSync(fd)
+
+  fs.fchown(fd, oldStat.uid, oldStat.gid, (err) => {
+    t.absent(err)
+
+    const newStat = fs.fstatSync(fd)
+
+    t.is(oldStat.uid, newStat.uid)
+    t.is(oldStat.gid, newStat.gid)
+  })
+})
+
+test('fchownSync', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const fd = fs.openSync(file)
+
+  t.teardown(() => fs.closeSync(fd))
+
+  const oldStat = fs.fstatSync(fd)
+
+  t.execution(fs.fchownSync(fd, oldStat.uid, oldStat.gid))
+
+  const newStat = fs.fstatSync(fd)
+
+  t.is(oldStat.uid, newStat.uid)
+  t.is(oldStat.gid, newStat.gid)
+})
+
+test('lchown', async (t) => {
+  t.plan(3)
+
+  const target = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
+
+  const oldStat = fs.lstatSync(link)
+
+  fs.lchown(link, oldStat.uid, oldStat.gid, (err) => {
+    t.absent(err)
+
+    const newStat = fs.lstatSync(link)
+
+    t.is(oldStat.uid, newStat.uid)
+    t.is(oldStat.gid, newStat.gid)
+  })
+})
+
+test('lchownSync', async (t) => {
+  const target = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const link = await withSymlink(t, 'test/fixtures/foo-link.txt', target)
+
+  const oldStat = fs.lstatSync(link)
+
+  t.execution(fs.lchownSync(link, oldStat.uid, oldStat.gid))
+
+  const newStat = fs.lstatSync(link)
+
+  t.is(oldStat.uid, newStat.uid)
+  t.is(oldStat.gid, newStat.gid)
+})
+
 test('read + position', async (t) => {
   t.plan(5)
 

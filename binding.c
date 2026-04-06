@@ -1108,6 +1108,174 @@ bare_fs_fchmod_sync(js_env_t *env, js_callback_info_t *info) {
 }
 
 static void
+bare_fs__on_chown(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__chown(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_uid_t uid;
+  err = js_get_value_uint32(env, argv[2], &uid);
+  assert(err == 0);
+
+  uv_gid_t gid;
+  err = js_get_value_uint32(env, argv[3], &gid);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_chown(loop, &req->handle, (char *) path, uid, gid, async ? bare_fs__on_chown : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_chown(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__chown(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_chown_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__chown(env, info, bare_fs_sync);
+}
+
+static void
+bare_fs__on_lchown(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__lchown(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_uid_t uid;
+  err = js_get_value_uint32(env, argv[2], &uid);
+  assert(err == 0);
+
+  uv_gid_t gid;
+  err = js_get_value_uint32(env, argv[3], &gid);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_lutime(loop, &req->handle, (char *) path, uid, gid, async ? bare_fs__on_lchown : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_lchown(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__lchown(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_lchown_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__lchown(env, info, bare_fs_sync);
+}
+
+static void
+bare_fs__on_fchown(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__fchown(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 4;
+  js_value_t *argv[4];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 4);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  uint32_t fd;
+  err = js_get_value_uint32(env, argv[1], &fd);
+  assert(err == 0);
+
+  uv_uid_t uid;
+  err = js_get_value_uint32(env, argv[2], &uid);
+  assert(err == 0);
+
+  uv_gid_t gid;
+  err = js_get_value_uint32(env, argv[3], &gid);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_fchown(loop, &req->handle, fd, uid, gid, async ? bare_fs__on_fchown : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_fchown(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__fchown(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_fchown_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__fchown(env, info, bare_fs_sync);
+}
+
+static void
 bare_fs__on_utimes(uv_fs_t *handle) {
   bare_fs__on_request_result(handle);
 }
@@ -2441,6 +2609,12 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("chmodSync", bare_fs_chmod_sync)
   V("fchmod", bare_fs_fchmod)
   V("fchmodSync", bare_fs_fchmod_sync)
+  V("chown", bare_fs_chown)
+  V("chownSync", bare_fs_chown_sync)
+  V("lchown", bare_fs_lchown)
+  V("lchownSync", bare_fs_lchown_sync)
+  V("fchown", bare_fs_fchown)
+  V("fchownSync", bare_fs_fchown_sync)
   V("utimes", bare_fs_utimes)
   V("utimesSync", bare_fs_utimes_sync)
   V("lutimes", bare_fs_lutimes)

@@ -770,6 +770,101 @@ function fchmodSync(fd, mode) {
   }
 }
 
+async function chown(filepath, uid, gid, cb) {
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.chown(req.handle, filepath, uid, gid)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'chown', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function chownSync(filepath, uid, gid) {
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.chownSync(req.handle, filepath, uid, gid)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'chownSync', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+}
+
+async function lchown(filepath, uid, gid, cb) {
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.lchown(req.handle, filepath, uid, gid)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'lchown', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function lchownSync(filepath, uid, gid) {
+  filepath = toNamespacedPath(filepath)
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.lchownSync(req.handle, filepath, uid, gid)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'lchownSync', code: e.code, path: filepath })
+  } finally {
+    req.return()
+  }
+}
+
+async function fchown(fd, uid, gid, cb) {
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.fchown(req.handle, fd, uid, gid)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'fchown', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function fchownSync(fd, uid, gid) {
+  const req = FileRequest.borrow()
+
+  try {
+    binding.fchownSync(req.handle, fd, uid, gid)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'fchownSync', code: e.code, fd })
+  } finally {
+    req.return()
+  }
+}
+
 async function utimes(filepath, atime, mtime, cb) {
   if (typeof atime !== 'number') atime = atime.getTime() / 1000
   if (typeof mtime !== 'number') mtime = mtime.getTime() / 1000
@@ -2475,19 +2570,19 @@ class Watcher extends EventEmitter {
 exports.access = access
 exports.appendFile = appendFile
 exports.chmod = chmod
-// exports.chown = chown TODO
+exports.chown = chown
 exports.close = close
 exports.copyFile = copyFile
 exports.cp = cp
 exports.exists = exists
 exports.fchmod = fchmod
-// exports.fchown = fchown TODO
+exports.fchown = fchown
 exports.fdatasync = fdatasync
 exports.fstat = fstat
 exports.fsync = fsync
 exports.ftruncate = ftruncate
 exports.futimes = futimes
-// exports.lchown = lchown TODO
+exports.lchown = lchown
 exports.lutimes = lutimes
 // exports.link = link TODO
 exports.lstat = lstat
@@ -2518,19 +2613,19 @@ exports.writev = writev
 exports.accessSync = accessSync
 exports.appendFileSync = appendFileSync
 exports.chmodSync = chmodSync
-// exports.chownSync = chownSync TODO
+exports.chownSync = chownSync
 exports.closeSync = closeSync
 exports.copyFileSync = copyFileSync
 exports.cpSync = cpSync
 exports.existsSync = existsSync
 exports.fchmodSync = fchmodSync
-// exports.fchownSync = fchownSync TODO
+exports.fchownSync = fchownSync
 exports.fdatasyncSync = fdatasyncSync
 exports.fstatSync = fstatSync
 exports.fsyncSync = fsyncSync
 exports.ftruncateSync = ftruncateSync
 exports.futimesSync = futimesSync
-// exports.lchownSync = lchownSync TODO
+exports.lchownSync = lchownSync
 exports.lutimesSync = lutimesSync
 // exports.linkSync = linkSync TODO
 exports.lstatSync = lstatSync

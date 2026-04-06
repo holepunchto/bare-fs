@@ -206,6 +206,42 @@ Callback version of `fs.fchmod()`.
 
 Synchronous version of `fs.fchmod()`.
 
+#### `await fs.chown(filepath, uid, gid)`
+
+Change the owner and group of a file.
+
+#### `fs.chown(filepath,  uid, gid, callback)`
+
+Callback version of `fs.chown()`.
+
+#### `await fs.chownSync(filepath, uid, gid)`
+
+Synchronous version of `fs.chown()`.
+
+#### `await fs.lchown(filepath, uid, gid)`
+
+Change the owner and group of a file, but if `filepath` is a symbolic link, the changes are applied only to the link, not the file it refers to.
+
+#### `fs.lchown(filepath,  uid, gid, callback)`
+
+Callback version of `fs.lchown()`.
+
+#### `fs.lchownSync(filepath, uid, gid)`
+
+Synchronous version of `fs.lchown()`.
+
+#### `await fs.fchown(filepath, uid, gid)`
+
+Change the owner and group of a file by its file descriptor.
+
+#### `fs.fchown(filepath,  uid, gid, callback)`
+
+Callback version of `fs.fchown()`.
+
+#### `fs.fchownSync(filepath, uid, gid)`
+
+Synchronous version of `fs.fchown()`.
+
 #### `await fs.utimes(filepath, atime, mtime)`
 
 Change the access and modification times of a file. Times may be numbers (seconds since epoch) or `Date` objects.
