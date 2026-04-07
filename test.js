@@ -1209,10 +1209,7 @@ test('link', async (t) => {
   t.plan(3)
 
   const target = await withFile(t, 'test/fixtures/foo.txt', 'foo')
-
-  const path = 'test/fixtures/bar.txt'
-
-  t.teardown(() => fs.promises.rm(path, { force: true }))
+  const path = await withFile(t, 'test/fixtures/bar.txt', false)
 
   fs.link(target, path, (err) => {
     t.absent(err)
@@ -1229,10 +1226,7 @@ test('linkSync', async (t) => {
   t.plan(3)
 
   const target = await withFile(t, 'test/fixtures/foo.txt', 'foo')
-
-  const path = 'test/fixtures/bar.txt'
-
-  t.teardown(() => fs.promises.rm(path, { force: true }))
+  const path = await withFile(t, 'test/fixtures/bar.txt', false)
 
   t.execution(fs.linkSync(target, path))
 
