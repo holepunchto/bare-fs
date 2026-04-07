@@ -1112,7 +1112,7 @@ test('mkdtemp', async (t) => {
   })
 })
 
-test('mkdtempSync', async (t) => {
+test('mkdtempSync', (t) => {
   const dir = fs.mkdtempSync('test/fixtures/foo-')
 
   withDir(t, dir, false)
