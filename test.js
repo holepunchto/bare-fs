@@ -1303,6 +1303,38 @@ test('cp sync', async (t) => {
   })
 })
 
+test('link', async (t) => {
+  t.plan(3)
+
+  const target = await withFile(t, 'test/fixtures/foo.txt', 'foo')
+  const path = await withFile(t, 'test/fixtures/bar.txt', false)
+
+  fs.link(target, path, (err) => {
+    t.absent(err)
+
+    fs.readFile(path, (err, data) => {
+      t.absent(err)
+
+      t.alike(data, Buffer.from('foo'))
+    })
+  })
+})
+
+test('linkSync', async (t) => {
+  t.plan(3)
+
+  const target = await withFile(t, 'test/fixtures/foo.txt', 'foo')
+  const path = await withFile(t, 'test/fixtures/bar.txt', false)
+
+  t.execution(fs.linkSync(target, path))
+
+  fs.readFile(path, (err, data) => {
+    t.absent(err)
+
+    t.alike(data, Buffer.from('foo'))
+  })
+})
+
 test('realpath', async (t) => {
   t.plan(2)
 

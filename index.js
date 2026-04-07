@@ -978,6 +978,46 @@ function futimesSync(fd, atime, mtime) {
   }
 }
 
+async function link(src, dst, cb) {
+  src = toNamespacedPath(src)
+  dst = toNamespacedPath(dst)
+
+  const req = FileRequest.borrow()
+
+  let err = null
+  try {
+    binding.link(req.handle, src, dst)
+
+    await req
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'link', code: e.code, path: src, destination: dst })
+  } finally {
+    req.return()
+  }
+
+  return done(err, cb)
+}
+
+function linkSync(src, dst) {
+  src = toNamespacedPath(src)
+  dst = toNamespacedPath(dst)
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.linkSync(req.handle, src, dst)
+  } catch (e) {
+    throw new FileError(e.message, {
+      operation: 'linkSync',
+      code: e.code,
+      path: src,
+      destination: dst
+    })
+  } finally {
+    req.return()
+  }
+}
+
 async function mkdir(filepath, opts, cb) {
   if (typeof opts === 'function') {
     cb = opts
@@ -2584,7 +2624,7 @@ exports.ftruncate = ftruncate
 exports.futimes = futimes
 exports.lchown = lchown
 exports.lutimes = lutimes
-// exports.link = link TODO
+exports.link = link
 exports.lstat = lstat
 exports.mkdir = mkdir
 // exports.mkdtemp = mkdtemp TODO
@@ -2627,7 +2667,7 @@ exports.ftruncateSync = ftruncateSync
 exports.futimesSync = futimesSync
 exports.lchownSync = lchownSync
 exports.lutimesSync = lutimesSync
-// exports.linkSync = linkSync TODO
+exports.linkSync = linkSync
 exports.lstatSync = lstatSync
 exports.mkdirSync = mkdirSync
 // exports.mkdtempSync = mkdtempSync TODO

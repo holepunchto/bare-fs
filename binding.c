@@ -1604,6 +1604,58 @@ bare_fs_mkdir_sync(js_env_t *env, js_callback_info_t *info) {
 }
 
 static void
+bare_fs__on_link(uv_fs_t *handle) {
+  bare_fs__on_request_result(handle);
+}
+
+static inline js_value_t *
+bare_fs__link(js_env_t *env, js_callback_info_t *info, bool async) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_req_t *req;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &req, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t src;
+  err = js_get_value_string_utf8(env, argv[1], src, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  bare_fs_path_t dst;
+  err = js_get_value_string_utf8(env, argv[2], dst, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  uv_loop_t *loop;
+  err = js_get_env_loop(env, &loop);
+  assert(err == 0);
+
+  err = uv_fs_link(loop, &req->handle, (char *) src, (char *) dst, async ? bare_fs__on_link : NULL);
+  (void) err;
+
+  err = bare_fs__request_pending(env, req, async, NULL);
+  (void) err;
+
+  return NULL;
+}
+
+static js_value_t *
+bare_fs_link(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__link(env, info, bare_fs_async);
+}
+
+static js_value_t *
+bare_fs_link_sync(js_env_t *env, js_callback_info_t *info) {
+  return bare_fs__link(env, info, bare_fs_sync);
+}
+
+static void
 bare_fs__on_rmdir(uv_fs_t *handle) {
   bare_fs__on_request_result(handle);
 }
@@ -2637,6 +2689,8 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("fstatSync", bare_fs_fstat_sync)
   V("statfs", bare_fs_statfs)
   V("statfsSync", bare_fs_statfs_sync)
+  V("link", bare_fs_link)
+  V("linkSync", bare_fs_link_sync)
   V("unlink", bare_fs_unlink)
   V("unlinkSync", bare_fs_unlink_sync)
   V("realpath", bare_fs_realpath)

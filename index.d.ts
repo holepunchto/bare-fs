@@ -385,6 +385,12 @@ export function futimes(fd: number, atime: number | Date, mtime: number | Date, 
 
 export function futimesSync(fd: number, atime: number | Date, mtime: number | Date): void
 
+export function link(src: Path, dst: Path): Promise<void>
+
+export function link(src: Path, dst: Path, cb: Callback): void
+
+export function linkSync(src: Path, dst: Path): void
+
 export interface MkdirOptions {
   mode?: number
   recursive?: boolean

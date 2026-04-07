@@ -97,6 +97,7 @@ exports.copyFile = fs.copyFile
 exports.cp = fs.cp
 exports.lchown = fs.lchown
 exports.lutimes = fs.lutimes
+exports.link = fs.link
 exports.lstat = fs.lstat
 exports.mkdir = fs.mkdir
 exports.opendir = fs.opendir
