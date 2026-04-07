@@ -51,6 +51,10 @@ class FileHandle extends EventEmitter {
     await fs.fchmod(this.fd, mode)
   }
 
+  async chown(uid, gid) {
+    await fs.fchown(this.fd, uid, gid)
+  }
+
   async datasync() {
     return fs.fdatasync(this.fd)
   }
@@ -87,9 +91,11 @@ exports.open = async function open(filepath, flags, mode) {
 exports.access = fs.access
 exports.appendFile = fs.appendFile
 exports.chmod = fs.chmod
+exports.chown = fs.chown
 exports.constants = fs.constants
 exports.copyFile = fs.copyFile
 exports.cp = fs.cp
+exports.lchown = fs.lchown
 exports.lutimes = fs.lutimes
 exports.lstat = fs.lstat
 exports.mkdir = fs.mkdir
