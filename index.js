@@ -1127,6 +1127,44 @@ function mkdirSync(filepath, opts) {
   }
 }
 
+async function mkdtemp(prefix, cb) {
+  prefix = toNamespacedPath(prefix)
+
+  const req = FileRequest.borrow()
+
+  let res
+  let err = null
+  try {
+    binding.mkdtemp(req.handle, prefix + 'XXXXXX')
+
+    await req
+
+    res = binding.requestResultPath(req.handle)
+  } catch (e) {
+    err = new FileError(e.message, { operation: 'mkdtemp', code: e.code, path: prefix })
+  } finally {
+    req.return()
+  }
+
+  return done(err, res, cb)
+}
+
+function mkdtempSync(prefix) {
+  prefix = toNamespacedPath(prefix)
+
+  const req = FileRequest.borrow()
+
+  try {
+    binding.mkdtempSync(req.handle, prefix + 'XXXXXX')
+
+    return binding.requestResultPath(req.handle)
+  } catch (e) {
+    throw new FileError(e.message, { operation: 'mkdtempSync', code: e.code, path: prefix })
+  } finally {
+    req.return()
+  }
+}
+
 async function rmdir(filepath, cb) {
   filepath = toNamespacedPath(filepath)
 
@@ -2627,7 +2665,7 @@ exports.lutimes = lutimes
 exports.link = link
 exports.lstat = lstat
 exports.mkdir = mkdir
-// exports.mkdtemp = mkdtemp TODO
+exports.mkdtemp = mkdtemp
 exports.open = open
 exports.opendir = opendir
 exports.read = read
@@ -2670,7 +2708,7 @@ exports.lutimesSync = lutimesSync
 exports.linkSync = linkSync
 exports.lstatSync = lstatSync
 exports.mkdirSync = mkdirSync
-// exports.mkdtempSync = mkdtempSync TODO
+exports.mkdtempSync = mkdtempSync
 exports.openSync = openSync
 exports.opendirSync = opendirSync
 exports.readFileSync = readFileSync

@@ -113,6 +113,8 @@ export function mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>
 
 export function mkdir(filepath: Path, mode: number): Promise<void>
 
+export function mkdtemp(prefix: Path): Promise<string>
+
 export function opendir(
   filepath: Path,
   opts: OpendirOptions & { encoding?: BufferEncoding }

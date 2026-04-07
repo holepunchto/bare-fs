@@ -315,6 +315,18 @@ Callback version of `fs.mkdir()`.
 
 Synchronous version of `fs.mkdir()`.
 
+#### `const path = await fs.mkdtemp(prefix)`
+
+Create a unique temporary directory.
+
+#### `fs.mkdtemp(prefix, callback)`
+
+Callback version of `fs.mkdtemp()`.
+
+#### `const path = fs.mkdtempSync(prefix)`
+
+Synchronous version of `fs.mkdtemp()`.
+
 #### `await fs.rmdir(filepath)`
 
 Remove an empty directory.
