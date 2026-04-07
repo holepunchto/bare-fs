@@ -1100,6 +1100,26 @@ test('mkdir recursive', async (t) => {
   })
 })
 
+test('mkdtemp', async (t) => {
+  t.plan(2)
+
+  fs.mkdtemp('test/fixtures/foo-', (err, dir) => {
+    t.absent(err, 'directory created')
+
+    withDir(t, dir, false)
+
+    t.ok(dir, dir)
+  })
+})
+
+test('mkdtempSync', async (t) => {
+  const dir = fs.mkdtempSync('test/fixtures/foo-')
+
+  withDir(t, dir, false)
+
+  t.ok(dir, dir)
+})
+
 test('copyFile', async (t) => {
   t.plan(11)
 

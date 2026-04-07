@@ -100,6 +100,7 @@ exports.lutimes = fs.lutimes
 exports.link = fs.link
 exports.lstat = fs.lstat
 exports.mkdir = fs.mkdir
+exports.mkdtemp = fs.mkdtemp
 exports.opendir = fs.opendir
 exports.readFile = fs.readFile
 exports.readdir = fs.readdir

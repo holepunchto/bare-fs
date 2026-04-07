@@ -410,6 +410,12 @@ export function mkdirSync(filepath: Path, opts?: MkdirOptions): void
 
 export function mkdirSync(filepath: Path, mode: number): void
 
+export function mkdtemp(prefix: Path): Promise<string>
+
+export function mkdtemp(prefix: Path, cb: Callback<[path: string | null]>): void
+
+export function mkdtempSync(prefix: Path): string
+
 export function open(filepath: Path, flags?: Flag | number, mode?: string | number): Promise<number>
 
 export function open(
