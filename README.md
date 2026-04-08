@@ -975,6 +975,10 @@ Create a readable stream for the file.
 
 Create a writable stream for the file.
 
+#### `handle.fd`
+
+The file descriptor number.
+
 #### `event: 'close'`
 
 Emitted when the file handle is closed.

@@ -30,6 +30,8 @@ interface FileHandleEvents extends EventMap {
 }
 
 interface FileHandle extends EventEmitter<FileHandleEvents>, AsyncDisposable {
+  readonly fd: number
+
   close(): Promise<void>
 
   read(
