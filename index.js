@@ -1890,17 +1890,15 @@ async function readdir(filepath, opts, cb) {
       const dir = await opendir(queue.pop())
 
       for await (const entry of dir) {
+        const entryPath = path.join(entry.parentPath, entry.name)
+
         if (withFileTypes) {
           result.push(entry)
         } else {
-          const filePath = path.relative(filepath, path.join(dir.path, entry.name))
-          result.push(filePath)
+          result.push(path.relative(filepath, entryPath))
         }
 
-        if (recursive && entry.isDirectory()) {
-          const dirPath = path.join(entry.parentPath, entry.name)
-          queue.push(dirPath)
-        }
+        if (recursive && entry.isDirectory()) queue.push(entryPath)
       }
     }
   } catch (e) {
@@ -1926,17 +1924,15 @@ function readdirSync(filepath, opts) {
     const dir = opendirSync(queue.pop(), opts)
 
     for (const entry of dir) {
+      const entryPath = path.join(entry.parentPath, entry.name)
+
       if (withFileTypes) {
         result.push(entry)
       } else {
-        const filePath = path.relative(filepath, path.join(dir.path, entry.name))
-        result.push(filePath)
+        result.push(path.relative(filepath, entryPath))
       }
 
-      if (recursive && entry.isDirectory()) {
-        const dirPath = path.join(entry.parentPath, entry.name)
-        queue.push(dirPath)
-      }
+      if (recursive && entry.isDirectory()) queue.push(entryPath)
     }
   }
 
