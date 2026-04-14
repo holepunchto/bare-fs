@@ -1000,6 +1000,23 @@ test('readdir + withFileTypes: true', async (t) => {
   })
 })
 
+test('readdir + recursive: true', async (t) => {
+  t.plan(2)
+
+  await withDir(t, 'test/fixtures/foo/bar/baz')
+  await withFile(t, 'test/fixtures/foo/bar/baz/foo.txt', 'hello\n')
+
+  fs.readdir('test/fixtures/foo', { recursive: true }, (err, files) => {
+    t.absent(err, 'read')
+
+    for (const entry of files) {
+      t.comment(entry)
+    }
+
+    t.pass('iterated')
+  })
+})
+
 test('readdirSync', async (t) => {
   await withDir(t, 'test/fixtures/dir')
   await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
@@ -1018,6 +1035,19 @@ test('readdirSync + withFileTypes: true', async (t) => {
   await withFile(t, 'test/fixtures/dir/foo.txt', 'hello\n')
 
   const files = fs.readdirSync('test/fixtures/dir', { withFileTypes: true })
+
+  for (const entry of files) {
+    t.comment(entry)
+  }
+
+  t.pass('iterated')
+})
+
+test('readdirSync + recursive: true', async (t) => {
+  await withDir(t, 'test/fixtures/foo/bar/baz')
+  await withFile(t, 'test/fixtures/foo/bar/baz/foo.txt', 'hello\n')
+
+  const files = fs.readdirSync('test/fixtures/foo', { recursive: true })
 
   for (const entry of files) {
     t.comment(entry)

@@ -1878,17 +1878,28 @@ async function readdir(filepath, opts, cb) {
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const { withFileTypes = false } = opts
+  const { withFileTypes = false, recursive = false } = opts
 
   filepath = toNamespacedPath(filepath)
 
+  const queue = [filepath]
   let result = []
   let err = null
   try {
-    const dir = await opendir(filepath)
+    while (queue.length !== 0) {
+      const dir = await opendir(queue.pop())
 
-    for await (const entry of dir) {
-      result.push(withFileTypes ? entry : entry.name)
+      for await (const entry of dir) {
+        const entryPath = path.join(entry.parentPath, entry.name)
+
+        if (withFileTypes) {
+          result.push(entry)
+        } else {
+          result.push(path.relative(filepath, entryPath))
+        }
+
+        if (recursive && entry.isDirectory()) queue.push(entryPath)
+      }
     }
   } catch (e) {
     result = []
@@ -1902,15 +1913,27 @@ function readdirSync(filepath, opts) {
   if (typeof opts === 'string') opts = { encoding: opts }
   else if (!opts) opts = {}
 
-  const { withFileTypes = false } = opts
+  const { withFileTypes = false, recursive = false } = opts
 
   filepath = toNamespacedPath(filepath)
 
-  const dir = opendirSync(filepath, opts)
+  const queue = [filepath]
   const result = []
 
-  for (const entry of dir) {
-    result.push(withFileTypes ? entry : entry.name)
+  while (queue.length !== 0) {
+    const dir = opendirSync(queue.pop(), opts)
+
+    for (const entry of dir) {
+      const entryPath = path.join(entry.parentPath, entry.name)
+
+      if (withFileTypes) {
+        result.push(entry)
+      } else {
+        result.push(path.relative(filepath, entryPath))
+      }
+
+      if (recursive && entry.isDirectory()) queue.push(entryPath)
+    }
   }
 
   return result

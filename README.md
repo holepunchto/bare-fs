@@ -540,7 +540,8 @@ Options include:
 ```js
 options = {
   encoding: 'utf8',
-  withFileTypes: false
+  withFileTypes: false,
+  recursive: false
 }
 ```
 
