@@ -286,6 +286,8 @@ async function read(fd, buffer, offset = 0, len = buffer.byteLength - offset, po
   try {
     binding.read(req.handle, fd, buffer, offset, len, pos)
 
+    req.retain(buffer)
+
     bytes = await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'read', code: e.code, fd })
@@ -322,6 +324,8 @@ async function readv(fd, buffers, pos = -1, cb) {
   let err = null
   try {
     binding.readv(req.handle, fd, buffers, pos)
+
+    req.retain(buffers)
 
     bytes = await req
   } catch (e) {
@@ -395,6 +399,8 @@ async function write(fd, data, offset, len, pos = -1, cb) {
   try {
     binding.write(req.handle, fd, data, offset, len, pos)
 
+    req.retain(data)
+
     bytes = await req
   } catch (e) {
     err = new FileError(e.message, { operation: 'write', code: e.code, fd })
@@ -449,6 +455,8 @@ async function writev(fd, buffers, pos = -1, cb) {
   let err = null
   try {
     binding.writev(req.handle, fd, buffers, pos)
+
+    req.retain(buffers)
 
     bytes = await req
   } catch (e) {
