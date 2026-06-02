@@ -7,9 +7,9 @@ import constants from './lib/constants'
 
 export { promises, constants }
 
-type Path = string | Buffer | URL
+export type Path = string | Buffer | URL
 
-type Flag =
+export type Flag =
   | 'a'
   | 'a+'
   | 'as'
@@ -55,7 +55,7 @@ export class Dir {
 }
 
 export interface Dirent<T extends string | Buffer = string | Buffer> {
-  readonly path: string
+  readonly parentPath: string
   readonly name: T
   readonly type: number
 
@@ -69,7 +69,7 @@ export interface Dirent<T extends string | Buffer = string | Buffer> {
 }
 
 export class Dirent<T extends string | Buffer = string | Buffer> {
-  private constructor(path: string, name: T, type: number)
+  private constructor(parentPath: string, name: T, type: number)
 }
 
 export interface Stats {
@@ -83,10 +83,14 @@ export interface Stats {
   readonly ino: number
   readonly size: number
   readonly blocks: number
-  readonly atimeMs: Date
-  readonly mtimeMs: Date
-  readonly ctimeMs: Date
-  readonly birthtimeMs: Date
+  readonly atimeMs: number
+  readonly mtimeMs: number
+  readonly ctimeMs: number
+  readonly birthtimeMs: number
+  readonly atime: Date
+  readonly mtime: Date
+  readonly ctime: Date
+  readonly birthtime: Date
 
   isDirectory(): boolean
   isFile(): boolean
@@ -126,7 +130,7 @@ export interface StatFs {
   readonly ffree: number
 }
 
-export class StatsFs {
+export class StatFs {
   private constructor(
     type: number,
     bsize: number,
@@ -154,7 +158,7 @@ export interface ReadStream extends Readable {
 }
 
 export class ReadStream {
-  private constructor(path: Path | null, opts?: WriteStreamOptions)
+  private constructor(path: Path | null, opts?: ReadStreamOptions)
 }
 
 export function createReadStream(path: Path | null, opts?: ReadStreamOptions): ReadStream
@@ -644,12 +648,12 @@ export interface ReaddirOptions extends OpendirOptions {
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding }
-): Promise<Dir<string>[] | string[]>
+): Promise<Dirent<string>[] | string[]>
 
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes: true }
-): Promise<Dir<string>[]>
+): Promise<Dirent<string>[]>
 
 export function readdir(
   filepath: Path,
@@ -659,12 +663,12 @@ export function readdir(
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer' }
-): Promise<Dir<Buffer>[] | Buffer[]>
+): Promise<Dirent<Buffer>[] | Buffer[]>
 
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes: true }
-): Promise<Dir<Buffer>[]>
+): Promise<Dirent<Buffer>[]>
 
 export function readdir(
   filepath: Path,
@@ -674,14 +678,17 @@ export function readdir(
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { withFileTypes: true }
-): Promise<Dir<string | Buffer>[]>
+): Promise<Dirent<string | Buffer>[]>
 
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { withFileTypes?: false }
 ): Promise<string[] | Buffer[]>
 
-export function readdir(filepath: Path, opts: ReaddirOptions): Promise<Dir[] | string[] | Buffer[]>
+export function readdir(
+  filepath: Path,
+  opts: ReaddirOptions
+): Promise<Dirent[] | string[] | Buffer[]>
 
 export function readdir(filepath: Path, encoding: BufferEncoding): Promise<string[]>
 
@@ -697,13 +704,13 @@ export function readdir(filepath: Path): Promise<string[]>
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding },
-  cb: Callback<[entries: Dir<string>[] | string[] | null]>
+  cb: Callback<[entries: Dirent<string>[] | string[] | null]>
 ): void
 
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes: true },
-  cb: Callback<[entries: Dir<string>[] | null]>
+  cb: Callback<[entries: Dirent<string>[] | null]>
 ): void
 
 export function readdir(
@@ -715,13 +722,13 @@ export function readdir(
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer' },
-  cb: Callback<[entries: Dir<Buffer>[] | Buffer[] | null]>
+  cb: Callback<[entries: Dirent<Buffer>[] | Buffer[] | null]>
 ): void
 
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes: true },
-  cb: Callback<[entries: Dir<Buffer>[] | null]>
+  cb: Callback<[entries: Dirent<Buffer>[] | null]>
 ): void
 
 export function readdir(
@@ -733,7 +740,7 @@ export function readdir(
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions & { withFileTypes: true },
-  cb: Callback<[entries: Dir<string | Buffer>[] | null]>
+  cb: Callback<[entries: Dirent<string | Buffer>[] | null]>
 ): void
 
 export function readdir(
@@ -745,7 +752,7 @@ export function readdir(
 export function readdir(
   filepath: Path,
   opts: ReaddirOptions,
-  cb: Callback<[entries: Dir[] | string[] | Buffer[] | null]>
+  cb: Callback<[entries: Dirent[] | string[] | Buffer[] | null]>
 ): void
 
 export function readdir(
@@ -771,12 +778,12 @@ export function readdir(filepath: Path, cb: Callback<[entries: string[] | null]>
 export function readdirSync(
   filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding }
-): Dir<string>[] | string[]
+): Dirent<string>[] | string[]
 
 export function readdirSync(
   filepath: Path,
   opts: ReaddirOptions & { encoding?: BufferEncoding; withFileTypes: true }
-): Dir<string>[]
+): Dirent<string>[]
 
 export function readdirSync(
   filepath: Path,
@@ -786,12 +793,12 @@ export function readdirSync(
 export function readdirSync(
   filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer' }
-): Dir<Buffer>[] | Buffer[]
+): Dirent<Buffer>[] | Buffer[]
 
 export function readdirSync(
   filepath: Path,
   opts: ReaddirOptions & { encoding: 'buffer'; withFileTypes: true }
-): Dir<Buffer>[]
+): Dirent<Buffer>[]
 
 export function readdirSync(
   filepath: Path,
@@ -801,14 +808,14 @@ export function readdirSync(
 export function readdirSync(
   filepath: Path,
   opts: ReaddirOptions & { withFileTypes: true }
-): Dir<string | Buffer>[]
+): Dirent<string | Buffer>[]
 
 export function readdirSync(
   filepath: Path,
   opts: ReaddirOptions & { withFileTypes?: false }
 ): string[] | Buffer[]
 
-export function readdirSync(filepath: Path, opts: ReaddirOptions): Dir[] | string[] | Buffer[]
+export function readdirSync(filepath: Path, opts: ReaddirOptions): Dirent[] | string[] | Buffer[]
 
 export function readdirSync(filepath: Path, encoding: BufferEncoding): string[]
 
@@ -998,11 +1005,11 @@ export function realpathSync(filepath: Path, encoding: BufferEncoding | 'buffer'
 
 export function realpathSync(filepath: Path): string
 
-export function rename(src: string, dst: string): Promise<void>
+export function rename(src: Path, dst: Path): Promise<void>
 
-export function rename(src: string, dst: string, cb: Callback): void
+export function rename(src: Path, dst: Path, cb: Callback): void
 
-export function renameSync(src: string, dst: string): void
+export function renameSync(src: Path, dst: Path): void
 
 export interface RmOptions {
   force?: boolean
@@ -1016,6 +1023,8 @@ export function rm(filepath: Path, opts: RmOptions, cb: Callback): void
 export function rm(filepath: Path, cb: Callback): void
 
 export function rmSync(filepath: Path, opts?: RmOptions): void
+
+export function rmdir(filepath: Path): Promise<void>
 
 export function rmdir(filepath: Path, cb: Callback): void
 
@@ -1037,9 +1046,9 @@ export function symlink(target: Path, filepath: Path, type?: string | number): P
 
 export function symlink(target: Path, filepath: Path, type: string | number, cb: Callback): void
 
-export function symlink(target: string, filepath: Path, cb: Callback): void
+export function symlink(target: Path, filepath: Path, cb: Callback): void
 
-export function symlinkSync(target: string, filepath: Path, type?: string | number): void
+export function symlinkSync(target: Path, filepath: Path, type?: string | number): void
 
 export function truncate(filepath: Path, len?: number): Promise<void>
 
@@ -1076,19 +1085,19 @@ export function watch(
 export function watch(
   filepath: Path,
   encoding: BufferEncoding,
-  cb: (evenType: WatcherEventType, filename: string) => void
+  cb: (eventType: WatcherEventType, filename: string) => void
 ): Watcher<string>
 
 export function watch(
   filepath: Path,
   encoding: 'buffer',
-  cb: (evenType: WatcherEventType, filename: Buffer) => void
+  cb: (eventType: WatcherEventType, filename: Buffer) => void
 ): Watcher<Buffer>
 
 export function watch(
   filepath: Path,
   encoding: BufferEncoding | 'buffer',
-  cb: (evenType: WatcherEventType, filename: string | Buffer) => void
+  cb: (eventType: WatcherEventType, filename: string | Buffer) => void
 ): Watcher
 
 export function watch(
