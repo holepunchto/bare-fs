@@ -685,7 +685,10 @@ export function readdir(
   opts: ReaddirOptions & { withFileTypes?: false }
 ): Promise<string[] | Buffer[]>
 
-export function readdir(filepath: Path, opts: ReaddirOptions): Promise<Dirent[] | string[] | Buffer[]>
+export function readdir(
+  filepath: Path,
+  opts: ReaddirOptions
+): Promise<Dirent[] | string[] | Buffer[]>
 
 export function readdir(filepath: Path, encoding: BufferEncoding): Promise<string[]>
 
