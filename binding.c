@@ -374,7 +374,7 @@ bare_fs_request_result_string(js_env_t *env, js_callback_info_t *info) {
   err = js_create_arraybuffer(env, len, (void *) &data, &result);
   assert(err == 0);
 
-  strncpy(data, req->handle.ptr, len);
+  memcpy(data, req->handle.ptr, len);
 
   return result;
 }
