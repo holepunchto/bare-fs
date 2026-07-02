@@ -2,6 +2,7 @@ const test = require('brittle')
 const path = require('bare-path')
 const crypto = require('bare-crypto')
 const fs = require('.')
+const { Thread } = Bare
 
 const isWindows = Bare.platform === 'win32'
 
@@ -1512,6 +1513,26 @@ test('sync methods', async (t) => {
 
     fs.fdatasync(fd, (err) => t.absent(err, 'fdatasync'))
   })
+})
+
+test('teardown with read enqueued from exit listener', (t) => {
+  t.plan(1)
+
+  // Enqueuing file I/O from an `exit` listener means the request can never
+  // complete back into JavaScript, as the runtime is already tearing down.
+  // Cleaning up the in-flight request during teardown must not crash.
+
+  const thread = new Thread(__filename, () => {
+    const fs = require('.')
+
+    Bare.on('exit', () => {
+      fs.readFile(__filename, () => {})
+    })
+  })
+
+  thread.join()
+
+  t.pass('thread torn down without crashing')
 })
 
 async function withFile(t, path, data = Buffer.alloc(0), opts = {}) {
