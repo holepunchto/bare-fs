@@ -74,15 +74,19 @@ bare_fs__request_destroy(bare_fs_req_t *req) {
 
 static void
 bare_fs__on_request_teardown(js_deferred_teardown_t *handle, void *data) {
-  int err;
-
   bare_fs_req_t *req = (bare_fs_req_t *) data;
 
   req->exiting = true;
 
+  // If a request is still in flight its result callback is guaranteed to run,
+  // even when the underlying work is cancelled successfully, in which case it
+  // completes with `UV_ECANCELED`. Destroying the request here would leave that
+  // pending callback to operate on freed memory, so we only attempt to cancel
+  // the work to hurry it along and defer destruction to the result callback.
   if (req->inflight) {
-    err = uv_cancel((uv_req_t *) &req->handle);
-    if (err < 0) return;
+    uv_cancel((uv_req_t *) &req->handle);
+
+    return;
   }
 
   bare_fs__request_destroy(req);
