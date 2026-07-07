@@ -2887,6 +2887,25 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V(UV_CHANGE)
 #undef V
 
+  js_value_t *errnos;
+  err = js_create_object(env, &errnos);
+  assert(err == 0);
+
+  err = js_set_named_property(env, exports, "errnos", errnos);
+  assert(err == 0);
+
+#define V(name, msg) \
+  { \
+    js_value_t *val; \
+    err = js_create_int32(env, UV_##name, &val); \
+    assert(err == 0); \
+    err = js_set_named_property(env, errnos, #name, val); \
+    assert(err == 0); \
+  }
+
+  UV_ERRNO_MAP(V);
+#undef V
+
   return exports;
 }
 
