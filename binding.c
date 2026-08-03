@@ -328,7 +328,7 @@ bare_fs_request_result_statfs(js_env_t *env, js_callback_info_t *info) {
   uv_statfs_t *statfs = req->handle.ptr;
 
   js_value_t *result;
-  err = js_create_array_with_length(env, 7, &result);
+  err = js_create_array_with_length(env, 8, &result);
   assert(err == 0);
 
   uint32_t i = 0;
@@ -349,6 +349,7 @@ bare_fs_request_result_statfs(js_env_t *env, js_callback_info_t *info) {
   V(bavail)
   V(files)
   V(ffree)
+  V(frsize)
 #undef V
 
   return result;

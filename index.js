@@ -2204,7 +2204,7 @@ class Stats {
 }
 
 class StatFs {
-  constructor(type, bsize, blocks, bfree, bavail, files, ffree) {
+  constructor(type, bsize, blocks, bfree, bavail, files, ffree, frsize) {
     this.type = type
     this.bsize = bsize
     this.blocks = blocks
@@ -2212,6 +2212,7 @@ class StatFs {
     this.bavail = bavail
     this.files = files
     this.ffree = ffree
+    this.frsize = frsize
   }
 }
 
