@@ -128,6 +128,7 @@ export interface StatFs {
   readonly bavail: number
   readonly files: number
   readonly ffree: number
+  readonly frsize: number
 }
 
 export class StatFs {
@@ -138,7 +139,8 @@ export class StatFs {
     bfree: number,
     bavail: number,
     files: number,
-    ffree: number
+    ffree: number,
+    frsize: number
   )
 }
 
