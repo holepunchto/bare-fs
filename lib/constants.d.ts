@@ -1,3 +1,4 @@
+/** An object containing file system constants, such as file access modes and file type flags. See `fs/constants` for the full list. */
 declare const constants: {
   O_RDWR: number
   O_RDONLY: number
