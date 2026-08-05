@@ -24,965 +24,1986 @@ try {
 }
 ```
 
+<!-- bare-refgen:api start -->
+
 ## API
 
-#### `const fd = await fs.open(filepath[, flags[, mode]])`
+### Opening, reading, and writing
+
+#### `open(filepath: Path, flags?: Flag | number, mode?: string | number): Promise<number>`
 
 Open a file, returning a file descriptor. `flags` defaults to `'r'` and `mode` defaults to `0o666`. `flags` may be a string such as `'r'`, `'w'`, `'a'`, `'r+'`, etc., or a numeric combination of `fs.constants` flags.
 
-#### `fs.open(filepath[, flags[, mode]], callback)`
+Overloads:
 
-Callback version of `fs.open()`.
+```ts
+open(filepath: Path, flags?: Flag | number, mode?: string | number): Promise<number>
+open(filepath: Path, flags: Flag | number, mode: string | number, cb: Callback<[fd: number]>): void
+open(filepath: Path, flags: Flag | number, cb: Callback<[fd: number]>): void
+open(filepath: Path, cb: Callback<[fd: number]>): void
+```
 
-#### `const fd = fs.openSync(filepath[, flags[, mode]])`
+Synchronous form: `openSync(filepath: Path, flags?: Flag | number, mode?: string | number): number`
 
-Synchronous version of `fs.open()`.
+**Parameters**
 
-#### `await fs.close(fd)`
+| Parameter  | Type               | Default | Description                                                                                         |
+| ---------- | ------------------ | ------- | --------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`             | —       | —                                                                                                   |
+| `flags?`   | `Flag \| number`   | —       | Defaults to `'r'`. Selects read/write mode and whether the file is created, truncated, or appended. |
+| `mode?`    | `string \| number` | —       | Defaults to `0o666`. Applied only when `flags` creates a new file.                                  |
+
+**Returns** `Promise<number>` — The file descriptor for the newly opened file.
+
+**Throws**
+
+- `ENOENT` — `filepath` does not exist and `flags` does not include a creating variant (for example the default `'r'`).
+- `EEXIST` — `flags` is an exclusive variant (`'wx'`, `'ax'`, `'xw'`, `'xa'`, etc.) and `filepath` already exists.
+
+#### `close(fd: number): Promise<void>`
 
 Close a file descriptor.
 
-#### `fs.close(fd, callback)`
+Overloads:
 
-Callback version of `fs.close()`.
+```ts
+close(fd: number): Promise<void>
+close(fd: number, cb: Callback): void
+```
 
-#### `fs.closeSync(fd)`
+Synchronous form: `closeSync(fd: number): void`
 
-Synchronous version of `fs.close()`.
+**Parameters**
 
-#### `await fs.access(filepath[, mode])`
+| Parameter | Type     | Default | Description                                               |
+| --------- | -------- | ------- | --------------------------------------------------------- |
+| `fd`      | `number` | —       | The file descriptor to close, as returned by `fs.open()`. |
 
-Check whether the file at `filepath` is accessible. `mode` defaults to `fs.constants.F_OK`.
+#### `read`
 
-#### `fs.access(filepath[, mode], callback)`
-
-Callback version of `fs.access()`.
-
-#### `fs.accessSync(filepath[, mode])`
-
-Synchronous version of `fs.access()`.
-
-#### `const exists = await fs.exists(filepath)`
-
-Check whether a file exists at `filepath`. Returns `true` if the file is accessible, `false` otherwise.
-
-#### `fs.exists(filepath, callback)`
-
-Callback version of `fs.exists()`.
-
-#### `const exists = fs.existsSync(filepath)`
-
-Synchronous version of `fs.exists()`.
-
-#### `const bytesRead = await fs.read(fd, buffer[, offset[, len[, pos]]])`
+```ts
+read(fd: number, buffer: Buffer | ArrayBufferView, offset?: number, len?: number, pos?: number): Promise<number>
+```
 
 Read from a file descriptor into `buffer`. `offset` defaults to `0`, `len` defaults to `buffer.byteLength - offset`, and `pos` defaults to `-1` (current position). Returns the number of bytes read.
 
-#### `fs.read(fd, buffer[, offset[, len[, pos]]], callback)`
+Synchronous form: `readSync(fd: number, buffer: Buffer | ArrayBufferView, offset?: number, len?: number, pos?: number): number`
 
-Callback version of `fs.read()`.
+**Parameters**
 
-#### `const bytesRead = fs.readSync(fd, buffer[, offset[, len[, pos]]])`
+| Parameter | Type                        | Default | Description                                                                                                          |
+| --------- | --------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `fd`      | `number`                    | —       | The file descriptor to read from, as returned by `fs.open()`.                                                        |
+| `buffer`  | `Buffer \| ArrayBufferView` | —       | —                                                                                                                    |
+| `offset?` | `number`                    | —       | The offset within `buffer` to start writing to. Defaults to `0`.                                                     |
+| `len?`    | `number`                    | —       | The number of bytes to read. Defaults to `buffer.byteLength - offset`.                                               |
+| `pos?`    | `number`                    | —       | The position in the file to read from. Defaults to `-1`, which reads from the current file position and advances it. |
 
-Synchronous version of `fs.read()`.
+**Returns** `Promise<number>` — The number of bytes actually read, which may be less than `len` (`0` at end of file).
 
-#### `const bytesRead = await fs.readv(fd, buffers[, pos])`
+#### `readv(fd: number, buffers: ArrayBufferView[], position?: number): Promise<number>`
 
 Read from a file descriptor into an array of `buffers`. `pos` defaults to `-1`.
 
-#### `fs.readv(fd, buffers[, pos], callback)`
+Overloads:
 
-Callback version of `fs.readv()`.
+```ts
+readv(fd: number, buffers: ArrayBufferView[], position?: number): Promise<number>
+readv(fd: number, buffers: ArrayBufferView[], position: number, cb: Callback<[len: number]>): void
+readv(fd: number, buffers: ArrayBufferView[], cb: Callback<[len: number]>): void
+```
 
-#### `const bytesRead = fs.readvSync(fd, buffers[, pos])`
+Synchronous form: `readvSync(fd: number, buffers: ArrayBufferView[], position?: number): number`
 
-Synchronous version of `fs.readv()`.
+**Parameters**
 
-#### `const bytesWritten = await fs.write(fd, data[, offset[, len[, pos]]])`
+| Parameter   | Type                | Default | Description |
+| ----------- | ------------------- | ------- | ----------- |
+| `fd`        | `number`            | —       | —           |
+| `buffers`   | `ArrayBufferView[]` | —       | —           |
+| `position?` | `number`            | —       | —           |
+
+**Returns** `Promise<number>` — The number of bytes actually read across all buffers.
+
+#### `write`
+
+```ts
+write(fd: number, data: Buffer | ArrayBufferView, offset?: number, len?: number, pos?: number): Promise<number>
+```
 
 Write `data` to a file descriptor. When `data` is a string, the signature is `fs.write(fd, data[, pos[, encoding]])` where `encoding` defaults to `'utf8'`. Returns the number of bytes written.
 
-#### `fs.write(fd, data[, offset[, len[, pos]]], callback)`
+Synchronous form: `writeSync(fd: number, data: Buffer | ArrayBufferView, offset?: number, len?: number, pos?: number): number`
 
-Callback version of `fs.write()`.
+**Parameters**
 
-#### `const bytesWritten = fs.writeSync(fd, data[, offset[, len[, pos]]])`
+| Parameter | Type                        | Default | Description                                                                                                            |
+| --------- | --------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `fd`      | `number`                    | —       | The file descriptor to write to, as returned by `fs.open()`.                                                           |
+| `data`    | `Buffer \| ArrayBufferView` | —       | The bytes to write. May also be a string, in which case the signature becomes `fs.write(fd, data[, pos[, encoding]])`. |
+| `offset?` | `number`                    | —       | The offset within `data` to start writing from. Defaults to `0`.                                                       |
+| `len?`    | `number`                    | —       | The number of bytes to write. Defaults to `data.byteLength - offset`.                                                  |
+| `pos?`    | `number`                    | —       | The position in the file to write to. Defaults to `-1`, which writes at the current file position and advances it.     |
 
-Synchronous version of `fs.write()`.
+**Returns** `Promise<number>` — The number of bytes actually written, which may be less than `data`'s length.
 
-#### `const bytesWritten = await fs.writev(fd, buffers[, pos])`
+#### `writev(fd: number, buffers: ArrayBufferView[], pos?: number): Promise<number>`
 
 Write an array of `buffers` to a file descriptor. `pos` defaults to `-1`.
 
-#### `fs.writev(fd, buffers[, pos], callback)`
-
-Callback version of `fs.writev()`.
-
-#### `const bytesWritten = fs.writevSync(fd, buffers[, pos])`
-
-Synchronous version of `fs.writev()`.
-
-#### `const stats = await fs.stat(filepath)`
-
-Get the status of a file. Returns a `Stats` object.
-
-#### `fs.stat(filepath, callback)`
-
-Callback version of `fs.stat()`.
-
-#### `const stats = fs.statSync(filepath)`
-
-Synchronous version of `fs.stat()`.
-
-#### `const stats = await fs.lstat(filepath)`
-
-Like `fs.stat()`, but if `filepath` is a symbolic link, the link itself is statted, not the file it refers to.
-
-#### `fs.lstat(filepath, callback)`
-
-Callback version of `fs.lstat()`.
-
-#### `const stats = fs.lstatSync(filepath)`
-
-Synchronous version of `fs.lstat()`.
-
-#### `const stats = await fs.fstat(fd)`
-
-Get the status of a file by its file descriptor. Returns a `Stats` object.
-
-#### `fs.fstat(fd, callback)`
-
-Callback version of `fs.fstat()`.
-
-#### `const stats = fs.fstatSync(fd)`
-
-Synchronous version of `fs.fstat()`.
-
-#### `const stats = await fs.statfs(filepath)`
-
-Get filesystem statistics. Returns a `StatFs` object.
-
-#### `fs.statfs(filepath, callback)`
-
-Callback version of `fs.statfs()`.
-
-#### `const stats = fs.statfsSync(filepath)`
-
-Synchronous version of `fs.statfs()`.
-
-#### `await fs.ftruncate(fd[, len])`
-
-Truncate a file to `len` bytes. `len` defaults to `0`.
-
-#### `fs.ftruncate(fd[, len], callback)`
-
-Callback version of `fs.ftruncate()`.
-
-#### `fs.ftruncateSync(fd[, len])`
-
-Synchronous version of `fs.ftruncate()`.
-
-#### `await fs.chmod(filepath, mode)`
-
-Change the permissions of a file. `mode` may be a numeric mode or a string that will be parsed as octal.
-
-#### `fs.chmod(filepath, mode, callback)`
-
-Callback version of `fs.chmod()`.
-
-#### `fs.chmodSync(filepath, mode)`
-
-Synchronous version of `fs.chmod()`.
-
-#### `await fs.fchmod(fd, mode)`
-
-Change the permissions of a file by its file descriptor.
-
-#### `fs.fchmod(fd, mode, callback)`
-
-Callback version of `fs.fchmod()`.
-
-#### `fs.fchmodSync(fd, mode)`
-
-Synchronous version of `fs.fchmod()`.
-
-#### `await fs.chown(filepath, uid, gid)`
-
-Change the owner and group of a file.
-
-**NOTE**: The `chown` functions are not implemented on Windows.
-
-#### `fs.chown(filepath,  uid, gid, callback)`
-
-Callback version of `fs.chown()`.
-
-#### `await fs.chownSync(filepath, uid, gid)`
-
-Synchronous version of `fs.chown()`.
-
-#### `await fs.lchown(filepath, uid, gid)`
-
-Change the owner and group of a file, but if `filepath` is a symbolic link, the changes are applied only to the link, not the file it refers to.
-
-#### `fs.lchown(filepath,  uid, gid, callback)`
-
-Callback version of `fs.lchown()`.
-
-#### `fs.lchownSync(filepath, uid, gid)`
-
-Synchronous version of `fs.lchown()`.
-
-#### `await fs.fchown(filepath, uid, gid)`
-
-Change the owner and group of a file by its file descriptor.
-
-#### `fs.fchown(filepath,  uid, gid, callback)`
-
-Callback version of `fs.fchown()`.
-
-#### `fs.fchownSync(filepath, uid, gid)`
-
-Synchronous version of `fs.fchown()`.
-
-#### `await fs.utimes(filepath, atime, mtime)`
-
-Change the access and modification times of a file. Times may be numbers (seconds since epoch) or `Date` objects.
-
-#### `fs.utimes(filepath, atime, mtime, callback)`
-
-Callback version of `fs.utimes()`.
-
-#### `fs.utimesSync(filepath, atime, mtime)`
-
-Synchronous version of `fs.utimes()`.
-
-#### `await fs.lutimes(filepath, atime, mtime)`
-
-Like `fs.utimes()`, but if `filepath` is a symbolic link, the timestamps of the link is changed, not the file it refers to.
-
-#### `fs.lutimes(filepath, atime, mtime, callback)`
-
-Callback version of `fs.lutimes()`.
-
-#### `fs.lutimesSync(filepath, atime, mtime)`
-
-Synchronous version of `fs.lutimes()`.
-
-#### `await fs.futimes(fd, atime, mtime)`
-
-Change the access and modification times of a file by its file descriptor. Times may be numbers (seconds since epoch) or `Date` objects.
-
-#### `fs.futimes(fd, atime, mtime, callback)`
-
-Callback version of `fs.futimes()`.
-
-#### `fs.futimesSync(fd, atime, mtime)`
-
-Synchronous version of `fs.futimes()`.
-
-#### `await fs.link(src, dst)`
-
-Creates a new link (also known as a hard link) to an existing file.
-
-#### `fs.link(src, dst, callback)`
-
-Callback version of `fs.link()`.
-
-#### `fs.linkSync(src, dst)`
-
-Synchronous version of `fs.link()`.
-
-#### `await fs.mkdir(filepath[, opts])`
-
-Create a directory at `filepath`.
-
-Options include:
-
-```js
-options = {
-  mode: 0o777,
-  recursive: false
-}
+Overloads:
+
+```ts
+writev(fd: number, buffers: ArrayBufferView[], pos?: number): Promise<number>
+writev(fd: number, buffers: ArrayBufferView[], pos: number, cb: Callback<[len: number]>): void
+writev(fd: number, buffers: ArrayBufferView[], cb: Callback<[len: number]>): void
 ```
 
-If `opts` is a number, it is treated as the `mode`. When `recursive` is `true`, parent directories are created as needed.
+Synchronous form: `writevSync(fd: number, buffers: ArrayBufferView[], pos?: number): number`
 
-#### `fs.mkdir(filepath[, opts], callback)`
+**Parameters**
 
-Callback version of `fs.mkdir()`.
+| Parameter | Type                | Default | Description |
+| --------- | ------------------- | ------- | ----------- |
+| `fd`      | `number`            | —       | —           |
+| `buffers` | `ArrayBufferView[]` | —       | —           |
+| `pos?`    | `number`            | —       | —           |
 
-#### `fs.mkdirSync(filepath[, opts])`
+**Returns** `Promise<number>` — The number of bytes actually written across all buffers.
 
-Synchronous version of `fs.mkdir()`.
-
-#### `const path = await fs.mkdtemp(prefix)`
-
-Create a unique temporary directory.
-
-#### `fs.mkdtemp(prefix, callback)`
-
-Callback version of `fs.mkdtemp()`.
-
-#### `const path = fs.mkdtempSync(prefix)`
-
-Synchronous version of `fs.mkdtemp()`.
-
-#### `await fs.rmdir(filepath)`
-
-Remove an empty directory.
-
-#### `fs.rmdir(filepath, callback)`
-
-Callback version of `fs.rmdir()`.
-
-#### `fs.rmdirSync(filepath)`
-
-Synchronous version of `fs.rmdir()`.
-
-#### `await fs.rm(filepath[, opts])`
-
-Remove a file or directory at `filepath`.
-
-Options include:
-
-```js
-options = {
-  force: false,
-  recursive: false
-}
-```
-
-When `recursive` is `true`, directories are removed along with their contents. When `force` is `true`, no error is thrown if `filepath` does not exist.
-
-#### `fs.rm(filepath[, opts], callback)`
-
-Callback version of `fs.rm()`.
-
-#### `fs.rmSync(filepath[, opts])`
-
-Synchronous version of `fs.rm()`.
-
-#### `await fs.unlink(filepath)`
-
-Remove a file.
-
-#### `fs.unlink(filepath, callback)`
-
-Callback version of `fs.unlink()`.
-
-#### `fs.unlinkSync(filepath)`
-
-Synchronous version of `fs.unlink()`.
-
-#### `await fs.rename(src, dst)`
-
-Rename a file from `src` to `dst`.
-
-#### `fs.rename(src, dst, callback)`
-
-Callback version of `fs.rename()`.
-
-#### `fs.renameSync(src, dst)`
-
-Synchronous version of `fs.rename()`.
-
-#### `await fs.copyFile(src, dst[, mode])`
-
-Copy a file from `src` to `dst`. `mode` is an optional bitmask created from `fs.constants.COPYFILE_EXCL`, `fs.constants.COPYFILE_FICLONE`, or `fs.constants.COPYFILE_FICLONE_FORCE`.
-
-#### `fs.copyFile(src, dst[, mode], callback)`
-
-Callback version of `fs.copyFile()`.
-
-#### `fs.copyFileSync(src, dst[, mode])`
-
-Synchronous version of `fs.copyFile()`.
-
-#### `await fs.cp(src, dst[, opts])`
-
-Copy a file or directory from `src` to `dst`.
-
-Options include:
-
-```js
-options = {
-  recursive: false
-}
-```
-
-Set `recursive` to `true` to copy directories and their contents. Files are copied preserving their permissions.
-
-#### `fs.cp(src, dst[, opts], callback)`
-
-Callback version of `fs.cp()`.
-
-#### `fs.cpSync(src, dst[, opts])`
-
-Synchronous version of `fs.cp()`.
-
-#### `const resolved = await fs.realpath(filepath[, opts])`
-
-Resolve the real path of `filepath`, expanding all symbolic links.
-
-Options include:
-
-```js
-options = {
-  encoding: 'utf8'
-}
-```
-
-Set `encoding` to `'buffer'` to receive the result as a `Buffer`.
-
-#### `fs.realpath(filepath[, opts], callback)`
-
-Callback version of `fs.realpath()`.
-
-#### `const resolved = fs.realpathSync(filepath[, opts])`
-
-Synchronous version of `fs.realpath()`.
-
-#### `const target = await fs.readlink(filepath[, opts])`
-
-Read the target of a symbolic link.
-
-Options include:
-
-```js
-options = {
-  encoding: 'utf8'
-}
-```
-
-#### `fs.readlink(filepath[, opts], callback)`
-
-Callback version of `fs.readlink()`.
-
-#### `const target = fs.readlinkSync(filepath[, opts])`
-
-Synchronous version of `fs.readlink()`.
-
-#### `await fs.truncate(filename[, len])`
-
-Truncate the file at `filename` to `len` bytes. `len` defaults to `0`.
-
-#### `fs.truncate(filename[, len], callback)`
-
-Callback version of `fs.truncate()`.
-
-#### `fs.truncateSync(filename[, len])`
-
-Synchronous version of `fs.truncate()`.
-
-#### `await fs.symlink(target, filepath[, type])`
-
-Create a symbolic link at `filepath` pointing to `target`. `type` may be `'file'`, `'dir'`, or `'junction'` (Windows only) or a numeric flag. On Windows, if `type` is not provided, it is inferred from the target.
-
-#### `fs.symlink(target, filepath[, type], callback)`
-
-Callback version of `fs.symlink()`.
-
-#### `fs.symlinkSync(target, filepath[, type])`
-
-Synchronous version of `fs.symlink()`.
-
-#### `await fs.fsync(fd)`
+#### `fsync(fd: number): Promise<void>`
 
 Flush all modified in-core data of the file referred by its file descriptor to the disk device.
 
-#### `fs.fsync(fs, callback)`
+Overloads:
 
-Callback version of `fs.fsync()`.
+```ts
+fsync(fd: number): Promise<void>
+fsync(fd: number, cb: Callback): void
+```
 
-#### `fs.fsyncSync(fd)`
+Synchronous form: `fsyncSync(fd: number): void`
 
-Synchronous version of `fs.fsync()`.
+**Parameters**
 
-#### `await fs.fdatasync(fd)`
+| Parameter | Type     | Default | Description |
+| --------- | -------- | ------- | ----------- |
+| `fd`      | `number` | —       | —           |
+
+#### `fdatasync(fd: number): Promise<void>`
 
 Similar to `fsync`, but does not flush modified metadata unless necessary.
 
-#### `fs.fdatasync(fs, callback)`
+Overloads:
 
-Callback version of `fs.fdatasync()`.
-
-#### `fs.fdatasyncSync(fd)`
-
-Synchronous version of `fs.fdatasync()`.
-
-#### `const dir = await fs.opendir(filepath[, opts])`
-
-Open a directory for iteration. Returns a `Dir` object.
-
-Options include:
-
-```js
-options = {
-  encoding: 'utf8',
-  bufferSize: 32
-}
+```ts
+fdatasync(fd: number): Promise<void>
+fdatasync(fd: number, cb: Callback): void
 ```
 
-#### `fs.opendir(filepath[, opts], callback)`
+Synchronous form: `fdatasyncSync(fd: number): void`
 
-Callback version of `fs.opendir()`.
+**Parameters**
 
-#### `const dir = fs.opendirSync(filepath[, opts])`
+| Parameter | Type     | Default | Description |
+| --------- | -------- | ------- | ----------- |
+| `fd`      | `number` | —       | —           |
 
-Synchronous version of `fs.opendir()`.
+### Whole-file helpers
 
-#### `const entries = await fs.readdir(filepath[, opts])`
-
-Read the contents of a directory. Returns an array of filenames or, if `withFileTypes` is `true`, an array of `Dirent` objects.
-
-Options include:
-
-```js
-options = {
-  encoding: 'utf8',
-  withFileTypes: false,
-  recursive: false
-}
-```
-
-#### `fs.readdir(filepath[, opts], callback)`
-
-Callback version of `fs.readdir()`.
-
-#### `const entries = fs.readdirSync(filepath[, opts])`
-
-Synchronous version of `fs.readdir()`.
-
-#### `const data = await fs.readFile(filepath[, opts])`
+#### `readFile(filepath: Path, opts: ReadFileOptions & { encoding: BufferEncoding }): Promise<string>`
 
 Read the entire contents of a file. Returns a `Buffer` by default, or a string if an `encoding` is specified.
 
-Options include:
+Overloads:
 
-```js
-options = {
-  encoding: 'buffer',
-  flag: 'r'
-}
+```ts
+readFile(filepath: Path, opts: ReadFileOptions & { encoding: BufferEncoding }): Promise<string>
+readFile(filepath: Path, opts: ReadFileOptions & { encoding?: 'buffer' }): Promise<Buffer>
+readFile(filepath: Path, opts: ReadFileOptions): Promise<string | Buffer>
+readFile(filepath: Path, encoding: BufferEncoding): Promise<string>
+readFile(filepath: Path, encoding: 'buffer'): Promise<Buffer>
+readFile(filepath: Path, encoding?: BufferEncoding | 'buffer'): Promise<string | Buffer>
+readFile(filepath: Path): Promise<Buffer>
+readFile(filepath: Path, opts: ReadFileOptions & { encoding: BufferEncoding }, cb: Callback<[buffer?: string]>): void
+readFile(filepath: Path, opts: ReadFileOptions & { encoding?: 'buffer' }, cb: Callback<[buffer?: Buffer]>): void
+readFile(filepath: Path, opts: ReadFileOptions, cb: Callback<[buffer?: string | Buffer]>): void
+readFile(filepath: Path, encoding: BufferEncoding, cb: Callback<[buffer?: string]>): void
+readFile(filepath: Path, encoding: 'buffer', cb: Callback<[buffer?: Buffer]>): void
+readFile(filepath: Path, encoding: BufferEncoding | 'buffer', cb: Callback<[buffer?: string | Buffer]>): void
+readFile(filepath: Path, cb: Callback<[buffer?: Buffer]>): void
 ```
 
-#### `fs.readFile(filepath[, opts], callback)`
+Synchronous form: `readFileSync(filepath: Path, opts: ReadFileOptions & { encoding: BufferEncoding }): string`
 
-Callback version of `fs.readFile()`.
+**Parameters**
 
-#### `const data = fs.readFileSync(filepath[, opts])`
+| Parameter  | Type                                             | Default | Description                                                                                              |
+| ---------- | ------------------------------------------------ | ------- | -------------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`                                           | —       | —                                                                                                        |
+| `opts`     | `ReadFileOptions & { encoding: BufferEncoding }` | —       | `encoding` defaults to `'buffer'` (returning a `Buffer` rather than a string); `flag` defaults to `'r'`. |
 
-Synchronous version of `fs.readFile()`.
+#### `writeFile`
 
-#### `await fs.writeFile(filepath, data[, opts])`
+```ts
+writeFile(filepath: Path, data: string | Buffer | ArrayBufferView, opts?: WriteFileOptions): Promise<void>
+```
 
 Write `data` to a file, replacing it if it already exists.
 
-Options include:
+Synchronous form: `writeFileSync(filepath: Path, data: string | Buffer | ArrayBufferView, opts?: WriteFileOptions): void`
 
-```js
-options = {
-  encoding: 'utf8',
-  flag: 'w',
-  mode: 0o666
-}
+**Parameters**
+
+| Parameter  | Type                                  | Default | Description                                                                          |
+| ---------- | ------------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| `filepath` | `Path`                                | —       | —                                                                                    |
+| `data`     | `string \| Buffer \| ArrayBufferView` | —       | —                                                                                    |
+| `opts?`    | `WriteFileOptions`                    | —       | `flag` defaults to `'w'` (truncating any existing file); `mode` defaults to `0o666`. |
+
+#### `appendFile`
+
+```ts
+appendFile(filepath: Path, data: string | Buffer | ArrayBufferView, opts?: AppendFileOptions): Promise<void>
 ```
-
-#### `fs.writeFile(filepath, data[, opts], callback)`
-
-Callback version of `fs.writeFile()`.
-
-#### `fs.writeFileSync(filepath, data[, opts])`
-
-Synchronous version of `fs.writeFile()`.
-
-#### `await fs.appendFile(filepath, data[, opts])`
 
 Append `data` to a file, creating it if it does not exist. Accepts the same options as `fs.writeFile()` but defaults to the `'a'` flag.
 
-#### `fs.appendFile(filepath, data[, opts], callback)`
+Synchronous form: `appendFileSync(filepath: Path, data: string | Buffer | ArrayBufferView, opts?: AppendFileOptions): void`
 
-Callback version of `fs.appendFile()`.
+**Parameters**
 
-#### `fs.appendFileSync(filepath, data[, opts])`
+| Parameter  | Type                                  | Default | Description |
+| ---------- | ------------------------------------- | ------- | ----------- |
+| `filepath` | `Path`                                | —       | —           |
+| `data`     | `string \| Buffer \| ArrayBufferView` | —       | —           |
+| `opts?`    | `AppendFileOptions`                   | —       | —           |
 
-Synchronous version of `fs.appendFile()`.
+#### `access(filepath: Path, mode?: number): Promise<void>`
 
-#### `const watcher = fs.watch(filepath[, opts], callback)`
+Check whether the file at `filepath` is accessible. `mode` defaults to `fs.constants.F_OK`.
 
-Watch a file or directory for changes. Returns a `Watcher` object. The `callback`, if provided, is called with `(eventType, filename)` on each change.
+Overloads:
 
-Options include:
-
-```js
-options = {
-  persistent: true,
-  recursive: false,
-  encoding: 'utf8'
-}
+```ts
+access(filepath: Path, mode?: number): Promise<void>
+access(filepath: Path, mode: number, cb: Callback): void
+access(filepath: Path, cb: Callback): void
 ```
 
-#### `const stream = fs.createReadStream(path[, opts])`
+Synchronous form: `accessSync(filepath: Path, mode?: number): void`
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description                                                                                       |
+| ---------- | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`   | —       | —                                                                                                 |
+| `mode?`    | `number` | —       | Defaults to `fs.constants.F_OK` (existence only); may also combine `R_OK`, `W_OK`, and/or `X_OK`. |
+
+#### `exists(filepath: Path): Promise<boolean>`
+
+Check whether a file exists at `filepath`. Returns `true` if the file is accessible, `false` otherwise.
+
+Overloads:
+
+```ts
+exists(filepath: Path): Promise<boolean>
+exists(filepath: Path, cb: (exists: boolean) => void): void
+```
+
+Synchronous form: `existsSync(filepath: Path): boolean`
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+### Metadata and size
+
+#### `stat(filepath: Path): Promise<Stats>`
+
+Get the status of a file. Returns a `Stats` object.
+
+Overloads:
+
+```ts
+stat(filepath: Path): Promise<Stats>
+stat(filepath: Path, cb: Callback<[stats: Stats | null]>): void
+```
+
+Synchronous form: `statSync(filepath: Path): Stats`
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+#### `lstat(filepath: Path): Promise<Stats>`
+
+Like `fs.stat()`, but if `filepath` is a symbolic link, the link itself is statted, not the file it refers to.
+
+Overloads:
+
+```ts
+lstat(filepath: Path): Promise<Stats>
+lstat(filepath: Path, cb: Callback<[stats: Stats | null]>): void
+```
+
+Synchronous form: `lstatSync(filepath: Path): Stats`
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+#### `fstat(fd: number): Promise<Stats>`
+
+Get the status of a file by its file descriptor. Returns a `Stats` object.
+
+Overloads:
+
+```ts
+fstat(fd: number): Promise<Stats>
+fstat(fd: number, cb: Callback<[stats: Stats | null]>): void
+```
+
+Synchronous form: `fstatSync(fd: number): Stats`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description |
+| --------- | -------- | ------- | ----------- |
+| `fd`      | `number` | —       | —           |
+
+#### `statfs(filepath: Path): Promise<StatFs>`
+
+Get filesystem statistics. Returns a `StatFs` object.
+
+Overloads:
+
+```ts
+statfs(filepath: Path): Promise<StatFs>
+statfs(filepath: Path, cb: Callback<[stats: StatFs | null]>): void
+```
+
+Synchronous form: `statfsSync(filepath: Path): StatFs`
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+#### `truncate(filepath: Path, len?: number): Promise<void>`
+
+Truncate the file at `filename` to `len` bytes. `len` defaults to `0`.
+
+Overloads:
+
+```ts
+truncate(filepath: Path, len?: number): Promise<void>
+truncate(filepath: Path, len: number, cb: Callback): void
+truncate(filepath: Path, cb: Callback): void
+```
+
+Synchronous form: `truncateSync(filepath: Path, len?: number): void`
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| `filepath` | `Path`   | —       | —           |
+| `len?`     | `number` | —       | —           |
+
+#### `ftruncate(fd: number, len?: number): Promise<void>`
+
+Truncate a file to `len` bytes. `len` defaults to `0`.
+
+Overloads:
+
+```ts
+ftruncate(fd: number, len?: number): Promise<void>
+ftruncate(fd: number, len: number, cb: Callback): void
+ftruncate(fd: number, cb: Callback): void
+```
+
+Synchronous form: `ftruncateSync(fd: number, len?: number): void`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description |
+| --------- | -------- | ------- | ----------- |
+| `fd`      | `number` | —       | —           |
+| `len?`    | `number` | —       | —           |
+
+### Permissions, ownership, and times
+
+#### `chmod(filepath: Path, mode: string | number): Promise<void>`
+
+Change the permissions of a file. `mode` may be a numeric mode or a string that will be parsed as octal.
+
+Overloads:
+
+```ts
+chmod(filepath: Path, mode: string | number): Promise<void>
+chmod(filepath: Path, mode: string | number, cb: Callback): void
+```
+
+Synchronous form: `chmodSync(filepath: Path, mode: string | number): void`
+
+**Parameters**
+
+| Parameter  | Type               | Default | Description |
+| ---------- | ------------------ | ------- | ----------- |
+| `filepath` | `Path`             | —       | —           |
+| `mode`     | `string \| number` | —       | —           |
+
+#### `fchmod(fd: number, mode: string | number): Promise<void>`
+
+Change the permissions of a file by its file descriptor.
+
+Overloads:
+
+```ts
+fchmod(fd: number, mode: string | number): Promise<void>
+fchmod(fd: number, mode: string | number, cb: Callback): void
+```
+
+Synchronous form: `fchmodSync(fd: number, mode: string | number): void`
+
+**Parameters**
+
+| Parameter | Type               | Default | Description |
+| --------- | ------------------ | ------- | ----------- |
+| `fd`      | `number`           | —       | —           |
+| `mode`    | `string \| number` | —       | —           |
+
+#### `chown(filepath: Path, uid: number, gid: number): Promise<void>`
+
+Change the owner and group of a file.
+
+Overloads:
+
+```ts
+chown(filepath: Path, uid: number, gid: number): Promise<void>
+chown(filepath: Path, uid: number, gid: number, cb: Callback): void
+```
+
+Synchronous form: `chownSync(filepath: Path, uid: number, gid: number): void`
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| `filepath` | `Path`   | —       | —           |
+| `uid`      | `number` | —       | —           |
+| `gid`      | `number` | —       | —           |
+
+#### `fchown(fd: number, uid: number, gid: number): Promise<void>`
+
+Change the owner and group of a file by its file descriptor.
+
+Overloads:
+
+```ts
+fchown(fd: number, uid: number, gid: number): Promise<void>
+fchown(fd: number, uid: number, gid: number, cb: Callback): void
+```
+
+Synchronous form: `fchownSync(fd: number, uid: number, gid: number): void`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description |
+| --------- | -------- | ------- | ----------- |
+| `fd`      | `number` | —       | —           |
+| `uid`     | `number` | —       | —           |
+| `gid`     | `number` | —       | —           |
+
+#### `lchown(filepath: Path, uid: number, gid: number): Promise<void>`
+
+Change the owner and group of a file, but if `filepath` is a symbolic link, the changes are applied only to the link, not the file it refers to.
+
+Overloads:
+
+```ts
+lchown(filepath: Path, uid: number, gid: number): Promise<void>
+lchown(filepath: Path, uid: number, gid: number, cb: Callback): void
+```
+
+Synchronous form: `lchownSync(filepath: Path, uid: number, gid: number): void`
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| `filepath` | `Path`   | —       | —           |
+| `uid`      | `number` | —       | —           |
+| `gid`      | `number` | —       | —           |
+
+#### `utimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>`
+
+Change the access and modification times of a file. Times may be numbers (seconds since epoch) or `Date` objects.
+
+Overloads:
+
+```ts
+utimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
+utimes(filepath: Path, atime: number | Date, mtime: number | Date, cb: Callback): void
+```
+
+Synchronous form: `utimesSync(filepath: Path, atime: number | Date, mtime: number | Date): void`
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description |
+| ---------- | ---------------- | ------- | ----------- |
+| `filepath` | `Path`           | —       | —           |
+| `atime`    | `number \| Date` | —       | —           |
+| `mtime`    | `number \| Date` | —       | —           |
+
+#### `lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>`
+
+Like `fs.utimes()`, but if `filepath` is a symbolic link, the timestamps of the link is changed, not the file it refers to.
+
+Overloads:
+
+```ts
+lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>
+lutimes(filepath: Path, atime: number | Date, mtime: number | Date, cb: Callback): void
+```
+
+Synchronous form: `lutimesSync(filepath: Path, atime: number | Date, mtime: number | Date): void`
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description |
+| ---------- | ---------------- | ------- | ----------- |
+| `filepath` | `Path`           | —       | —           |
+| `atime`    | `number \| Date` | —       | —           |
+| `mtime`    | `number \| Date` | —       | —           |
+
+#### `futimes(fd: number, atime: number | Date, mtime: number | Date): Promise<void>`
+
+Change the access and modification times of a file by its file descriptor. Times may be numbers (seconds since epoch) or `Date` objects.
+
+Overloads:
+
+```ts
+futimes(fd: number, atime: number | Date, mtime: number | Date): Promise<void>
+futimes(fd: number, atime: number | Date, mtime: number | Date, cb: Callback): void
+```
+
+Synchronous form: `futimesSync(fd: number, atime: number | Date, mtime: number | Date): void`
+
+**Parameters**
+
+| Parameter | Type             | Default | Description |
+| --------- | ---------------- | ------- | ----------- |
+| `fd`      | `number`         | —       | —           |
+| `atime`   | `number \| Date` | —       | —           |
+| `mtime`   | `number \| Date` | —       | —           |
+
+### Directories
+
+#### `mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>`
+
+Create a directory at `filepath`.
+
+Overloads:
+
+```ts
+mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>
+mkdir(filepath: Path, mode: number): Promise<void>
+mkdir(filepath: Path, opts: MkdirOptions, cb: Callback): void
+mkdir(filepath: Path, mode: number, cb: Callback): void
+mkdir(filepath: Path, cb: Callback): void
+```
+
+Synchronous form: `mkdirSync(filepath: Path, opts?: MkdirOptions): void`
+
+**Parameters**
+
+| Parameter  | Type           | Default | Description                                                                                                                                            |
+| ---------- | -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `filepath` | `Path`         | —       | —                                                                                                                                                      |
+| `opts?`    | `MkdirOptions` | —       | `mode` defaults to `0o777`. `recursive`, if `true`, creates missing parent directories and does not error if `filepath` already exists as a directory. |
+
+**Throws**
+
+- `ENOENT` — a parent directory in `filepath` does not exist and `opts.recursive` is not set.
+- `EEXIST` — `filepath` already exists; when `opts.recursive` is set this is only thrown if the existing path is not itself a directory.
+
+#### `mkdtemp(prefix: Path): Promise<string>`
+
+Create a unique temporary directory.
+
+Overloads:
+
+```ts
+mkdtemp(prefix: Path): Promise<string>
+mkdtemp(prefix: Path, cb: Callback<[path: string | null]>): void
+```
+
+Synchronous form: `mkdtempSync(prefix: Path): string`
+
+**Parameters**
+
+| Parameter | Type   | Default | Description                                                                                                           |
+| --------- | ------ | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| `prefix`  | `Path` | —       | The literal suffix `'XXXXXX'` is appended to `prefix` and replaced with random characters to form the directory name. |
+
+**Returns** `Promise<string>` — The path of the newly created directory, including its randomly generated suffix.
+
+#### `rmdir(filepath: Path): Promise<void>`
+
+Remove an empty directory.
+
+Overloads:
+
+```ts
+rmdir(filepath: Path): Promise<void>
+rmdir(filepath: Path, cb: Callback): void
+```
+
+Synchronous form: `rmdirSync(filepath: Path): void`
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+**Throws**
+
+- `ENOTEMPTY` — the directory is not empty.
+
+#### `readdir`
+
+```ts
+readdir(filepath: Path, opts: ReaddirOptions & { encoding?: BufferEncoding }): Promise<Dirent<string>[] | string[]>
+```
+
+Read the contents of a directory. Returns an array of filenames or, if `withFileTypes` is `true`, an array of `Dirent` objects.
+
+Synchronous form: `readdirSync(filepath: Path, opts: ReaddirOptions & { encoding?: BufferEncoding }): Dirent<string>[] | string[]`
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description                                                                             |
+| ---------- | ------------------------------------------------ | ------- | --------------------------------------------------------------------------------------- |
+| `filepath` | `Path`                                           | —       | —                                                                                       |
+| `opts`     | `ReaddirOptions & { encoding?: BufferEncoding }` | —       | `withFileTypes`, if `true`, returns `Dirent` objects instead of plain filename strings. |
+
+#### `opendir`
+
+```ts
+opendir(filepath: Path, opts: OpendirOptions & { encoding?: BufferEncoding }): Promise<Dir<string>>
+```
+
+Open a directory for iteration. Returns a `Dir` object.
+
+Synchronous form: `opendirSync(filepath: Path, opts: OpendirOptions & { encoding?: BufferEncoding }): Dir<string>`
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description |
+| ---------- | ------------------------------------------------ | ------- | ----------- |
+| `filepath` | `Path`                                           | —       | —           |
+| `opts`     | `OpendirOptions & { encoding?: BufferEncoding }` | —       | —           |
+
+### Links, moving, copying, and removing
+
+#### `link(src: Path, dst: Path): Promise<void>`
+
+Creates a new link (also known as a hard link) to an existing file.
+
+Overloads:
+
+```ts
+link(src: Path, dst: Path): Promise<void>
+link(src: Path, dst: Path, cb: Callback): void
+```
+
+Synchronous form: `linkSync(src: Path, dst: Path): void`
+
+**Parameters**
+
+| Parameter | Type   | Default | Description |
+| --------- | ------ | ------- | ----------- |
+| `src`     | `Path` | —       | —           |
+| `dst`     | `Path` | —       | —           |
+
+#### `symlink(target: Path, filepath: Path, type?: string | number): Promise<void>`
+
+Create a symbolic link at `filepath` pointing to `target`. `type` may be `'file'`, `'dir'`, or `'junction'` (Windows only) or a numeric flag. On Windows, if `type` is not provided, it is inferred from the target.
+
+Overloads:
+
+```ts
+symlink(target: Path, filepath: Path, type?: string | number): Promise<void>
+symlink(target: Path, filepath: Path, type: string | number, cb: Callback): void
+symlink(target: Path, filepath: Path, cb: Callback): void
+```
+
+Synchronous form: `symlinkSync(target: Path, filepath: Path, type?: string | number): void`
+
+**Parameters**
+
+| Parameter  | Type               | Default | Description |
+| ---------- | ------------------ | ------- | ----------- |
+| `target`   | `Path`             | —       | —           |
+| `filepath` | `Path`             | —       | —           |
+| `type?`    | `string \| number` | —       | —           |
+
+#### `readlink(filepath: Path, opts: ReadlinkOptions & { encoding?: BufferEncoding }): Promise<string>`
+
+Read the target of a symbolic link.
+
+Overloads:
+
+```ts
+readlink(filepath: Path, opts: ReadlinkOptions & { encoding?: BufferEncoding }): Promise<string>
+readlink(filepath: Path, opts: ReadlinkOptions & { encoding: 'buffer' }): Promise<Buffer>
+readlink(filepath: Path, opts: ReadlinkOptions): Promise<string | Buffer>
+readlink(filepath: Path, encoding: BufferEncoding): Promise<string>
+readlink(filepath: Path, encoding: 'buffer'): Promise<Buffer>
+readlink(filepath: Path, encoding: BufferEncoding | 'buffer'): Promise<string | Buffer>
+readlink(filepath: Path): Promise<string>
+readlink(filepath: Path, opts: ReadlinkOptions & { encoding?: BufferEncoding }, cb: Callback<[link: string | null]>): void
+readlink(filepath: Path, opts: ReadlinkOptions & { encoding: 'buffer' }, cb: Callback<[link: Buffer | null]>): void
+readlink(filepath: Path, opts: ReadlinkOptions, cb: Callback<[link: string | Buffer | null]>): void
+readlink(filepath: Path, encoding: BufferEncoding, cb: Callback<[link: string | null]>): void
+readlink(filepath: Path, encoding: 'buffer', cb: Callback<[link: Buffer | null]>): void
+readlink(filepath: Path, encoding: BufferEncoding | 'buffer', cb: Callback<[link: string | Buffer | null]>): void
+readlink(filepath: Path, cb: Callback<[link: string | null]>): void
+```
+
+Synchronous form: `readlinkSync(filepath: Path, opts: ReadlinkOptions & { encoding?: BufferEncoding }): string`
+
+**Parameters**
+
+| Parameter  | Type                                              | Default | Description |
+| ---------- | ------------------------------------------------- | ------- | ----------- |
+| `filepath` | `Path`                                            | —       | —           |
+| `opts`     | `ReadlinkOptions & { encoding?: BufferEncoding }` | —       | —           |
+
+#### `realpath(filepath: Path, opts: RealpathOptions & { encoding?: BufferEncoding }): Promise<string>`
+
+Resolve the real path of `filepath`, expanding all symbolic links.
+
+Overloads:
+
+```ts
+realpath(filepath: Path, opts: RealpathOptions & { encoding?: BufferEncoding }): Promise<string>
+realpath(filepath: Path, opts: RealpathOptions & { encoding: 'buffer' }): Promise<Buffer>
+realpath(filepath: Path, opts: RealpathOptions): Promise<string | Buffer>
+realpath(filepath: Path, encoding: BufferEncoding): Promise<string>
+realpath(filepath: Path, encoding: 'buffer'): Promise<Buffer>
+realpath(filepath: Path, encoding: BufferEncoding | 'buffer'): Promise<string | Buffer>
+realpath(filepath: Path): Promise<string>
+realpath(filepath: Path, opts: RealpathOptions & { encoding?: BufferEncoding }, cb: Callback<[path: string | null]>): void
+realpath(filepath: Path, opts: RealpathOptions & { encoding: 'buffer' }, cb: Callback<[path: Buffer | null]>): void
+realpath(filepath: Path, opts: RealpathOptions, cb: Callback<[path: string | Buffer | null]>): void
+realpath(filepath: Path, encoding: BufferEncoding, cb: Callback<[path: string | null]>): void
+realpath(filepath: Path, encoding: 'buffer', cb: Callback<[path: Buffer | null]>): void
+realpath(filepath: Path, encoding: BufferEncoding | 'buffer', cb: Callback<[path: string | Buffer | null]>): void
+realpath(filepath: Path, cb: Callback<[path: string | null]>): void
+```
+
+Synchronous form: `realpathSync(filepath: Path, opts: RealpathOptions & { encoding?: BufferEncoding }): string`
+
+**Parameters**
+
+| Parameter  | Type                                              | Default | Description |
+| ---------- | ------------------------------------------------- | ------- | ----------- |
+| `filepath` | `Path`                                            | —       | —           |
+| `opts`     | `RealpathOptions & { encoding?: BufferEncoding }` | —       | —           |
+
+#### `rename(src: Path, dst: Path): Promise<void>`
+
+Rename a file from `src` to `dst`.
+
+Overloads:
+
+```ts
+rename(src: Path, dst: Path): Promise<void>
+rename(src: Path, dst: Path, cb: Callback): void
+```
+
+Synchronous form: `renameSync(src: Path, dst: Path): void`
+
+**Parameters**
+
+| Parameter | Type   | Default | Description |
+| --------- | ------ | ------- | ----------- |
+| `src`     | `Path` | —       | —           |
+| `dst`     | `Path` | —       | —           |
+
+#### `unlink(filepath: Path): Promise<void>`
+
+Remove a file.
+
+Overloads:
+
+```ts
+unlink(filepath: Path): Promise<void>
+unlink(filepath: Path, cb: Callback): void
+```
+
+Synchronous form: `unlinkSync(filepath: Path): void`
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description                     |
+| ---------- | ------ | ------- | ------------------------------- |
+| `filepath` | `Path` | —       | The path of the file to remove. |
+
+#### `rm(filepath: Path, opts?: RmOptions): Promise<void>`
+
+Remove a file or directory at `filepath`.
+
+Overloads:
+
+```ts
+rm(filepath: Path, opts?: RmOptions): Promise<void>
+rm(filepath: Path, opts: RmOptions, cb: Callback): void
+rm(filepath: Path, cb: Callback): void
+```
+
+Synchronous form: `rmSync(filepath: Path, opts?: RmOptions): void`
+
+**Parameters**
+
+| Parameter  | Type        | Default | Description                                                                                                                              |
+| ---------- | ----------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`      | —       | —                                                                                                                                        |
+| `opts?`    | `RmOptions` | —       | `recursive`, if `true`, removes directories and their contents; `force`, if `true`, suppresses the error when `filepath` does not exist. |
+
+**Throws**
+
+- `EISDIR` — `filepath` is a directory and `opts.recursive` is not set.
+
+#### `copyFile(src: Path, dst: Path, mode?: number): Promise<void>`
+
+Copy a file from `src` to `dst`. `mode` is an optional bitmask created from `fs.constants.COPYFILE_EXCL`, `fs.constants.COPYFILE_FICLONE`, or `fs.constants.COPYFILE_FICLONE_FORCE`.
+
+Overloads:
+
+```ts
+copyFile(src: Path, dst: Path, mode?: number): Promise<void>
+copyFile(src: Path, dst: Path, mode: number, cb: Callback): void
+copyFile(src: Path, dst: Path, cb: Callback): void
+```
+
+Synchronous form: `copyFileSync(src: Path, dst: Path, mode?: number): void`
+
+**Parameters**
+
+| Parameter | Type     | Default | Description                                                                                                                         |
+| --------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src`     | `Path`   | —       | —                                                                                                                                   |
+| `dst`     | `Path`   | —       | —                                                                                                                                   |
+| `mode?`   | `number` | —       | Defaults to `0`. A bitmask of `fs.constants.COPYFILE_EXCL` (fail if `dst` exists), `COPYFILE_FICLONE`, or `COPYFILE_FICLONE_FORCE`. |
+
+**Throws**
+
+- `EEXIST` — `dst` already exists and `mode` includes `fs.constants.COPYFILE_EXCL`.
+
+#### `cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>`
+
+Copy a file or directory from `src` to `dst`.
+
+Overloads:
+
+```ts
+cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>
+cp(src: Path, dst: Path, opts: CpOptions, cb: Callback): void
+cp(src: Path, dst: Path, cb: Callback): void
+```
+
+Synchronous form: `cpSync(src: Path, dst: Path, opts?: CpOptions): void`
+
+**Parameters**
+
+| Parameter | Type        | Default | Description                                                                                     |
+| --------- | ----------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `src`     | `Path`      | —       | —                                                                                               |
+| `dst`     | `Path`      | —       | —                                                                                               |
+| `opts?`   | `CpOptions` | —       | `recursive` must be `true` to copy a directory; copying a directory without it throws `EISDIR`. |
+
+**Throws**
+
+- `EISDIR` — `src` is a directory and `opts.recursive` is not set.
+
+### Streams and watching
+
+#### `createReadStream(path: Path | null, opts?: ReadStreamOptions): ReadStream`
 
 Create a readable stream for a file. Returns a `ReadStream`.
 
-Options include:
+**Parameters**
 
-```js
-options = {
-  fd: -1,
-  flags: 'r',
-  mode: 0o666,
-  start: 0,
-  end: Infinity
-}
-```
+| Parameter | Type                | Default | Description                                                                                                                                  |
+| --------- | ------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`    | `Path \| null`      | —       | May be `null` if `opts.fd` specifies an already-open file descriptor to read from instead of opening `path`.                                 |
+| `opts?`   | `ReadStreamOptions` | —       | `flags` defaults to `'r'`, `mode` to `0o666`, `start` (byte offset) to `0`; `end` (inclusive byte offset), if given, stops the stream early. |
 
-If `fd` is provided, `path` may be `null` and the stream reads from the given file descriptor.
-
-#### `const stream = fs.createWriteStream(path[, opts])`
+#### `createWriteStream(path: Path | null, opts?: WriteStreamOptions): WriteStream`
 
 Create a writable stream for a file. Returns a `WriteStream`.
 
-Options include:
+**Parameters**
 
-```js
-options = {
-  fd: -1,
-  flags: 'w',
-  mode: 0o666
+| Parameter | Type                 | Default | Description                                                                                                 |
+| --------- | -------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| `path`    | `Path \| null`       | —       | May be `null` if `opts.fd` specifies an already-open file descriptor to write to instead of opening `path`. |
+| `opts?`   | `WriteStreamOptions` | —       | `flags` defaults to `'w'`, `mode` to `0o666`.                                                               |
+
+#### `watch`
+
+```ts
+watch(filepath: Path, opts: WatcherOptions & { encoding?: BufferEncoding }, cb: (eventType: WatcherEventType, filename: string) => void): Watcher<string>
+```
+
+Watch a file or directory for changes. Returns a `Watcher` object. The `callback`, if provided, is called with `(eventType, filename)` on each change.
+
+**Parameters**
+
+| Parameter  | Type                                                      | Default | Description                                                                                                                  |
+| ---------- | --------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`                                                    | —       | —                                                                                                                            |
+| `opts`     | `WatcherOptions & { encoding?: BufferEncoding }`          | —       | `persistent` defaults to `true`; `recursive` (default `false`) also watches subdirectories; `encoding` defaults to `'utf8'`. |
+| `cb`       | `(eventType: WatcherEventType, filename: string) => void` | —       | Called with `(eventType, filename)` on each change; equivalent to listening for the `Watcher`'s `'change'` event.            |
+
+### Modules
+
+#### `promises`
+
+#### `constants`
+
+```ts
+constants: {
+  O_RDWR: number
+  O_RDONLY: number
+  O_WRONLY: number
+  O_CREAT: number
+  O_TRUNC: number
+  O_APPEND: number
+
+  F_OK: number
+  R_OK: number
+  W_OK: number
+  X_OK: number
+
+  S_IFMT: number
+  S_IFREG: number
+  S_IFDIR: number
+  S_IFCHR: number
+  S_IFLNK: number
+  S_IFBLK: number
+  S_IFIFO: number
+  S_IFSOCK: number
+
+  S_IRUSR: number
+  S_IWUSR: number
+  S_IXUSR: number
+  S_IRGRP: number
+  S_IWGRP: number
+  S_IXGRP: number
+  S_IROTH: number
+  S_IWOTH: number
+  S_IXOTH: number
+
+  UV_DIRENT_UNKNOWN: number
+  UV_DIRENT_FILE: number
+  UV_DIRENT_DIR: number
+  UV_DIRENT_LINK: number
+  UV_DIRENT_FIFO: number
+  UV_DIRENT_SOCKET: number
+  UV_DIRENT_CHAR: number
+  UV_DIRENT_BLOCK: number
+
+  COPYFILE_EXCL: number
+  COPYFILE_FICLONE: number
+  COPYFILE_FICLONE_FORCE: number
+  UV_FS_SYMLINK_DIR: number
+  UV_FS_SYMLINK_JUNCTION: number
 }
 ```
 
-If `fd` is provided, `path` may be `null` and the stream writes to the given file descriptor.
+An object containing file system constants, such as file access modes and file type flags. See `fs/constants` for the full list.
 
-#### `fs.constants`
+### Dir
 
-An object containing file system constants. See `fs/constants` for the full list. Commonly used constants include:
+#### `close(): Promise<void>`
 
-- `fs.constants.O_RDONLY`, `fs.constants.O_WRONLY`, `fs.constants.O_RDWR` — file access flags
-- `fs.constants.O_CREAT`, `fs.constants.O_TRUNC`, `fs.constants.O_APPEND` — file creation flags
-- `fs.constants.F_OK`, `fs.constants.R_OK`, `fs.constants.W_OK`, `fs.constants.X_OK` — file accessibility flags
-- `fs.constants.S_IFMT`, `fs.constants.S_IFREG`, `fs.constants.S_IFDIR`, `fs.constants.S_IFLNK` — file type flags
-- `fs.constants.COPYFILE_EXCL`, `fs.constants.COPYFILE_FICLONE`, `fs.constants.COPYFILE_FICLONE_FORCE` — copy flags
+Close the directory handle opened by `fs.opendir()`.
 
-### `Stats`
+Overloads:
 
-Returned by `fs.stat()`, `fs.lstat()`, and `fs.fstat()`.
+```ts
+close(): Promise<void>
+close(cb: Callback): void
+```
 
-#### `stats.dev`
+#### `closeSync(): void`
 
-The device identifier.
+Close the directory handle opened by `fs.opendirSync()`.
 
-#### `stats.mode`
-
-The file mode (type and permissions).
-
-#### `stats.nlink`
-
-The number of hard links.
-
-#### `stats.uid`
-
-The user identifier of the file owner.
-
-#### `stats.gid`
-
-The group identifier of the file owner.
-
-#### `stats.rdev`
-
-The device identifier for special files.
-
-#### `stats.blksize`
-
-The file system block size for I/O operations.
-
-#### `stats.ino`
-
-The inode number.
-
-#### `stats.size`
-
-The size of the file in bytes.
-
-#### `stats.blocks`
-
-The number of 512-byte blocks allocated.
-
-#### `stats.atimeMs`
-
-The access time in milliseconds since the epoch.
-
-#### `stats.mtimeMs`
-
-The modification time in milliseconds since the epoch.
-
-#### `stats.ctimeMs`
-
-The change time in milliseconds since the epoch.
-
-#### `stats.birthtimeMs`
-
-The creation time in milliseconds since the epoch.
-
-#### `stats.atime`
-
-The access time as a `Date` object.
-
-#### `stats.mtime`
-
-The modification time as a `Date` object.
-
-#### `stats.ctime`
-
-The change time as a `Date` object.
-
-#### `stats.birthtime`
-
-The creation time as a `Date` object.
-
-#### `stats.isDirectory()`
-
-Returns `true` if the file is a directory.
-
-#### `stats.isFile()`
-
-Returns `true` if the file is a regular file.
-
-#### `stats.isBlockDevice()`
-
-Returns `true` if the file is a block device.
-
-#### `stats.isCharacterDevice()`
-
-Returns `true` if the file is a character device.
-
-#### `stats.isFIFO()`
-
-Returns `true` if the file is a FIFO (named pipe).
-
-#### `stats.isSymbolicLink()`
-
-Returns `true` if the file is a symbolic link. Only meaningful when using `fs.lstat()`.
-
-#### `stats.isSocket()`
-
-Returns `true` if the file is a socket.
-
-### `Dir`
-
-Returned by `fs.opendir()`. Supports both synchronous and asynchronous iteration.
-
-#### `dir.path`
+#### `path: string`
 
 The path of the directory.
 
-#### `const dirent = await dir.read()`
+#### `read(): Promise<Dirent<T> | null>`
 
-Read the next directory entry. Returns a `Dirent` or `null` when all entries have been read.
+Read the next entry from the directory.
 
-#### `dir.read(callback)`
+Overloads:
 
-Callback version of `dir.read()`.
+```ts
+read(): Promise<Dirent<T> | null>
+read(cb: Callback<[dirent: Dirent<T> | null]>): void
+```
 
-#### `const dirent = dir.readSync()`
+**Returns** `Promise<Dirent<T> | null>` — The next `Dirent` for the directory, or `null` once every entry has been read.
 
-Synchronous version of `dir.read()`.
+#### `readSync(): Dirent<T> | null`
 
-#### `await dir.close()`
+Read the next entry from the directory.
 
-Close the directory handle.
+**Returns** `Dirent<T> | null` — The next `Dirent` for the directory, or `null` once every entry has been read.
 
-#### `dir.close(callback)`
+### Dirent
 
-Callback version of `dir.close()`.
+#### `Dirent.isBlockDevice(): boolean`
 
-#### `dir.closeSync()`
+Returns `true` if the file is a block device.
 
-Synchronous version of `dir.close()`.
+#### `Dirent.isCharacterDevice(): boolean`
 
-### `Dirent`
+Returns `true` if the file is a character device.
 
-Represents a directory entry, returned when iterating a `Dir` or using `fs.readdir()` with `withFileTypes: true`.
+#### `Dirent.isDirectory(): boolean`
 
-#### `dirent.parentPath`
+Returns `true` if the file is a directory.
 
-The path of the parent directory.
+#### `Dirent.isFIFO(): boolean`
 
-#### `dirent.name`
+Returns `true` if the file is a FIFO (named pipe).
+
+#### `Dirent.isFile(): boolean`
+
+Returns `true` if the file is a regular file.
+
+#### `Dirent.isSocket(): boolean`
+
+Returns `true` if the file is a socket.
+
+#### `Dirent.isSymbolicLink(): boolean`
+
+Returns `true` if the file is a symbolic link. Only meaningful when using `fs.lstat()`.
+
+#### `name: T`
 
 The name of the directory entry, as a string or `Buffer` depending on the encoding.
 
-#### `dirent.type`
+#### `parentPath: string`
+
+The path of the parent directory.
+
+#### `type: number`
 
 The numeric type of the directory entry.
 
-#### `dirent.isFile()`
+### Stats
 
-Returns `true` if the entry is a regular file.
+#### `atime: Date`
 
-#### `dirent.isDirectory()`
+The access time as a `Date` object.
 
-Returns `true` if the entry is a directory.
+#### `atimeMs: number`
 
-#### `dirent.isSymbolicLink()`
+The access time in milliseconds since the epoch.
 
-Returns `true` if the entry is a symbolic link.
+#### `birthtime: Date`
 
-#### `dirent.isFIFO()`
+The creation time as a `Date` object.
 
-Returns `true` if the entry is a FIFO.
+#### `birthtimeMs: number`
 
-#### `dirent.isSocket()`
+The creation time in milliseconds since the epoch.
 
-Returns `true` if the entry is a socket.
+#### `blksize: number`
 
-#### `dirent.isCharacterDevice()`
+The file system block size for I/O operations.
 
-Returns `true` if the entry is a character device.
+#### `blocks: number`
 
-#### `dirent.isBlockDevice()`
+The number of 512-byte blocks allocated.
 
-Returns `true` if the entry is a block device.
+#### `ctime: Date`
 
-### `ReadStream`
+The change time as a `Date` object.
 
-A readable stream for file data, created by `fs.createReadStream()`. Extends `Readable` from <https://github.com/holepunchto/bare-stream>.
+#### `ctimeMs: number`
 
-#### `stream.path`
+The change time in milliseconds since the epoch.
 
-The file path, or `null` if opened by file descriptor.
+#### `dev: number`
 
-#### `stream.fd`
+The device identifier.
 
-The underlying file descriptor.
+#### `gid: number`
 
-#### `stream.flags`
+The group identifier of the file owner.
 
-The flags the file was opened with.
+#### `ino: number`
 
-#### `stream.mode`
+The inode number.
 
-The mode the file was opened with.
+#### `Stats.isBlockDevice(): boolean`
 
-### `WriteStream`
+Returns `true` if the file is a block device.
 
-A writable stream for file data, created by `fs.createWriteStream()`. Extends `Writable` from <https://github.com/holepunchto/bare-stream>.
+#### `Stats.isCharacterDevice(): boolean`
 
-#### `stream.path`
+Returns `true` if the file is a character device.
 
-The file path, or `null` if opened by file descriptor.
+#### `Stats.isDirectory(): boolean`
 
-#### `stream.fd`
+Returns `true` if the file is a directory.
 
-The underlying file descriptor.
+#### `Stats.isFIFO(): boolean`
 
-#### `stream.flags`
+Returns `true` if the file is a FIFO (named pipe).
 
-The flags the file was opened with.
+#### `Stats.isFile(): boolean`
 
-#### `stream.mode`
+Returns `true` if the file is a regular file.
 
-The mode the file was opened with.
+#### `Stats.isSocket(): boolean`
 
-### `Watcher`
+Returns `true` if the file is a socket.
 
-Watches for file system changes, created by `fs.watch()`. Extends `EventEmitter` from <https://github.com/holepunchto/bare-events>.
+#### `Stats.isSymbolicLink(): boolean`
 
-#### `watcher.close()`
+Returns `true` if the file is a symbolic link. Only meaningful when using `fs.lstat()`.
 
-Stop watching for changes.
+#### `mode: number`
 
-#### `watcher.ref()`
+The file mode (type and permissions).
+
+#### `mtime: Date`
+
+The modification time as a `Date` object.
+
+#### `mtimeMs: number`
+
+The modification time in milliseconds since the epoch.
+
+#### `nlink: number`
+
+The number of hard links.
+
+#### `rdev: number`
+
+The device identifier for special files.
+
+#### `size: number`
+
+The size of the file in bytes.
+
+#### `uid: number`
+
+The user identifier of the file owner.
+
+### Watcher
+
+#### `close(): void`
+
+Stop watching for further changes. Once closed, a `close` event is emitted.
+
+#### `ref(): void`
 
 Prevent the event loop from exiting while the watcher is active.
 
-#### `watcher.unref()`
+#### `unref(): void`
 
 Allow the event loop to exit even if the watcher is still active.
 
-#### `event: 'change'`
+### Types
 
-Emitted with `(eventType, filename)` when a change is detected. `eventType` is either `'rename'` or `'change'`.
+#### `Path`
 
-#### `event: 'error'`
+```ts
+type Path = string | Buffer | URL
+```
 
-Emitted with `(err)` when an error occurs.
+#### `Flag`
 
-#### `event: 'close'`
+```ts
+type Flag =
+  | 'a'
+  | 'a+'
+  | 'as'
+  | 'as+'
+  | 'ax'
+  | 'ax+'
+  | 'r'
+  | 'r+'
+  | 'rs'
+  | 'rs+'
+  | 'sa'
+  | 'sa+'
+  | 'sr'
+  | 'sr+'
+  | 'w'
+  | 'w+'
+  | 'wx'
+  | 'wx+'
+  | 'xa'
+  | 'xa+'
+  | 'xw'
+  | 'xw+'
+```
 
-Emitted when the watcher is closed.
+#### `ReadStreamOptions`
 
-### `FileHandle`
+```ts
+interface ReadStreamOptions {
+  fd?: number
+  flags?: Flag
+  mode?: number
+  start?: number
+  end?: number
+}
+```
 
-Returned by `require('bare-fs/promises').open()`. Provides an object-oriented API for working with file descriptors.
+Options for `fs.createReadStream()`. `fd`, if given, is used instead of opening `path`. `flags` defaults to `'r'` and `mode` to `0o666`. `start` (default `0`) is the first byte read; `end`, if given, is the last byte read (inclusive).
 
-#### `await handle.close()`
+#### `WriteStreamOptions`
 
-Close the file handle.
+```ts
+interface WriteStreamOptions {
+  fd?: number
+  flags?: Flag
+  mode?: number
+}
+```
 
-#### `const { bytesRead, buffer } = await handle.read(buffer[, offset[, len[, pos]]])`
+Options for `fs.createWriteStream()`. `fd`, if given, is used instead of opening `path`. `flags` defaults to `'w'` and `mode` to `0o666`.
 
-Read from the file into `buffer`.
+#### `WatcherOptions`
 
-#### `const { bytesRead, buffers } = await handle.readv(buffers[, pos])`
+```ts
+interface WatcherOptions {
+  persistent?: boolean
+  recursive?: boolean
+  encoding?: BufferEncoding | 'buffer'
+}
+```
 
-Read from the file into an array of `buffers`.
+Options for `fs.watch()`. `persistent` defaults to `true` (if `false`, the watcher is `unref()`'d immediately so it does not keep the process alive). `recursive` defaults to `false` and also watches subdirectories. `encoding` defaults to `'utf8'`.
 
-#### `const { bytesWritten, buffer } = await handle.write(data[, offset[, len[, pos]]])`
+#### `WatcherEventType`
 
-Write `data` to the file.
+```ts
+type WatcherEventType = 'rename' | 'change'
+```
 
-#### `const { bytesWritten, buffers } = await handle.writev(buffers[, pos])`
+#### `WatcherEvents`
 
-Write an array of `buffers` to the file.
+```ts
+interface WatcherEvents<T extends string | Buffer = string | Buffer> {
+  error: [err: Error]
+  change: [eventType: WatcherEventType, filename: T]
+  close: []
+}
+```
 
-#### `const stats = await handle.stat()`
+#### `AppendFileOptions`
 
-Get the status of the file.
+```ts
+interface AppendFileOptions {
+  encoding?: BufferEncoding
+  flag?: string
+  mode?: number
+}
+```
 
-#### `await handle.chmod(mode)`
+#### `CpOptions`
 
-Change the permissions of the file.
+```ts
+interface CpOptions {
+  recursive?: boolean
+}
+```
 
-#### `await handle.chown(uid, gid)`
+Options for `fs.cp()`. `recursive` must be `true` to copy a directory; without it, copying a directory throws `EISDIR`.
 
-Change the owner and group of the file.
+#### `MkdirOptions`
 
-**NOTE**: This function is not implemented on Windows.
+```ts
+interface MkdirOptions {
+  mode?: number
+  recursive?: boolean
+}
+```
 
-#### `await handle.datasync()`
+Options for `fs.mkdir()`. `mode` defaults to `0o777`. `recursive`, if `true`, creates any missing parent directories and does not error if `filepath` already exists as a directory.
 
-Similar to `fsync`, but does not flush modified metadata unless necessary.
+#### `OpendirOptions`
 
-#### `await handle.sync()`
+```ts
+interface OpendirOptions {
+  encoding?: BufferEncoding | 'buffer'
+  bufferSize?: number
+}
+```
 
-Flush all modified in-core data of the file.
+Options for `fs.opendir()`. `bufferSize` defaults to `32` and sets how many directory entries are buffered internally per read.
 
-#### `await handle.truncate(len)`
+#### `ReadFileOptions`
 
-Truncate the file.
+```ts
+interface ReadFileOptions {
+  encoding?: BufferEncoding | 'buffer'
+  flag?: Flag
+}
+```
 
-#### `await handle.utimes(mode)`
+#### `ReaddirOptions`
 
-Change the access and modification times of the file.
+```ts
+interface ReaddirOptions {
+  withFileTypes?: boolean
+  encoding?: BufferEncoding | 'buffer'
+  bufferSize?: number
+}
+```
 
-#### `const stream = handle.createReadStream([opts])`
+#### `ReadlinkOptions`
 
-Create a readable stream for the file.
+```ts
+interface ReadlinkOptions {
+  encoding?: BufferEncoding | 'buffer'
+}
+```
 
-#### `const stream = handle.createWriteStream([opts])`
+#### `RealpathOptions`
 
-Create a writable stream for the file.
+```ts
+interface RealpathOptions {
+  encoding?: BufferEncoding | 'buffer'
+}
+```
 
-#### `handle.fd`
+#### `RmOptions`
 
-The file descriptor number.
+```ts
+interface RmOptions {
+  force?: boolean
+  recursive?: boolean
+}
+```
 
-#### `event: 'close'`
+Options for `fs.rm()`. `recursive`, if `true`, removes directories and their contents. `force`, if `true`, suppresses the error when `filepath` does not exist.
 
-Emitted when the file handle is closed.
+#### `WriteFileOptions`
+
+```ts
+interface WriteFileOptions {
+  encoding?: BufferEncoding
+  flag?: Flag
+  mode?: number
+}
+```
+
+### Classes
+
+#### `StatFs`
+
+```ts
+class StatFs {
+  bavail: number
+  bfree: number
+  blocks: number
+  bsize: number
+  ffree: number
+  files: number
+  frsize: number
+  type: number
+}
+```
+
+#### `ReadStream`
+
+```ts
+class ReadStream {
+  fd: number
+  flags: Flag
+  mode: number
+  path: string | null
+}
+```
+
+#### `WriteStream`
+
+```ts
+class WriteStream {
+  fd: number
+  flags: Flag
+  mode: number
+  path: string | null
+}
+```
+
+## `bare-fs/promises`
+
+### Functions
+
+#### `open(filepath: Path, flags?: Flag | number, mode?: string | number): Promise<FileHandle>`
+
+Open a file, returning a file descriptor. `flags` defaults to `'r'` and `mode` defaults to `0o666`. `flags` may be a string such as `'r'`, `'w'`, `'a'`, `'r+'`, etc., or a numeric combination of `fs.constants` flags.
+
+**Parameters**
+
+| Parameter  | Type               | Default | Description                                                                                         |
+| ---------- | ------------------ | ------- | --------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`             | —       | —                                                                                                   |
+| `flags?`   | `Flag \| number`   | —       | Defaults to `'r'`. Selects read/write mode and whether the file is created, truncated, or appended. |
+| `mode?`    | `string \| number` | —       | Defaults to `0o666`. Applied only when `flags` creates a new file.                                  |
+
+**Returns** `Promise<FileHandle>` — The file descriptor for the newly opened file.
+
+**Throws**
+
+- `ENOENT` — `filepath` does not exist and `flags` does not include a creating variant (e.g. the default `'r'`).
+- `EEXIST` — `flags` is an exclusive variant (`'wx'`, `'ax'`, `'xw'`, `'xa'`, etc.) and `filepath` already exists.
+
+#### `promises.access(filepath: Path, mode?: number): Promise<void>`
+
+Check whether the file at `filepath` is accessible. `mode` defaults to `fs.constants.F_OK`.
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description                                                                                       |
+| ---------- | -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`   | —       | —                                                                                                 |
+| `mode?`    | `number` | —       | Defaults to `fs.constants.F_OK` (existence only); may also combine `R_OK`, `W_OK`, and/or `X_OK`. |
+
+#### `promises.appendFile`
+
+```ts
+appendFile(filepath: Path, data: string | Buffer | ArrayBufferView, opts?: AppendFileOptions): Promise<void>
+```
+
+Append `data` to a file, creating it if it does not exist. Accepts the same options as `fs.writeFile()` but defaults to the `'a'` flag.
+
+**Parameters**
+
+| Parameter  | Type                                  | Default | Description |
+| ---------- | ------------------------------------- | ------- | ----------- |
+| `filepath` | `Path`                                | —       | —           |
+| `data`     | `string \| Buffer \| ArrayBufferView` | —       | —           |
+| `opts?`    | `AppendFileOptions`                   | —       | —           |
+
+#### `promises.chmod(filepath: Path, mode: string | number): Promise<void>`
+
+Change the permissions of a file. `mode` may be a numeric mode or a string that will be parsed as octal.
+
+**Parameters**
+
+| Parameter  | Type               | Default | Description |
+| ---------- | ------------------ | ------- | ----------- |
+| `filepath` | `Path`             | —       | —           |
+| `mode`     | `string \| number` | —       | —           |
+
+#### `promises.chown(filepath: Path, uid: number, gid: number): Promise<void>`
+
+Change the owner and group of a file.
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| `filepath` | `Path`   | —       | —           |
+| `uid`      | `number` | —       | —           |
+| `gid`      | `number` | —       | —           |
+
+#### `promises.copyFile(src: Path, dst: Path, mode?: number): Promise<void>`
+
+Copy a file from `src` to `dst`. `mode` is an optional bitmask created from `fs.constants.COPYFILE_EXCL`, `fs.constants.COPYFILE_FICLONE`, or `fs.constants.COPYFILE_FICLONE_FORCE`.
+
+**Parameters**
+
+| Parameter | Type     | Default | Description                                                                                                                         |
+| --------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src`     | `Path`   | —       | —                                                                                                                                   |
+| `dst`     | `Path`   | —       | —                                                                                                                                   |
+| `mode?`   | `number` | —       | Defaults to `0`. A bitmask of `fs.constants.COPYFILE_EXCL` (fail if `dst` exists), `COPYFILE_FICLONE`, or `COPYFILE_FICLONE_FORCE`. |
+
+**Throws**
+
+- `EEXIST` — `dst` already exists and `mode` includes `fs.constants.COPYFILE_EXCL`.
+
+#### `promises.cp(src: Path, dst: Path, opts?: CpOptions): Promise<void>`
+
+Copy a file or directory from `src` to `dst`.
+
+**Parameters**
+
+| Parameter | Type        | Default | Description                                                                                     |
+| --------- | ----------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `src`     | `Path`      | —       | —                                                                                               |
+| `dst`     | `Path`      | —       | —                                                                                               |
+| `opts?`   | `CpOptions` | —       | `recursive` must be `true` to copy a directory; copying a directory without it throws `EISDIR`. |
+
+**Throws**
+
+- `EISDIR` — `src` is a directory and `opts.recursive` is not set.
+
+#### `promises.lchown(filepath: Path, uid: number, gid: number): Promise<void>`
+
+Change the owner and group of a file, but if `filepath` is a symbolic link, the changes are applied only to the link, not the file it refers to.
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| `filepath` | `Path`   | —       | —           |
+| `uid`      | `number` | —       | —           |
+| `gid`      | `number` | —       | —           |
+
+#### `promises.lutimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>`
+
+Like `fs.utimes()`, but if `filepath` is a symbolic link, the timestamps of the link is changed, not the file it refers to.
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description |
+| ---------- | ---------------- | ------- | ----------- |
+| `filepath` | `Path`           | —       | —           |
+| `atime`    | `number \| Date` | —       | —           |
+| `mtime`    | `number \| Date` | —       | —           |
+
+#### `promises.link(src: Path, dst: Path): Promise<void>`
+
+Creates a new link (also known as a hard link) to an existing file.
+
+**Parameters**
+
+| Parameter | Type   | Default | Description |
+| --------- | ------ | ------- | ----------- |
+| `src`     | `Path` | —       | —           |
+| `dst`     | `Path` | —       | —           |
+
+#### `promises.lstat(filepath: Path): Promise<Stats>`
+
+Like `fs.stat()`, but if `filepath` is a symbolic link, the link itself is statted, not the file it refers to.
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+#### `promises.mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>`
+
+Create a directory at `filepath`.
+
+Overloads:
+
+```ts
+mkdir(filepath: Path, opts?: MkdirOptions): Promise<void>
+mkdir(filepath: Path, mode: number): Promise<void>
+```
+
+**Parameters**
+
+| Parameter  | Type           | Default | Description                                                                                                                                            |
+| ---------- | -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `filepath` | `Path`         | —       | —                                                                                                                                                      |
+| `opts?`    | `MkdirOptions` | —       | `mode` defaults to `0o777`. `recursive`, if `true`, creates missing parent directories and does not error if `filepath` already exists as a directory. |
+
+**Throws**
+
+- `ENOENT` — a parent directory in `filepath` does not exist and `opts.recursive` is not set.
+- `EEXIST` — `filepath` already exists; when `opts.recursive` is set this is only thrown if the existing path is not itself a directory.
+
+#### `promises.mkdtemp(prefix: Path): Promise<string>`
+
+Create a unique temporary directory.
+
+**Parameters**
+
+| Parameter | Type   | Default | Description                                                                                                           |
+| --------- | ------ | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| `prefix`  | `Path` | —       | The literal suffix `'XXXXXX'` is appended to `prefix` and replaced with random characters to form the directory name. |
+
+**Returns** `Promise<string>` — The path of the newly created directory, including its randomly generated suffix.
+
+#### `promises.opendir`
+
+```ts
+opendir(filepath: Path, opts: OpendirOptions & { encoding?: BufferEncoding }): Promise<Dir<string>>
+```
+
+Open a directory for iteration. Returns a `Dir` object.
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description |
+| ---------- | ------------------------------------------------ | ------- | ----------- |
+| `filepath` | `Path`                                           | —       | —           |
+| `opts`     | `OpendirOptions & { encoding?: BufferEncoding }` | —       | —           |
+
+#### `promises.readFile(filepath: Path, opts: ReadFileOptions & { encoding: BufferEncoding }): Promise<string>`
+
+Read the entire contents of a file. Returns a `Buffer` by default, or a string if an `encoding` is specified.
+
+Overloads:
+
+```ts
+readFile(filepath: Path, opts: ReadFileOptions & { encoding: BufferEncoding }): Promise<string>
+readFile(filepath: Path, opts: ReadFileOptions & { encoding?: 'buffer' }): Promise<Buffer>
+readFile(filepath: Path, opts: ReadFileOptions): Promise<string | Buffer>
+readFile(filepath: Path, encoding: BufferEncoding): Promise<string>
+readFile(filepath: Path, encoding: 'buffer'): Promise<Buffer>
+readFile(filepath: Path, encoding?: BufferEncoding | 'buffer'): Promise<string | Buffer>
+readFile(filepath: Path): Promise<Buffer>
+```
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description                                                                                              |
+| ---------- | ------------------------------------------------ | ------- | -------------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`                                           | —       | —                                                                                                        |
+| `opts`     | `ReadFileOptions & { encoding: BufferEncoding }` | —       | `encoding` defaults to `'buffer'` (returning a `Buffer` rather than a string); `flag` defaults to `'r'`. |
+
+#### `promises.readdir`
+
+```ts
+readdir(filepath: Path, opts: ReaddirOptions & { encoding?: BufferEncoding }): Promise<Dir<string>[] | string[]>
+```
+
+Read the contents of a directory. Returns an array of filenames or, if `withFileTypes` is `true`, an array of `Dirent` objects.
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description                                                                             |
+| ---------- | ------------------------------------------------ | ------- | --------------------------------------------------------------------------------------- |
+| `filepath` | `Path`                                           | —       | —                                                                                       |
+| `opts`     | `ReaddirOptions & { encoding?: BufferEncoding }` | —       | `withFileTypes`, if `true`, returns `Dirent` objects instead of plain filename strings. |
+
+#### `promises.readlink(filepath: Path, opts: ReadlinkOptions & { encoding?: BufferEncoding }): Promise<string>`
+
+Read the target of a symbolic link.
+
+Overloads:
+
+```ts
+readlink(filepath: Path, opts: ReadlinkOptions & { encoding?: BufferEncoding }): Promise<string>
+readlink(filepath: Path, opts: ReadlinkOptions & { encoding: 'buffer' }): Promise<Buffer>
+readlink(filepath: Path, opts: ReadlinkOptions): Promise<string | Buffer>
+readlink(filepath: Path, encoding: BufferEncoding): Promise<string>
+readlink(filepath: Path, encoding: 'buffer'): Promise<Buffer>
+readlink(filepath: Path, encoding: BufferEncoding | 'buffer'): Promise<string | Buffer>
+readlink(filepath: Path): Promise<string>
+```
+
+**Parameters**
+
+| Parameter  | Type                                              | Default | Description |
+| ---------- | ------------------------------------------------- | ------- | ----------- |
+| `filepath` | `Path`                                            | —       | —           |
+| `opts`     | `ReadlinkOptions & { encoding?: BufferEncoding }` | —       | —           |
+
+#### `promises.realpath(filepath: Path, opts: RealpathOptions & { encoding?: BufferEncoding }): Promise<string>`
+
+Resolve the real path of `filepath`, expanding all symbolic links.
+
+Overloads:
+
+```ts
+realpath(filepath: Path, opts: RealpathOptions & { encoding?: BufferEncoding }): Promise<string>
+realpath(filepath: Path, opts: RealpathOptions & { encoding: 'buffer' }): Promise<Buffer>
+realpath(filepath: Path, opts: RealpathOptions): Promise<string | Buffer>
+realpath(filepath: Path, encoding: BufferEncoding): Promise<string>
+realpath(filepath: Path, encoding: 'buffer'): Promise<Buffer>
+realpath(filepath: Path, encoding: BufferEncoding | 'buffer'): Promise<string | Buffer>
+realpath(filepath: Path): Promise<string>
+```
+
+**Parameters**
+
+| Parameter  | Type                                              | Default | Description |
+| ---------- | ------------------------------------------------- | ------- | ----------- |
+| `filepath` | `Path`                                            | —       | —           |
+| `opts`     | `RealpathOptions & { encoding?: BufferEncoding }` | —       | —           |
+
+#### `promises.rename(src: Path, dst: Path): Promise<void>`
+
+Rename a file from `src` to `dst`.
+
+**Parameters**
+
+| Parameter | Type   | Default | Description |
+| --------- | ------ | ------- | ----------- |
+| `src`     | `Path` | —       | —           |
+| `dst`     | `Path` | —       | —           |
+
+#### `promises.rm(filepath: Path, opts?: RmOptions): Promise<void>`
+
+Remove a file or directory at `filepath`.
+
+**Parameters**
+
+| Parameter  | Type        | Default | Description                                                                                                                              |
+| ---------- | ----------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`      | —       | —                                                                                                                                        |
+| `opts?`    | `RmOptions` | —       | `recursive`, if `true`, removes directories and their contents; `force`, if `true`, suppresses the error when `filepath` does not exist. |
+
+**Throws**
+
+- `EISDIR` — `filepath` is a directory and `opts.recursive` is not set.
+
+#### `promises.rmdir(filepath: Path): Promise<void>`
+
+Remove an empty directory.
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+**Throws**
+
+- `ENOTEMPTY` — the directory is not empty.
+
+#### `promises.stat(filepath: Path): Promise<Stats>`
+
+Get the status of a file. Returns a `Stats` object.
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+#### `promises.statfs(filepath: Path): Promise<StatFs>`
+
+Get filesystem statistics. Returns a `StatFs` object.
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description |
+| ---------- | ------ | ------- | ----------- |
+| `filepath` | `Path` | —       | —           |
+
+#### `promises.truncate(filepath: Path, len?: number): Promise<void>`
+
+Truncate the file at `filename` to `len` bytes. `len` defaults to `0`.
+
+**Parameters**
+
+| Parameter  | Type     | Default | Description |
+| ---------- | -------- | ------- | ----------- |
+| `filepath` | `Path`   | —       | —           |
+| `len?`     | `number` | —       | —           |
+
+#### `promises.symlink(target: Path, filepath: Path, type?: string | number): Promise<void>`
+
+Create a symbolic link at `filepath` pointing to `target`. `type` may be `'file'`, `'dir'`, or `'junction'` (Windows only) or a numeric flag. On Windows, if `type` is not provided, it is inferred from the target.
+
+**Parameters**
+
+| Parameter  | Type               | Default | Description |
+| ---------- | ------------------ | ------- | ----------- |
+| `target`   | `Path`             | —       | —           |
+| `filepath` | `Path`             | —       | —           |
+| `type?`    | `string \| number` | —       | —           |
+
+#### `promises.unlink(filepath: Path): Promise<void>`
+
+Remove a file.
+
+**Parameters**
+
+| Parameter  | Type   | Default | Description                     |
+| ---------- | ------ | ------- | ------------------------------- |
+| `filepath` | `Path` | —       | The path of the file to remove. |
+
+#### `promises.utimes(filepath: Path, atime: number | Date, mtime: number | Date): Promise<void>`
+
+Change the access and modification times of a file. Times may be numbers (seconds since epoch) or `Date` objects.
+
+**Parameters**
+
+| Parameter  | Type             | Default | Description |
+| ---------- | ---------------- | ------- | ----------- |
+| `filepath` | `Path`           | —       | —           |
+| `atime`    | `number \| Date` | —       | —           |
+| `mtime`    | `number \| Date` | —       | —           |
+
+#### `watch(filepath: Path, opts: WatcherOptions & { encoding?: BufferEncoding }): Watcher<string>`
+
+Watch a file or directory for changes. Returns a `Watcher` object. The `callback`, if provided, is called with `(eventType, filename)` on each change.
+
+Overloads:
+
+```ts
+watch(filepath: Path, opts: WatcherOptions & { encoding?: BufferEncoding }): Watcher<string>
+watch(filepath: Path, opts: WatcherOptions & { encoding: 'buffer' }): Watcher<Buffer>
+watch(filepath: Path, opts: WatcherOptions): Watcher
+watch(filepath: Path, encoding: BufferEncoding): Watcher<string>
+watch(filepath: Path, encoding: 'buffer'): Watcher<Buffer>
+watch(filepath: Path, encoding: BufferEncoding | 'buffer'): Watcher
+watch(filepath: Path): Watcher<string>
+```
+
+**Parameters**
+
+| Parameter  | Type                                             | Default | Description                                                                                                                  |
+| ---------- | ------------------------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `filepath` | `Path`                                           | —       | —                                                                                                                            |
+| `opts`     | `WatcherOptions & { encoding?: BufferEncoding }` | —       | `persistent` defaults to `true`; `recursive` (default `false`) also watches subdirectories; `encoding` defaults to `'utf8'`. |
+
+#### `promises.writeFile`
+
+```ts
+writeFile(filepath: Path, data: string | Buffer | ArrayBufferView, opts?: WriteFileOptions): Promise<void>
+```
+
+Write `data` to a file, replacing it if it already exists.
+
+**Parameters**
+
+| Parameter  | Type                                  | Default | Description                                                                          |
+| ---------- | ------------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| `filepath` | `Path`                                | —       | —                                                                                    |
+| `data`     | `string \| Buffer \| ArrayBufferView` | —       | —                                                                                    |
+| `opts?`    | `WriteFileOptions`                    | —       | `flag` defaults to `'w'` (truncating any existing file); `mode` defaults to `0o666`. |
+
+### Constants and variables
+
+#### `promises.constants`
+
+```ts
+constants: {
+  O_RDWR: number
+  O_RDONLY: number
+  O_WRONLY: number
+  O_CREAT: number
+  O_TRUNC: number
+  O_APPEND: number
+
+  F_OK: number
+  R_OK: number
+  W_OK: number
+  X_OK: number
+
+  S_IFMT: number
+  S_IFREG: number
+  S_IFDIR: number
+  S_IFCHR: number
+  S_IFLNK: number
+  S_IFBLK: number
+  S_IFIFO: number
+  S_IFSOCK: number
+
+  S_IRUSR: number
+  S_IWUSR: number
+  S_IXUSR: number
+  S_IRGRP: number
+  S_IWGRP: number
+  S_IXGRP: number
+  S_IROTH: number
+  S_IWOTH: number
+  S_IXOTH: number
+
+  UV_DIRENT_UNKNOWN: number
+  UV_DIRENT_FILE: number
+  UV_DIRENT_DIR: number
+  UV_DIRENT_LINK: number
+  UV_DIRENT_FIFO: number
+  UV_DIRENT_SOCKET: number
+  UV_DIRENT_CHAR: number
+  UV_DIRENT_BLOCK: number
+
+  COPYFILE_EXCL: number
+  COPYFILE_FICLONE: number
+  COPYFILE_FICLONE_FORCE: number
+  UV_FS_SYMLINK_DIR: number
+  UV_FS_SYMLINK_JUNCTION: number
+}
+```
+
+An object containing file system constants, such as file access modes and file type flags. See `fs/constants` for the full list.
+
+## `bare-fs/constants`
+
+### Constants and variables
+
+#### `constants.constants`
+
+```ts
+constants: {
+  O_RDWR: number
+  O_RDONLY: number
+  O_WRONLY: number
+  O_CREAT: number
+  O_TRUNC: number
+  O_APPEND: number
+
+  F_OK: number
+  R_OK: number
+  W_OK: number
+  X_OK: number
+
+  S_IFMT: number
+  S_IFREG: number
+  S_IFDIR: number
+  S_IFCHR: number
+  S_IFLNK: number
+  S_IFBLK: number
+  S_IFIFO: number
+  S_IFSOCK: number
+
+  S_IRUSR: number
+  S_IWUSR: number
+  S_IXUSR: number
+  S_IRGRP: number
+  S_IWGRP: number
+  S_IXGRP: number
+  S_IROTH: number
+  S_IWOTH: number
+  S_IXOTH: number
+
+  UV_DIRENT_UNKNOWN: number
+  UV_DIRENT_FILE: number
+  UV_DIRENT_DIR: number
+  UV_DIRENT_LINK: number
+  UV_DIRENT_FIFO: number
+  UV_DIRENT_SOCKET: number
+  UV_DIRENT_CHAR: number
+  UV_DIRENT_BLOCK: number
+
+  COPYFILE_EXCL: number
+  COPYFILE_FICLONE: number
+  COPYFILE_FICLONE_FORCE: number
+  UV_FS_SYMLINK_DIR: number
+  UV_FS_SYMLINK_JUNCTION: number
+}
+```
+
+An object containing file system constants, such as file access modes and file type flags. See `fs/constants` for the full list.
+<!-- bare-refgen:api end -->
 
 ## License
 
