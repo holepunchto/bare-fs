@@ -2463,9 +2463,11 @@ class FileReadStream extends Readable {
 
     if (err) return cb(err)
 
-    this._seekable = st.isFile()
+    this._isCharacterDevice = st.isCharacterDevice()
 
-    if (this._seekable) {
+    if (this._isCharacterDevice) {
+      this._missing = Infinity
+    } else {
       if (this._missing === -1) this._missing = st.size
 
       if (st.size < this._offset) {
@@ -2474,8 +2476,6 @@ class FileReadStream extends Readable {
       } else if (st.size < this._offset + this._missing) {
         this._missing = st.size - this._offset
       }
-    } else {
-      this._missing = Infinity
     }
 
     cb(null)
@@ -2489,7 +2489,13 @@ class FileReadStream extends Readable {
     let len
     let err = null
     try {
-      len = await read(this.fd, data, 0, data.byteLength, this._seekable ? this._offset : -1)
+      len = await read(
+        this.fd,
+        data,
+        0,
+        data.byteLength,
+        this._isCharacterDevice ? -1 : this._offset
+      )
     } catch (e) {
       err = e
     }
