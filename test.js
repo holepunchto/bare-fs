@@ -1479,6 +1479,17 @@ test('createReadStream, large file', async (t) => {
     .on('end', () => t.alike(Buffer.concat(read), expected))
 })
 
+test('createReadStream, character device', { skip: isWindows }, (t) => {
+  t.plan(1)
+
+  const stream = fs.createReadStream('/dev/zero')
+
+  stream.on('data', (data) => {
+    t.alike(data, Buffer.alloc(data.byteLength))
+    stream.destroy()
+  })
+})
+
 test('createWriteStream', async (t) => {
   t.plan(2)
 
