@@ -262,7 +262,7 @@ export type WatcherEventType = 'rename' | 'change'
 
 export interface WatcherEvents<T extends string | Buffer = string | Buffer> extends EventMap {
   error: [err: Error]
-  change: [eventType: WatcherEventType, filename: T]
+  change: [eventType: WatcherEventType, filename: T | null]
   /** Emitted once the watcher has stopped watching. */
   close: []
 }
@@ -270,7 +270,7 @@ export interface WatcherEvents<T extends string | Buffer = string | Buffer> exte
 export interface Watcher<T extends string | Buffer = string | Buffer>
   extends
     EventEmitter<WatcherEvents<T>>,
-    AsyncIterable<{ eventType: WatcherEventType; filename: T }> {
+    AsyncIterable<{ eventType: WatcherEventType; filename: T | null }> {
   /** Stop watching for further changes. Once closed, a `close` event is emitted. */
   close(): void
   /** Prevent the event loop from exiting while the watcher is active. */
@@ -1306,7 +1306,9 @@ export function unlinkSync(filepath: Path): void
 
 /**
  * Watch a file or directory for changes. Returns a `Watcher` object. The `callback`, if provided,
- * is called with `(eventType, filename)` on each change.
+ * is called with `(eventType, filename)` on each change. `filename` is `null` when the platform
+ * could not report which file changed, such as when events were dropped, in which case the watched
+ * path should be rescanned.
  * @param opts - `persistent` defaults to `true`; `recursive` (default `false`) also watches
  * subdirectories; `encoding` defaults to `'utf8'`.
  * @param cb - Called with `(eventType, filename)` on each change; equivalent to listening for the
@@ -1315,42 +1317,42 @@ export function unlinkSync(filepath: Path): void
 export function watch(
   filepath: Path,
   opts: WatcherOptions & { encoding?: BufferEncoding },
-  cb: (eventType: WatcherEventType, filename: string) => void
+  cb: (eventType: WatcherEventType, filename: string | null) => void
 ): Watcher<string>
 
 export function watch(
   filepath: Path,
   opts: WatcherOptions & { encoding: 'buffer' },
-  cb: (eventType: WatcherEventType, filename: Buffer) => void
+  cb: (eventType: WatcherEventType, filename: Buffer | null) => void
 ): Watcher<Buffer>
 
 export function watch(
   filepath: Path,
   opts: WatcherOptions,
-  cb: (eventType: WatcherEventType, filename: string | Buffer) => void
+  cb: (eventType: WatcherEventType, filename: string | Buffer | null) => void
 ): Watcher
 
 export function watch(
   filepath: Path,
   encoding: BufferEncoding,
-  cb: (eventType: WatcherEventType, filename: string) => void
+  cb: (eventType: WatcherEventType, filename: string | null) => void
 ): Watcher<string>
 
 export function watch(
   filepath: Path,
   encoding: 'buffer',
-  cb: (eventType: WatcherEventType, filename: Buffer) => void
+  cb: (eventType: WatcherEventType, filename: Buffer | null) => void
 ): Watcher<Buffer>
 
 export function watch(
   filepath: Path,
   encoding: BufferEncoding | 'buffer',
-  cb: (eventType: WatcherEventType, filename: string | Buffer) => void
+  cb: (eventType: WatcherEventType, filename: string | Buffer | null) => void
 ): Watcher
 
 export function watch(
   filepath: Path,
-  cb: (eventType: WatcherEventType, filename: string) => void
+  cb: (eventType: WatcherEventType, filename: string | null) => void
 ): Watcher<string>
 
 /**
