@@ -2489,13 +2489,18 @@ bare_fs__on_watcher_event(uv_fs_event_t *handle, const char *filename, int event
     err = js_create_int32(env, events, &args[1]);
     assert(err == 0);
 
-    size_t len = strlen(filename);
+    if (filename == NULL) {
+      err = js_get_null(env, &args[2]);
+      assert(err == 0);
+    } else {
+      size_t len = strlen(filename);
 
-    void *data;
-    err = js_create_arraybuffer(env, len, &data, &args[2]);
-    assert(err == 0);
+      void *data;
+      err = js_create_arraybuffer(env, len, &data, &args[2]);
+      assert(err == 0);
 
-    memcpy(data, (void *) filename, len);
+      memcpy(data, (void *) filename, len);
+    }
   }
 
   err = js_call_function(env, ctx, on_event, 3, args, NULL);
@@ -2572,21 +2577,13 @@ static js_value_t *
 bare_fs_watcher_init(js_env_t *env, js_callback_info_t *info) {
   int err;
 
-  size_t argc = 5;
-  js_value_t *argv[5];
+  size_t argc = 3;
+  js_value_t *argv[3];
 
   err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
   assert(err == 0);
 
-  assert(argc == 5);
-
-  bare_fs_path_t path;
-  err = js_get_value_string_utf8(env, argv[0], path, sizeof(bare_fs_path_t), NULL);
-  assert(err == 0);
-
-  bool recursive;
-  err = js_get_value_bool(env, argv[1], &recursive);
-  assert(err == 0);
+  assert(argc == 3);
 
   js_value_t *result;
 
@@ -2607,26 +2604,57 @@ bare_fs_watcher_init(js_env_t *env, js_callback_info_t *info) {
     return NULL;
   }
 
-  err = uv_fs_event_start(&watcher->handle, bare_fs__on_watcher_event, (char *) path, recursive ? UV_FS_EVENT_RECURSIVE : 0);
-  assert(err == 0);
-
   watcher->env = env;
   watcher->closing = false;
   watcher->exiting = false;
 
-  err = js_create_reference(env, argv[2], 1, &watcher->ctx);
+  err = js_create_reference(env, argv[0], 1, &watcher->ctx);
   assert(err == 0);
 
-  err = js_create_reference(env, argv[3], 1, &watcher->on_event);
+  err = js_create_reference(env, argv[1], 1, &watcher->on_event);
   assert(err == 0);
 
-  err = js_create_reference(env, argv[4], 1, &watcher->on_close);
+  err = js_create_reference(env, argv[2], 1, &watcher->on_close);
   assert(err == 0);
 
   err = js_add_deferred_teardown_callback(env, bare_fs__on_watcher_teardown, (void *) watcher, &watcher->teardown);
   assert(err == 0);
 
   return result;
+}
+
+static js_value_t *
+bare_fs_watcher_start(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 3;
+  js_value_t *argv[3];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 3);
+
+  bare_fs_watcher_t *watcher;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &watcher, NULL);
+  assert(err == 0);
+
+  bare_fs_path_t path;
+  err = js_get_value_string_utf8(env, argv[1], path, sizeof(bare_fs_path_t), NULL);
+  assert(err == 0);
+
+  bool recursive;
+  err = js_get_value_bool(env, argv[2], &recursive);
+  assert(err == 0);
+
+  err = uv_fs_event_start(&watcher->handle, bare_fs__on_watcher_event, (char *) path, recursive ? UV_FS_EVENT_RECURSIVE : 0);
+
+  if (err < 0) {
+    err = js_throw_error(env, uv_err_name(err), uv_strerror(err));
+    assert(err == 0);
+  }
+
+  return NULL;
 }
 
 static js_value_t *
@@ -2792,6 +2820,7 @@ bare_fs_exports(js_env_t *env, js_value_t *exports) {
   V("fdatasyncSync", bare_fs_fdatasync_sync)
 
   V("watcherInit", bare_fs_watcher_init)
+  V("watcherStart", bare_fs_watcher_start)
   V("watcherClose", bare_fs_watcher_close)
   V("watcherRef", bare_fs_watcher_ref)
   V("watcherUnref", bare_fs_watcher_unref)

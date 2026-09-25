@@ -2592,7 +2592,14 @@ class Watcher extends EventEmitter {
 
     this._closed = false
     this._encoding = encoding
-    this._handle = binding.watcherInit(path, recursive, this, this._onevent, this._onclose)
+    this._handle = binding.watcherInit(this, this._onevent, this._onclose)
+
+    try {
+      binding.watcherStart(this._handle, path, recursive)
+    } catch (err) {
+      this.close()
+      throw err
+    }
 
     if (!persistent) this.unref()
 
@@ -2668,9 +2675,11 @@ class Watcher extends EventEmitter {
       this.emit('error', err)
     } else {
       const path =
-        this._encoding === 'buffer'
-          ? Buffer.from(filename)
-          : Buffer.from(filename).toString(this._encoding)
+        filename === null
+          ? null
+          : this._encoding === 'buffer'
+            ? Buffer.from(filename)
+            : Buffer.from(filename).toString(this._encoding)
 
       if (events & binding.UV_RENAME) {
         this.emit('change', 'rename', path)

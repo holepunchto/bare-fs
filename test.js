@@ -2,7 +2,7 @@ const test = require('brittle')
 const path = require('bare-path')
 const crypto = require('bare-crypto')
 const fs = require('.')
-const { Thread } = Bare
+const Thread = require('bare-thread')
 
 const isWindows = Bare.platform === 'win32'
 
@@ -1533,13 +1533,21 @@ test('teardown with read enqueued from exit listener', (t) => {
   // complete back into JavaScript, as the runtime is already tearing down.
   // Cleaning up the in-flight request during teardown must not crash.
 
-  const thread = new Thread(__filename, () => {
-    const fs = require('.')
+  const thread = new Thread(require.resolve('./test/threads/read-from-exit-listener'))
 
-    Bare.on('exit', () => {
-      fs.readFile(__filename, () => {})
-    })
-  })
+  thread.join()
+
+  t.pass('thread torn down without crashing')
+})
+
+test('watch, missing path', (t) => {
+  t.exception(() => fs.watch('test/fixtures/does-not-exist'), /no such file or directory/)
+})
+
+test('watch, missing path during teardown', (t) => {
+  t.plan(1)
+
+  const thread = new Thread(require.resolve('./test/threads/watch-missing-path'))
 
   thread.join()
 
