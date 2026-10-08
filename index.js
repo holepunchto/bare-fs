@@ -1469,6 +1469,20 @@ async function cp(src, dst, opts, cb) {
     } else if (st.isFile()) {
       await copyFile(src, dst)
       await chmod(dst, st.mode)
+    } else if (st.isSymbolicLink()) {
+      try {
+        if (!(await lstat(dst)).isDirectory()) await unlink(dst)
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e
+      }
+
+      await symlink(await readlink(src), dst)
+    } else {
+      throw new FileError('cannot copy a special file', {
+        operation: 'cp',
+        code: 'ENOTSUP',
+        path: src
+      })
     }
   } catch (e) {
     err = e
@@ -1503,6 +1517,20 @@ function cpSync(src, dst, opts = {}) {
   } else if (st.isFile()) {
     copyFileSync(src, dst)
     chmodSync(dst, st.mode)
+  } else if (st.isSymbolicLink()) {
+    try {
+      if (!lstatSync(dst).isDirectory()) unlinkSync(dst)
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e
+    }
+
+    symlinkSync(readlinkSync(src), dst)
+  } else {
+    throw new FileError('cannot copy a special file', {
+      operation: 'cp',
+      code: 'ENOTSUP',
+      path: src
+    })
   }
 }
 
@@ -1736,9 +1764,7 @@ async function symlink(target, filepath, type, cb) {
       target = path.resolve(filepath, '..', target)
 
       try {
-        type = (await stat(target)).isDirectory()
-          ? constants.UV_FS_SYMLINK_DIR
-          : constants.UV_FS_SYMLINK_JUNCTION
+        type = (await stat(target)).isDirectory() ? constants.UV_FS_SYMLINK_DIR : 0
       } catch {
         type = 0
       }
@@ -1791,9 +1817,7 @@ function symlinkSync(target, filepath, type) {
       target = path.resolve(filepath, '..', target)
 
       try {
-        type = statSync(target).isDirectory()
-          ? constants.UV_FS_SYMLINK_DIR
-          : constants.UV_FS_SYMLINK_JUNCTION
+        type = statSync(target).isDirectory() ? constants.UV_FS_SYMLINK_DIR : 0
       } catch {
         type = 0
       }
