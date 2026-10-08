@@ -1449,6 +1449,51 @@ test('symlink sync', async (t) => {
   t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
+test('symlink to a file', async (t) => {
+  await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const link = await withSymlink(t, 'test/fixtures/foo-link')
+
+  fs.symlinkSync('foo.txt', link)
+
+  t.ok(fs.lstatSync(link).isSymbolicLink())
+  t.is(fs.readFileSync(link, 'utf8'), 'foo\n')
+})
+
+test('cp copies symbolic links', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'foo\n')
+  await withSymlink(t, 'test/fixtures/dir/link', 'foo.txt')
+  await withDir(t, 'test/fixtures/dir2', false)
+
+  await fs.promises.cp('test/fixtures/dir', 'test/fixtures/dir2', { recursive: true })
+
+  t.ok(fs.lstatSync('test/fixtures/dir2/link').isSymbolicLink())
+  t.is(fs.readlinkSync('test/fixtures/dir2/link'), fs.readlinkSync('test/fixtures/dir/link'))
+})
+
+test('cp sync copies symbolic links', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+  await withFile(t, 'test/fixtures/dir/foo.txt', 'foo\n')
+  await withSymlink(t, 'test/fixtures/dir/link', 'foo.txt')
+  await withDir(t, 'test/fixtures/dir2', false)
+
+  fs.cpSync('test/fixtures/dir', 'test/fixtures/dir2', { recursive: true })
+
+  t.ok(fs.lstatSync('test/fixtures/dir2/link').isSymbolicLink())
+  t.is(fs.readlinkSync('test/fixtures/dir2/link'), fs.readlinkSync('test/fixtures/dir/link'))
+})
+
+test('cp sync replaces an existing symbolic link', async (t) => {
+  await withDir(t, 'test/fixtures/dir')
+  await withSymlink(t, 'test/fixtures/dir/link', 'foo.txt')
+  await withDir(t, 'test/fixtures/dir2')
+  await withSymlink(t, 'test/fixtures/dir2/link', 'bar.txt')
+
+  fs.cpSync('test/fixtures/dir', 'test/fixtures/dir2', { recursive: true })
+
+  t.is(fs.readlinkSync('test/fixtures/dir2/link'), fs.readlinkSync('test/fixtures/dir/link'))
+})
+
 test('createReadStream', async (t) => {
   t.plan(1)
 
