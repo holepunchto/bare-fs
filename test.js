@@ -675,6 +675,18 @@ test('stat sync', async (t) => {
   t.ok(st)
 })
 
+test('stat timestamps are in milliseconds since the epoch', async (t) => {
+  const before = Date.now()
+  const file = await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
+  const after = Date.now()
+
+  const st = fs.statSync(file)
+
+  for (const key of ['atimeMs', 'mtimeMs', 'ctimeMs', 'birthtimeMs']) {
+    t.ok(st[key] > before - 60000 && st[key] < after + 60000, key)
+  }
+})
+
 test('fstat', async (t) => {
   t.plan(4)
 
