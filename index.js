@@ -1744,6 +1744,7 @@ async function symlink(target, filepath, type, cb) {
     type = null
   }
 
+  target = toPath(target)
   filepath = toNamespacedPath(filepath)
 
   if (typeof type === 'string') {
@@ -1797,6 +1798,7 @@ async function symlink(target, filepath, type, cb) {
 }
 
 function symlinkSync(target, filepath, type) {
+  target = toPath(target)
   filepath = toNamespacedPath(filepath)
 
   if (typeof type === 'string') {
@@ -2612,6 +2614,8 @@ class Watcher extends EventEmitter {
 
     const { persistent = true, recursive = false, encoding = 'utf8' } = opts
 
+    path = toPath(path)
+
     super()
 
     this._closed = false
@@ -2827,13 +2831,23 @@ exports.createWriteStream = function createWriteStream(path, opts) {
   return new FileWriteStream(path, opts)
 }
 
-function toNamespacedPath(filepath) {
+function toPath(filepath) {
   if (typeof filepath !== 'string') {
     if (isURL(filepath)) filepath = fileURLToPath(filepath)
     else filepath = filepath.toString()
   }
 
-  return path.toNamespacedPath(filepath)
+  if (filepath.includes('\0')) {
+    throw new TypeError(
+      `The "path" argument must not contain null bytes. Received ${JSON.stringify(filepath)}`
+    )
+  }
+
+  return filepath
+}
+
+function toNamespacedPath(filepath) {
+  return path.toNamespacedPath(toPath(filepath))
 }
 
 function toFlags(flags) {
