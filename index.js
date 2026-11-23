@@ -1136,6 +1136,8 @@ function mkdirSync(filepath, opts) {
 }
 
 async function mkdtemp(prefix, cb) {
+  const original = prefix
+
   prefix = toNamespacedPath(prefix)
 
   const req = FileRequest.borrow()
@@ -1147,7 +1149,7 @@ async function mkdtemp(prefix, cb) {
 
     await req
 
-    res = binding.requestResultPath(req.handle)
+    res = original + binding.requestResultPath(req.handle).slice(prefix.length)
   } catch (e) {
     err = new FileError(e.message, { operation: 'mkdtemp', code: e.code, path: prefix })
   } finally {
@@ -1158,6 +1160,8 @@ async function mkdtemp(prefix, cb) {
 }
 
 function mkdtempSync(prefix) {
+  const original = prefix
+
   prefix = toNamespacedPath(prefix)
 
   const req = FileRequest.borrow()
@@ -1165,7 +1169,7 @@ function mkdtempSync(prefix) {
   try {
     binding.mkdtempSync(req.handle, prefix + 'XXXXXX')
 
-    return binding.requestResultPath(req.handle)
+    return original + binding.requestResultPath(req.handle).slice(prefix.length)
   } catch (e) {
     throw new FileError(e.message, { operation: 'mkdtempSync', code: e.code, path: prefix })
   } finally {

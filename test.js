@@ -1174,6 +1174,37 @@ test('mkdtempSync', (t) => {
   t.ok(dir, dir)
 })
 
+test('mkdtemp keeps prefix', async (t) => {
+  const prefix = path.resolve('test/fixtures/foo-')
+  const dir = await fs.promises.mkdtemp(prefix)
+
+  withDir(t, dir, false)
+
+  t.ok(dir.startsWith(prefix), dir)
+  t.is(dir.length, prefix.length + 6)
+  t.ok(fs.statSync(dir).isDirectory())
+})
+
+test('mkdtempSync keeps prefix', (t) => {
+  const prefix = path.resolve('test/fixtures/foo-')
+  const dir = fs.mkdtempSync(prefix)
+
+  withDir(t, dir, false)
+
+  t.ok(dir.startsWith(prefix), dir)
+  t.is(dir.length, prefix.length + 6)
+  t.ok(fs.statSync(dir).isDirectory())
+})
+
+test('mkdtempSync keeps relative prefix', (t) => {
+  const dir = fs.mkdtempSync('test/fixtures/foo-')
+
+  withDir(t, dir, false)
+
+  t.ok(dir.startsWith('test/fixtures/foo-'), dir)
+  t.is(dir.length, 'test/fixtures/foo-'.length + 6)
+})
+
 test('copyFile', async (t) => {
   t.plan(11)
 
