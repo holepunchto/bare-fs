@@ -49,6 +49,17 @@ test('open + close sync', async (t) => {
   t.pass()
 })
 
+test('open, path with null byte', async (t) => {
+  const file = await withFile(t, 'test/fixtures/foo.txt')
+
+  for (const value of [`${file}\0.png`, Buffer.from(`${file}\0.png`)]) {
+    t.exception.all(() => fs.openSync(value), TypeError)
+    await t.exception.all(fs.promises.open(value), TypeError)
+  }
+
+  t.absent(fs.existsSync(`${file}\0/../missing`))
+})
+
 test('access', async (t) => {
   t.plan(1)
 
@@ -1461,6 +1472,13 @@ test('symlink sync', async (t) => {
   t.is(fs.readlinkSync(link), isWindows ? path.resolve(target) : 'foo')
 })
 
+test('symlink, target with null byte', async (t) => {
+  const link = await withSymlink(t, 'test/fixtures/foo-link')
+
+  t.exception.all(() => fs.symlinkSync('foo\0bar', link), TypeError)
+  t.exception(() => fs.lstatSync(link))
+})
+
 test('symlink to a file', async (t) => {
   await withFile(t, 'test/fixtures/foo.txt', 'foo\n')
   const link = await withSymlink(t, 'test/fixtures/foo-link')
@@ -1599,6 +1617,10 @@ test('teardown with read enqueued from exit listener', (t) => {
 
 test('watch, missing path', (t) => {
   t.exception(() => fs.watch('test/fixtures/does-not-exist'), /no such file or directory/)
+})
+
+test('watch, path with null byte', (t) => {
+  t.exception.all(() => fs.watch('test/fixtures\0/does-not-exist'), TypeError)
 })
 
 test('watch, missing path during teardown', (t) => {
