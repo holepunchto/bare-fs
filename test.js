@@ -1,5 +1,6 @@
 const test = require('brittle')
 const path = require('bare-path')
+const url = require('bare-url')
 const crypto = require('bare-crypto')
 const fs = require('.')
 const Thread = require('bare-thread')
@@ -1172,6 +1173,34 @@ test('mkdtempSync', (t) => {
   withDir(t, dir, false)
 
   t.ok(dir, dir)
+})
+
+test('mkdtemp keeps relative prefix', async (t) => {
+  const dir = await fs.promises.mkdtemp('test/fixtures/foo-')
+
+  withDir(t, dir, false)
+
+  t.ok(dir.startsWith('test/fixtures/foo-'), dir)
+  t.is(dir.length, 'test/fixtures/foo-'.length + 6)
+})
+
+test('mkdtempSync keeps relative prefix', (t) => {
+  const dir = fs.mkdtempSync('test/fixtures/foo-')
+
+  withDir(t, dir, false)
+
+  t.ok(dir.startsWith('test/fixtures/foo-'), dir)
+  t.is(dir.length, 'test/fixtures/foo-'.length + 6)
+})
+
+test('mkdtempSync with URL prefix', (t) => {
+  const prefix = path.resolve('test/fixtures/foo-')
+  const dir = fs.mkdtempSync(url.pathToFileURL(prefix))
+
+  withDir(t, dir, false)
+
+  t.ok(dir.startsWith(prefix), dir)
+  t.is(dir.length, prefix.length + 6)
 })
 
 test('copyFile', async (t) => {
